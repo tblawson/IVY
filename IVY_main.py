@@ -3,14 +3,14 @@
 """
 DEVELOPMENT VERSION
 
-Created on Mon Jun 29 11:36:13 2015
+Created on Mon Jul 31 12:00:00 2017
 
 @author: t.lawson
 """
 
 """
-High_R_Bridge.py - Version 0.3
-A Python version of the high resistance bridge TestPoint application.
+IVY_main.py - Version 0.1
+A Python version of the I-to-V TestPoint application.
 This app is intended to offer the same functionality as the original
 TestPoint version but avoiding the clutter. It uses a wxPython notebook,
 with separate pages (tabs) dedicated to:
@@ -24,10 +24,6 @@ are output to.
 """
 
 import os
-
-#os.environ['GMHPATH'] = 'C:\Users\\t.lawson\Documents\Python Scripts\High_Res_Bridge\GMHdll'
-#os.environ['XLPATH'] = 'C:\Users\\t.lawson\Documents\Python Scripts\High_Res_Bridge'
-
 import wx
 import nbpages as page
 import IVY_events as evts
