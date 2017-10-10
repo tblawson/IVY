@@ -47,6 +47,7 @@ class SetupPage(wx.Panel):
         self.Bind(evts.EVT_FILEPATH, self.UpdateFilepath)
 
         self.status = self.GetTopLevelParent().sb
+        self.version = self.GetTopLevelParent().version
 
         self.SRC_COMBO_CHOICE = ['none']
         self.DVM_COMBO_CHOICE = ['none']
@@ -451,7 +452,7 @@ class SetupPage(wx.Panel):
 
 
     def BuildCommStr(self,e):
-    # Called by a change in GMH probe selection, or DUC name
+        # Called by a change in GMH probe selection, or DUC name
         d = e.GetString()
         if 'GMH' in d: # A GMH probe selection changed
             # Find the role associated with the selected instrument description
@@ -463,7 +464,7 @@ class SetupPage(wx.Panel):
         RunPage = self.GetParent().GetPage(1)
         params={'DUC':self.DUCName.GetValue(),'GMH':self.GMHProbes.GetValue()}
         joinstr = ' monitored by '
-        commstr = 'DUC: ' + params['DUC'] + joinstr + params['GMH']
+        commstr = 'IVY v.' + self.version + '. DUC: ' + params['DUC'] + joinstr + params['GMH']
         evt = evts.UpdateCommentEvent(str = commstr)
         wx.PostEvent(RunPage,evt)
 
