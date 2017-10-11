@@ -49,8 +49,6 @@ class AqnThread(Thread):
         self._want_abort = 0
         
         self.V12Data = {'V1':[],'V2':[]}
-#        self.V1Data = []
-#        self.V2Data = []
         self.V3Data = []
         self.Times = []
         self.V12m = {'V1':0,'V2':0}
@@ -58,8 +56,6 @@ class AqnThread(Thread):
         
         self.log = self.SetupPage.log
         
-#        self.Range_Mode = {True:'AUTO',False:'FIXED'}
-
         print'Role -> Instrument:'
         print >>self.log,'Role -> Instrument:'
         print'------------------------------'
