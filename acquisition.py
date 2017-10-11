@@ -286,10 +286,8 @@ class AqnThread(Thread):
                     self.PlotThisRow(row,node)
                     time.sleep(0.1)
                     row += 1
-                    
-                    # Reset start row for next measurement
                     self.ws['B1'].value = row+2
-
+                    # Reset start row for next measurement
                 # (end of V3_mask loop)
             # (end of node loop)
         # (end of abs_V3 loop)
