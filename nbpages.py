@@ -53,7 +53,7 @@ class SetupPage(wx.Panel):
         self.DVM_COMBO_CHOICE = ['none']
         self.GMH_COMBO_CHOICE = ['none'] # devices.GMH_DESCR # ('GMH s/n628', 'GMH s/n627')
 #        self.SB_COMBO_CHOICE =  devices.SWITCH_CONFIGS.keys()
-        self.IVBOX_COMBO_CHOICE = ['IV_box']
+        self.IVBOX_COMBO_CHOICE = ['IV_box','none']
         self.T_SENSOR_CHOICE = devices.T_Sensors
         self.cbox_addr_COM = []
         self.cbox_addr_GPIB = []
@@ -104,7 +104,7 @@ class SetupPage(wx.Panel):
         
         IVboxLbl = wx.StaticText(self, label='IVbox (IVbox):', id = wx.ID_ANY)
         self.IVbox = wx.ComboBox(self,wx.ID_ANY, choices = self.IVBOX_COMBO_CHOICE, style=wx.CB_DROPDOWN)
-#        self.Switchbox.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
+        self.IVbox.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
 
         # Addresses
         self.SrcAddr = wx.ComboBox(self,wx.ID_ANY, choices = self.GPIBAddressList, size = (150,10), style=wx.CB_DROPDOWN)
@@ -133,7 +133,7 @@ class SetupPage(wx.Panel):
         
         self.IVboxAddr = wx.ComboBox(self,wx.ID_ANY, choices = self.COMAddressList, style=wx.CB_DROPDOWN)
         self.cbox_addr_COM.append(self.IVboxAddr)
-        
+        self.IVboxAddr.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
 
         # Filename
         FileLbl = wx.StaticText(self, label='Excel file full path:', id = wx.ID_ANY)
@@ -408,7 +408,6 @@ class SetupPage(wx.Panel):
 
     def UpdateAddr(self, e):
         # An address was manually selected
-        # Change INSTR_DATA ...
         # 1st, we'll need instrument description d...
         d = 'none'
         acb = e.GetEventObject() # 'a'ddress 'c'ombo 'b'ox
@@ -416,6 +415,8 @@ class SetupPage(wx.Panel):
             if devices.ROLES_WIDGETS[r]['acb'] == acb:
                 d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
                 break # stop looking when we've found the right instrument description
+        
+        # ...Now change INSTR_DATA...
         a = e.GetString() # address string, eg 'COM5' or 'GPIB0::23'
         if (a not in self.GPIBAddressList) or (a not in self.COMAddressList): # Ignore dummy values, like 'NO_ADDRESS'
             devices.INSTR_DATA[d]['str_addr'] = a
@@ -522,7 +523,7 @@ class RunPage(wx.Panel):
         self.GAINS_CHOICE = ['1e3','1e4','1e5','1e6','1e7','1e8','1e9','1e10']
         self.Rs_CHOICE = ['1k','10k','100k','1M','10M','100M','1G']
         self.Rs_SWITCHABLE = self.Rs_CHOICE[:4]
-        self.Rs_VALUES = [1000,1e4,1e5,1e6,1e7,1e8,1e9]
+        self.Rs_VALUES = [1e3,1e4,1e5,1e6,1e7,1e8,1e9]
         self.Rs_choice_to_val = dict(zip(self.Rs_CHOICE,self.Rs_VALUES))
         self.VNODE_CHOICE = ['V1','V2','V3']
         
@@ -691,11 +692,11 @@ class RunPage(wx.Panel):
 
 
     def OnRs(self,e):
-        self.Rs = self.Rs_choice_to_val[e.GetString()]
-        print 'RunPage.OnRs(): Rs =',self.Rs
-        if self.Rs in self.Rs_SWITCHABLE:
-            s = str(math.log10(round(self.Rs)))
-            print 'Sending %s to IVbox'%s
+        self.Rs_val = self.Rs_choice_to_val[e.GetString()] # an INT
+        print 'RunPage.OnRs(): Rs =',self.Rs_val
+        if e.GetString() in self.Rs_SWITCHABLE: # a STRING
+            s = str(math.log10(round(self.Rs_val))) # '3','4','5' or '6'
+            print 'Switching Rs - Sending %s to IVbox'%s
             devices.ROLES_INSTR['IVbox'].SendCmd(s)
         
 
