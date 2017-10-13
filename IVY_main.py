@@ -28,6 +28,7 @@ import wx
 import nbpages as page
 import IVY_events as evts
 import devices
+import time
 
 VERSION = "0.1"
 
@@ -76,11 +77,13 @@ class MainFrame(wx.Frame):
         self.page1 = page.SetupPage(self.NoteBook)
         self.page2 = page.RunPage(self.NoteBook)
         self.page3 = page.PlotPage(self.NoteBook)
+        self.page4 = page.CalcPage(self.NoteBook)
 
         # Add the pages to the notebook with the label to show on the tab
         self.NoteBook.AddPage(self.page1, "Setup")
         self.NoteBook.AddPage(self.page2, "Run")
         self.NoteBook.AddPage(self.page3, "Plots")
+        self.NoteBook.AddPage(self.page4, "Analysis")
 
         # Finally, put the notebook in a sizer for the panel to manage
         # the layout
@@ -88,12 +91,14 @@ class MainFrame(wx.Frame):
         sizer.Add(self.NoteBook, 1, wx.EXPAND)
         self.MainPanel.SetSizer(sizer)
 
+
     def UpdateStatus(self,e):
         if e.field == 'b':
             self.sb.SetStatusText(e.msg,0)
             self.sb.SetStatusText(e.msg,1)
         else:
             self.sb.SetStatusText(e.msg, e.field)
+
 
     def OnAbout(self, event=None):
         # A message dialog with 'OK' button. wx.OK is a standard wxWidgets ID.
@@ -104,10 +109,12 @@ class MainFrame(wx.Frame):
         dlg.Destroy() # Destroy when done.
 
     def OnSave(self,event=None):
-        print 'Saving',self.page1.XLFile.GetValue(),'...'
-        if self.ExcelPath is not None:
+        if self.ExcelPath is not "":
+            print 'Main.OnSave(): Saving',self.page1.XLFile.GetValue(),'...'
             self.page1.wb.save(self.page1.XLFile.GetValue())
             self.page1.log.close()
+        else:
+            print 'Main.OnSave(): Nothing to Save.'
     
     
     def OnOpen(self,event=None):
@@ -121,19 +128,25 @@ class MainFrame(wx.Frame):
             wx.PostEvent(self.page1,file_evt)
         dlg.Destroy()
 
+
     def CloseInstrSessions(self,event=None):
         for r in devices.ROLES_INSTR.keys():
             devices.ROLES_INSTR[r].Close()
+            time.sleep(0.1)
         devices.RM.close()
-        print'Main.CloseInstrSessions(): closed VISA resource manager and GMH instruments'
+        print'Main.CloseInstrSessions(): closed VISA resource manager.'
+
 
     def OnQuit(self, event=None):
         self.CloseInstrSessions()
         self.OnSave()
+        time.sleep(0.1)
+        print 'Closing IVY...'
         self.Close()
 
 
 """_______________________________________________"""
+
 class SplashScreen(wx.SplashScreen):
     def __init__(self, parent=None):
         ivy_bmp = wx.Image(name = "ivy-splash.png").ConvertToBitmap()
