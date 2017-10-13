@@ -392,7 +392,6 @@ class SetupPage(wx.Panel):
         Called by CreateInstr().
         Updates internal info (INSTR_DATA) and Enables/disables testbuttons as necessary.
         """
-#        print 'nbpages.SetupPage.SetInstr():',d,'assigned to role',r,'demo mode:',devices.ROLES_INSTR[r].demo
         assert devices.INSTR_DATA.has_key(d),'Unknown instrument: %s - check Excel file is loaded.'%d
         assert devices.INSTR_DATA[d].has_key('role'),'Unknown instrument parameter - check Excel Parameters sheet is populated.'
         devices.INSTR_DATA[d]['role'] = r # update default role
@@ -573,6 +572,7 @@ class RunPage(wx.Panel):
         self.StopBtn.Enable(False)
         NodeLbl = wx.StaticText(self,id = wx.ID_ANY, label = 'Node:')
         self.Node = wx.ComboBox(self,wx.ID_ANY, choices = self.VNODE_CHOICE, style=wx.CB_DROPDOWN)
+        self.Node.Bind(wx.EVT_COMBOBOX, self.OnNode)
         VavLbl = wx.StaticText(self,id = wx.ID_ANY, label = 'Mean V:')
         self.Vav = NumCtrl(self, id = wx.ID_ANY, integerWidth=3, fractionWidth=9, groupDigits=True)
         VsdLbl = wx.StaticText(self,id = wx.ID_ANY, label = 'Stdev V:')
@@ -674,17 +674,6 @@ class RunPage(wx.Panel):
             self.RunThread = None
             self.StartBtn.Enable(True)
 
-#        if e.flag in 'AF':# Aborted or Finished
-#            self.RunThread = None
-#            self.StartBtn.Enable(True)
-#        else:
-#            self.Node.SetValue(e.flag)
-#            self.Time.SetValue(str(e.t))
-#            self.Vav.SetValue(str(e.Vm))
-#            self.Vsd.SetValue(str(e.Vsd))
-#            self.Row.SetValue(str(e.r))
-#            self.Progress.SetValue(e.P)
-
 
     def UpdateStartRow(self,e):
         # Triggered by an 'update startrow' event
@@ -695,10 +684,21 @@ class RunPage(wx.Panel):
         self.Rs_val = self.Rs_choice_to_val[e.GetString()] # an INT
         print 'RunPage.OnRs(): Rs =',self.Rs_val
         if e.GetString() in self.Rs_SWITCHABLE: # a STRING
-            s = str(math.log10(round(self.Rs_val))) # '3','4','5' or '6'
-            print 'Switching Rs - Sending %s to IVbox'%s
+            s = str(int(math.log10(self.Rs_val))) # '3','4','5' or '6'
+            print 'Switching Rs - Sending "%s" to IVbox'%s
             devices.ROLES_INSTR['IVbox'].SendCmd(s)
         
+        
+    def OnNode(self,e):
+        node = e.GetString() # 'V1', 'V2', or 'V3'
+        print'RunPage.OnNode():',node
+        s = node[1]
+        if s in ('1','2'):
+            print'RunPage.OnNode():Sending IVbox "',s,'"'
+            devices.ROLES_INSTR['IVbox'].SendCmd(s)
+        else: # '3'
+            print'RunPage.OnNode():IGNORING IVbox cmd "',s,'"'
+
 
     def OnV1Set(self,e):
         # Called by change in value (manually OR by software!)
@@ -818,3 +818,23 @@ class PlotPage(wx.Panel):
         self.V3ax.set_ylabel('V3')
         self.canvas.draw()
         self.canvas.Refresh()
+
+'''
+__________________________________________
+-------------- End of Plot Page ----------
+__________________________________________
+'''
+
+'''
+---------------------------
+# Analysis Page definition:
+---------------------------
+'''
+class CalcPage(wx.Panel):
+    def __init__(self, parent):
+        wx.Panel.__init__(self, parent)
+        
+        self.status = self.GetTopLevelParent().sb
+        self.version = self.GetTopLevelParent().version
+        
+        

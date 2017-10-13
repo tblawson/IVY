@@ -27,13 +27,13 @@ from openpyxl.styles import Font,Border,Side
 import IVY_events as evts
 import devices
 
-TEST_V_OUT = [0.1,1,10]
-NODES = ['V1','V2']
-TEST_V_MASK = [0,-1,1,0]
-I_MIN = 1e-11 # 10 pA (S/N issues)
-I_MAX = 0.01 # 10 mA (Opamp overheating)
-V1_MIN = 0.01 # 10 mV (noise)
-V1_MAX = 10 # 10 V(Opamp output limit)
+TEST_V_OUT = [0.1,1,10] # O/P test voltage selection
+NODES = ['V1','V2'] # Input node selection
+TEST_V_MASK = [0,-1,1,0] # Polarity / zero selection
+I_MIN = 1e-11 # 10 pA (S/N issues, noise limit)
+I_MAX = 0.01 # 10 mA (Opamp overheating limit)
+V1_MIN = 0.01 # 10 mV (S/N issues, noise limit)
+V1_MAX = 10 # 10 V (Opamp output limit)
 P_MAX = 480 # Maximum progress (20 measurement-cycles * 24 rows)
 
 class AqnThread(Thread):
@@ -148,15 +148,15 @@ class AqnThread(Thread):
         If the nominal calculated input voltage, required to result in the prescribed output, would be
         outside the scope {0.01V < V < 10V}, that 8-row block is skipped.
         '''
-        self.Rs = self.RunPage.Rs
+        self.Rs = self.RunPage.Rs_val
         self.DUC_G = float(self.RunPage.DUCgain.GetValue())
         
         for abs_V3 in TEST_V_OUT: # Loop over desired output voltages
             print'\nV3:',abs_V3,'V'
             self.V1_nom = self.Rs*abs_V3/self.DUC_G
-            self.I_nom = self.V1_nom/self.RunPage.Rs
+            self.I_nom = self.V1_nom/self.Rs
             if (abs(self.I_nom) <= I_MIN or abs(self.I_nom) >= I_MAX):
-                warning = 'Nominal I/P test I outside scope! (%.1g A)'%self.I_nom
+                warning = 'Nominal I/P test-I outside scope! (%.1g A)'%self.I_nom
                 print warning
                 stat_ev = evts.StatusEvent(msg = warning ,field = 1)
                 wx.PostEvent(self.TopLevel, stat_ev)
@@ -167,7 +167,7 @@ class AqnThread(Thread):
                 continue
 
             if abs(self.V1_nom) < V1_MIN or abs(self.V1_nom) > V1_MAX :
-                warning = '\nNom. I/P test V outside scope! (%.1g V)'%self.V1_nom
+                warning = '\nNom. I/P test-V outside scope! (%.1g V)'%self.V1_nom
                 print warning
                 stat_ev = evts.StatusEvent(msg = warning ,field = 1)
                 wx.PostEvent(self.TopLevel, stat_ev)
@@ -176,13 +176,11 @@ class AqnThread(Thread):
                 update_ev = evts.DataEvent(ud=Update)
                 wx.PostEvent(self.RunPage, update_ev)
                 continue
-            
+            Update = {'node':'-','Vm':0,'Vsc':0,'time':'-','row':row,'progress':100.0*pbar/P_MAX,'end_flag':0}
+            update_ev = evts.DataEvent(ud=Update)
+            wx.PostEvent(self.RunPage, update_ev)
             for node in NODES: # Select input node (V1 then V2)
-                self.RunPage.Node.SetValue(node)
-                s = node[1]
-                print'AqnThread.run():Sending IVbox "',s,'"'
-                devices.ROLES_INSTR['IVbox'].SendCmd(s)
-                time.sleep(1)
+                self.SetNode(node)
                     
                 for V3_mask in TEST_V_MASK: # Loop over {0,+,-,0} test voltages (assumes negative gain)
                     self.Vout = abs_V3*V3_mask # Nominal output
@@ -246,6 +244,7 @@ class AqnThread(Thread):
                     self.tm = dt.datetime.fromtimestamp(np.mean(self.Times)).strftime("%d/%m/%Y %H:%M:%S")
                     self.V12m[node] = np.mean(self.V12Data[node])
                     self.V12sd[node] = np.std(self.V12Data[node],ddof=1)
+                    self.SetNode(node)
                     Update = {'node':node,'Vm':self.V12m[node],'Vsd':self.V12sd[node],'time':self.tm,'row':row,
                                   'progress':100.0*pbar/(P_MAX),'end_flag':0}
                     update_ev = evts.DataEvent(ud=Update)
@@ -259,6 +258,7 @@ class AqnThread(Thread):
                     self.T = devices.ROLES_INSTR['GMH'].Measure('T')
                     self.OPrange = devices.ROLES_INSTR['DVM3'].SendCmd('RANGE?')
                     
+                    self.SetNode('V3')
                     Update = {'node':'V3','Vm':self.V3m,'Vsd':self.V3sd,'time':self.tm,'row':row,'end_flag':0}
                     update_ev = evts.DataEvent(ud=Update)
                     wx.PostEvent(self.RunPage, update_ev)
@@ -282,8 +282,9 @@ class AqnThread(Thread):
                     self.PlotThisRow(row,node)
                     time.sleep(0.1)
                     row += 1
-                    self.ws['B1'].value = row+2
+                    
                     # Reset start row for next measurement
+                    self.ws['B1'].value = row+2
                 # (end of V3_mask loop)
             # (end of node loop)
         # (end of abs_V3 loop)
@@ -291,6 +292,20 @@ class AqnThread(Thread):
         self.FinishRun()
         return
 
+    def SetNode(self,node):
+        '''
+        Update Node ComboBox and Change I/P node relays in IV-box
+        '''
+        print'AqnThread.SetNode(): ',node
+        self.RunPage.Node.SetValue(node) # Update widget value
+        s = node[1]
+        if s in ('1','2'):
+            print'AqnThread.SetNode():Sending IVbox "',s,'"'
+            devices.ROLES_INSTR['IVbox'].SendCmd(s)
+        else: # '3'
+            print'AqnThread.SetNode():IGNORING IVbox cmd "',s,'"'
+        time.sleep(1)
+        
         
     def PlotThisRow(self,row,node):
         # Plot data

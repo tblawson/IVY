@@ -335,8 +335,8 @@ class instrument(device):
         # Close comms with instrument
         if self.demo == True:
             print 'devices.instrument.Close():',self.Descr,'in demo mode - nothing to close'
-        if self.instr is not None:
-            print 'devices.instrument.Close():',self.Descr,'session handle=',self.instr.session
+        elif self.instr is not None:
+            print 'devices.instrument.Close(): Closing',self.Descr,'(session handle=',self.instr.session,')'
             self.instr.close()
         else:
             print 'devices.instrument.Close():',self.Descr,'is "None" or already closed'
