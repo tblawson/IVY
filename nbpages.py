@@ -836,5 +836,84 @@ class CalcPage(wx.Panel):
         
         self.status = self.GetTopLevelParent().sb
         self.version = self.GetTopLevelParent().version
+        self.wb = self.GetParent().GetPage(0).wb
+        self.ws_Data = self.wb.get_sheet_by_name('Data')
+        self.ws_Results = self.wb.get_sheet_by_name('Results')
         
+        gbSizer = wx.GridBagSizer()
         
+        # Analysis set-up:
+        StartRowLbl = wx.StaticText(self,id = wx.ID_ANY, label = 'Start row:')
+        gbSizer.Add(StartRowLbl,pos=(0,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        self.StartRow = wx.TextCtrl(self, id = wx.ID_ANY)
+        gbSizer.Add(self.StartRow,pos=(0,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        
+        StopRowLbl = wx.StaticText(self,id = wx.ID_ANY, label = 'Stop row:')
+        gbSizer.Add(StopRowLbl,pos=(0,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        self.StopRow = wx.TextCtrl(self, id = wx.ID_ANY, style=wx.TE_READONLY)
+        gbSizer.Add(self.StopRow,pos=(0,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        
+        self.Analyze = wx.Button(self, id = wx.ID_ANY, label='Analyze')
+        self.Analyze.Bind(wx.EVT_BUTTON, self.OnAnalyze)
+        gbSizer.Add(self.Analyze,pos=(0,4), span=(1,2), flag=wx.ALL|wx.EXPAND, border=5)
+        
+        self.h_sep1 = wx.StaticLine(self,id = wx.ID_ANY,style = wx.LI_HORIZONTAL)
+        gbSizer.Add(self.h_sep1, pos=(1,0), span=(1,6), flag=wx.ALL|wx.EXPAND, border=5)
+        
+        # Analysis results:
+        RangeLbl = wx.StaticText(self,id = wx.ID_ANY, label = 'Range or Gain (V/A):')
+        gbSizer.Add(RangeLbl, pos=(2,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        self.Range = wx.TextCtrl(self, id = wx.ID_ANY)
+        gbSizer.Add(self.Range, pos=(3,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        
+        DeltaVLbl = wx.StaticText(self,id = wx.ID_ANY, label = 'O/P Delta-V:')
+        gbSizer.Add(DeltaVLbl, pos=(2,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        self.DeltaV_01 = wx.TextCtrl(self, id = wx.ID_ANY)
+        gbSizer.Add(self.DeltaV_01, pos=(3,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        self.DeltaV_1 = wx.TextCtrl(self, id = wx.ID_ANY)
+        gbSizer.Add(self.DeltaV_1, pos=(4,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        self.DeltaV_10 = wx.TextCtrl(self, id = wx.ID_ANY)
+        gbSizer.Add(self.DeltaV_10, pos=(5,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        
+        PosILbl = wx.StaticText(self,id = wx.ID_ANY, label = '+I in (A):')
+        gbSizer.Add(PosILbl, pos=(2,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        self.PosI_01 = wx.TextCtrl(self, id = wx.ID_ANY)
+        gbSizer.Add(self.PosI_01, pos=(3,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        self.PosI_1 = wx.TextCtrl(self, id = wx.ID_ANY)
+        gbSizer.Add(self.PosI_1, pos=(4,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        self.PosI_10 = wx.TextCtrl(self, id = wx.ID_ANY)
+        gbSizer.Add(self.PosI_10, pos=(5,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        
+        NegILbl = wx.StaticText(self,id = wx.ID_ANY, label = '-I in (A):')
+        gbSizer.Add(NegILbl, pos=(2,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        self.NegI_01 = wx.TextCtrl(self, id = wx.ID_ANY)
+        gbSizer.Add(self.NegI_01, pos=(3,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        self.NegI_1 = wx.TextCtrl(self, id = wx.ID_ANY)
+        gbSizer.Add(self.NegI_1, pos=(4,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        self.NegI_10 = wx.TextCtrl(self, id = wx.ID_ANY)
+        gbSizer.Add(self.NegI_10, pos=(5,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        
+        ExpULbl = wx.StaticText(self,id = wx.ID_ANY, label = 'Exp. U (A):')
+        gbSizer.Add(ExpULbl, pos=(2,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        self.ExpU_01 = wx.TextCtrl(self, id = wx.ID_ANY)
+        gbSizer.Add(self.ExpU_01, pos=(3,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        self.ExpU_1 = wx.TextCtrl(self, id = wx.ID_ANY)
+        gbSizer.Add(self.ExpU_1, pos=(4,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        self.ExpU_10 = wx.TextCtrl(self, id = wx.ID_ANY)
+        gbSizer.Add(self.ExpU_10, pos=(5,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        
+        CovFactLbl = wx.StaticText(self,id = wx.ID_ANY, label = 'k:')
+        gbSizer.Add(CovFactLbl, pos=(2,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        self.CovFact_01 = wx.TextCtrl(self, id = wx.ID_ANY)
+        gbSizer.Add(self.CovFact_01, pos=(3,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        self.CovFact_1 = wx.TextCtrl(self, id = wx.ID_ANY)
+        gbSizer.Add(self.CovFact_1, pos=(4,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        self.CovFact_10 = wx.TextCtrl(self, id = wx.ID_ANY)
+        gbSizer.Add(self.CovFact_10, pos=(5,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+
+        self.SetSizerAndFit(gbSizer)
+        
+    def OnAnalyze(self,e):
+#        self.start_row = self.ws['B1'].value
+#        print 'OnAnalyze(): start-row =',self.start_row
+        pass

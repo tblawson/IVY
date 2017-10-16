@@ -170,5 +170,5 @@ class MainApp(wx.App):
 
 if __name__ == '__main__':
     app = MainApp(0)
-    #wx.lib.inspection.InspectionTool().Show()
+#    wx.lib.inspection.InspectionTool().Show()
     app.MainLoop()
