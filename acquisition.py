@@ -27,6 +27,7 @@ from openpyxl.styles import Font,Border,Side
 import IVY_events as evts
 import devices
 
+NREADS = 20
 TEST_V_OUT = [0.1,1,10] # O/P test voltage selection
 NODES = ['V1','V2'] # Input node selection
 TEST_V_MASK = [0,-1,1,0] # Polarity / zero selection
@@ -228,7 +229,7 @@ class AqnThread(Thread):
                     stat_ev = evts.StatusEvent(msg=status_msg, field=1)
                     wx.PostEvent(self.TopLevel, stat_ev)
                     
-                    for n in range(20): # Acquire all voltage and time readings
+                    for n in range(NREADS): # Acquire all voltage and time readings
                         self.MeasureV(node)
                         self.MeasureV('V3')
                         pbar += 1
@@ -322,18 +323,22 @@ class AqnThread(Thread):
 
     def WriteHeadings(self):
         
+        Id_row = self.start_row-2 # Headings
+        self.ws['A'+str(Id_row)] = 'Run ID:'
+        self.ws['B'+str(Id_row)] = self.RunPage.run_id
+        
         Head_row = self.start_row-1 # Headings
 
         col_headings = {'A':'Comment', 'B':'DUC gain (V/A)', 'C':'Rs (Ohm)', 'D':'I/P node (V1,V2?)', 'E':'Date, time',
-                        'F':'Nom. Vout ', 'G':'O/P V (V3)', 'H':'Stdev', 'I':'I/P V (V1 or V2)', 'J':'Stdev',
-                        'K':'T(GMH)', 'L':'Pt (DVM)', 'M':'IP DVM range', 'N':'OP DVM range', 'O':'T (room)',
-                        'P':'P (room)', 'Q':'RH (room)', 'R':'Role', 'S':'Instrument description'}
+                        'F':'N meas.','G':'Nom. Vout ', 'H':'O/P V (V3)', 'I':'Stdev', 'J':'I/P V (V1 or V2)', 'K':'Stdev',
+                        'L':'T(GMH)', 'M':'Pt (DVM)', 'N':'IP DVM range', 'O':'OP DVM range', 'P':'T (room)',
+                        'Q':'P (room)', 'R':'RH (room)', 'S':'Role', 'T':'Instrument description'}
         for k in col_headings.keys():
             self.ws[k+str(Head_row)] = col_headings[k]
 
 
     def WriteInstrAssignments(self):
-        # Record ALL POSSIBLE roles and corresponding instrument descriptions in XL sheet
+        # Record all roles and corresponding instrument descriptions in XL sheet
         role_row = self.start_row
         bord_tl = Border(top = Side(style='thin'), left = Side(style='thin'))
         bord_tr = Border(top = Side(style='thin'), right = Side(style='thin'))
@@ -343,21 +348,20 @@ class AqnThread(Thread):
         bord_br = Border(bottom = Side(style='thin'), right = Side(style='thin'))
         for r in devices.ROLES_WIDGETS.keys():
             if role_row == self.start_row: # 1st row
-                self.ws['R'+str(role_row)].border = bord_tl
-                self.ws['S'+str(role_row)].border = bord_tr
+                self.ws['S'+str(role_row)].border = bord_tl
+                self.ws['T'+str(role_row)].border = bord_tr
             elif role_row == self.start_row + 6: # last row
-                self.ws['R'+str(role_row)].border = bord_bl
-                self.ws['S'+str(role_row)].border = bord_br
+                self.ws['S'+str(role_row)].border = bord_bl
+                self.ws['T'+str(role_row)].border = bord_br
             else: # in-between rows
-                self.ws['R'+str(role_row)].border = bord_l
-                self.ws['S'+str(role_row)].border = bord_r
-            self.ws['R'+str(role_row)] = r
+                self.ws['S'+str(role_row)].border = bord_l
+                self.ws['T'+str(role_row)].border = bord_r
+            self.ws['S'+str(role_row)] = r
             d = devices.ROLES_WIDGETS[r]['icb'].GetValue() # descr
-            self.ws['S'+str(role_row)] = d
+            self.ws['T'+str(role_row)] = d
             role_row += 1
 
     def initialise(self):
-
         stat_ev = evts.StatusEvent(msg='Initialising instruments...', field=0)
         wx.PostEvent(self.TopLevel, stat_ev)
 
@@ -391,7 +395,6 @@ class AqnThread(Thread):
         del self.V12Data[node][:]
         del self.V3Data[:]
         del self.Times[:]
-        
         
 
     def MeasureV(self,node):
@@ -439,22 +442,23 @@ class AqnThread(Thread):
         self.ws['C'+str(row)] = self.Rs
         self.ws['D'+str(row)] = node
         self.ws['E'+str(row)] = str(dt.datetime.fromtimestamp(np.mean(self.Times)).strftime("%d/%m/%Y %H:%M:%S"))
-        self.ws['F'+str(row)] = self.Vout # Nominal output
-        self.ws['G'+str(row)] = self.V3m # Measured output
-        self.ws['H'+str(row)] = self.V3sd
-        self.ws['I'+str(row)] = self.V12m[node]
-        self.ws['J'+str(row)] = self.V12sd[node]
-        self.ws['K'+str(row)] = self.T
+        self.ws['F'+str(row)] = NREADS
+        self.ws['G'+str(row)] = self.Vout # Nominal output
+        self.ws['H'+str(row)] = self.V3m # Measured output
+        self.ws['I'+str(row)] = self.V3sd
+        self.ws['J'+str(row)] = self.V12m[node]
+        self.ws['K'+str(row)] = self.V12sd[node]
+        self.ws['L'+str(row)] = self.T
         if devices.ROLES_INSTR['DVMT'].demo == True:
             TdvmOP = np.random.normal(108.0,1.0e-2)
         else:
             TdvmOP = devices.ROLES_INSTR['DVMT'].SendCmd('READ?')
-        self.ws['L'+str(row)] = TdvmOP
-        self.ws['M'+str(row)] = str(self.IPrange)
-        self.ws['N'+str(row)] = str(self.OPrange)
-        self.ws['O'+str(row)] = self.Troom
-        self.ws['P'+str(row)] = self.Proom
-        self.ws['Q'+str(row)] = self.RHroom
+        self.ws['M'+str(row)] = TdvmOP
+        self.ws['N'+str(row)] = str(self.IPrange)
+        self.ws['O'+str(row)] = str(self.OPrange)
+        self.ws['P'+str(row)] = self.Troom
+        self.ws['Q'+str(row)] = self.Proom
+        self.ws['R'+str(row)] = self.RHroom
         
         # Save after every row
         self.wb_io.save(self.xlfilename) # self.wb_io.save(self.xlfilename)
