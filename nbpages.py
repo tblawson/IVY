@@ -28,8 +28,10 @@ from openpyxl import load_workbook, cell
 
 import IVY_events as evts
 import acquisition as acq
-#import RLink as rl
 import devices
+
+import GTC
+from numbers import Number
 
 matplotlib.rc('lines', linewidth=1, color='blue')
 
@@ -137,7 +139,7 @@ class SetupPage(wx.Panel):
 
         # Filename
         FileLbl = wx.StaticText(self, label='Excel file full path:', id = wx.ID_ANY)
-        self.XLFile = wx.TextCtrl(self, id = wx.ID_ANY, value=self.GetTopLevelParent().ExcelPath)
+        self.XLFile = wx.TextCtrl(self, id = wx.ID_ANY, value=self.GetTopLevelParent().ExcelPath, style = wx.TE_READONLY)
         
         # DUC
         self.DUCName = wx.TextCtrl(self, id = wx.ID_ANY, value= 'DUC Name')
@@ -282,10 +284,12 @@ class SetupPage(wx.Panel):
         # Open logfile
         logname = 'IVYv'+str(e.v)+'_'+str(dt.date.today())+'.log'
         logfile = os.path.join(e.d, logname)
-        self.log = open(logfile,'a')
+        self.GetTopLevelParent().log = open(logfile,'a')
+        self.log = self.GetTopLevelParent().log
         
         # Read parameters sheet - gather instrument info:
-        self.wb = load_workbook(self.XLFile.GetValue(),data_only = True) # Need cell VALUE, not FORMULA, so set data_only = True
+        self.GetTopLevelParent().wb = load_workbook(self.XLFile.GetValue(),data_only = True) # Need cell VALUE, not FORMULA, so set data_only = True
+        self.wb = self.GetTopLevelParent().wb
         self.ws_params = self.wb.get_sheet_by_name('Parameters')
         
         headings = (None, u'description',u'Instrument Info:',u'parameter',u'value',u'uncert',u'dof',u'label')
@@ -830,22 +834,25 @@ __________________________________________
 # Analysis Page definition:
 ---------------------------
 '''
+SEARCH_LIMIT = 24
+
 class CalcPage(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
-        
-        self.status = self.GetTopLevelParent().sb
+
         self.version = self.GetTopLevelParent().version
-        self.wb = self.GetParent().GetPage(0).wb
-        self.ws_Data = self.wb.get_sheet_by_name('Data')
-        self.ws_Results = self.wb.get_sheet_by_name('Results')
+        self.Run_id = self.GetTopLevelParent().page2.run_id
+        
+        self.Rs_VALUES = self.GetTopLevelParent().page2.Rs_VALUES
+        self.Rs_NAMES = ['Auto 1k','Auto 10k','Auto 100k','Auto 1M','Auto 10M','Auto 100M','Auto 1G']
+        self.Rs_VAL_NAME = dict(zip(self.Rs_VALUES,self.Rs_NAMES))
         
         gbSizer = wx.GridBagSizer()
         
         # Analysis set-up:
         StartRowLbl = wx.StaticText(self,id = wx.ID_ANY, label = 'Start row:')
         gbSizer.Add(StartRowLbl,pos=(0,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        self.StartRow = wx.TextCtrl(self, id = wx.ID_ANY)
+        self.StartRow = wx.TextCtrl(self, id = wx.ID_ANY, style=wx.TE_READONLY)
         gbSizer.Add(self.StartRow,pos=(0,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         
         StopRowLbl = wx.StaticText(self,id = wx.ID_ANY, label = 'Stop row:')
@@ -863,57 +870,318 @@ class CalcPage(wx.Panel):
         # Analysis results:
         RangeLbl = wx.StaticText(self,id = wx.ID_ANY, label = 'Range or Gain (V/A):')
         gbSizer.Add(RangeLbl, pos=(2,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        self.Range = wx.TextCtrl(self, id = wx.ID_ANY)
+        self.Range = wx.TextCtrl(self, id = wx.ID_ANY, style=wx.TE_READONLY)
         gbSizer.Add(self.Range, pos=(3,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         
         DeltaVLbl = wx.StaticText(self,id = wx.ID_ANY, label = 'O/P Delta-V:')
         gbSizer.Add(DeltaVLbl, pos=(2,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        self.DeltaV_01 = wx.TextCtrl(self, id = wx.ID_ANY)
+        self.DeltaV_01 = wx.TextCtrl(self, id = wx.ID_ANY, style=wx.TE_READONLY)
         gbSizer.Add(self.DeltaV_01, pos=(3,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        self.DeltaV_1 = wx.TextCtrl(self, id = wx.ID_ANY)
+        self.DeltaV_1 = wx.TextCtrl(self, id = wx.ID_ANY, style=wx.TE_READONLY)
         gbSizer.Add(self.DeltaV_1, pos=(4,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        self.DeltaV_10 = wx.TextCtrl(self, id = wx.ID_ANY)
+        self.DeltaV_10 = wx.TextCtrl(self, id = wx.ID_ANY, style=wx.TE_READONLY)
         gbSizer.Add(self.DeltaV_10, pos=(5,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         
         PosILbl = wx.StaticText(self,id = wx.ID_ANY, label = '+I in (A):')
         gbSizer.Add(PosILbl, pos=(2,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        self.PosI_01 = wx.TextCtrl(self, id = wx.ID_ANY)
+        self.PosI_01 = wx.TextCtrl(self, id = wx.ID_ANY, style=wx.TE_READONLY)
         gbSizer.Add(self.PosI_01, pos=(3,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        self.PosI_1 = wx.TextCtrl(self, id = wx.ID_ANY)
+        self.PosI_1 = wx.TextCtrl(self, id = wx.ID_ANY, style=wx.TE_READONLY)
         gbSizer.Add(self.PosI_1, pos=(4,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        self.PosI_10 = wx.TextCtrl(self, id = wx.ID_ANY)
+        self.PosI_10 = wx.TextCtrl(self, id = wx.ID_ANY, style=wx.TE_READONLY)
         gbSizer.Add(self.PosI_10, pos=(5,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         
         NegILbl = wx.StaticText(self,id = wx.ID_ANY, label = '-I in (A):')
         gbSizer.Add(NegILbl, pos=(2,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        self.NegI_01 = wx.TextCtrl(self, id = wx.ID_ANY)
+        self.NegI_01 = wx.TextCtrl(self, id = wx.ID_ANY, style=wx.TE_READONLY)
         gbSizer.Add(self.NegI_01, pos=(3,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        self.NegI_1 = wx.TextCtrl(self, id = wx.ID_ANY)
+        self.NegI_1 = wx.TextCtrl(self, id = wx.ID_ANY, style=wx.TE_READONLY)
         gbSizer.Add(self.NegI_1, pos=(4,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        self.NegI_10 = wx.TextCtrl(self, id = wx.ID_ANY)
+        self.NegI_10 = wx.TextCtrl(self, id = wx.ID_ANY, style=wx.TE_READONLY)
         gbSizer.Add(self.NegI_10, pos=(5,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         
         ExpULbl = wx.StaticText(self,id = wx.ID_ANY, label = 'Exp. U (A):')
         gbSizer.Add(ExpULbl, pos=(2,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        self.ExpU_01 = wx.TextCtrl(self, id = wx.ID_ANY)
+        self.ExpU_01 = wx.TextCtrl(self, id = wx.ID_ANY, style=wx.TE_READONLY)
         gbSizer.Add(self.ExpU_01, pos=(3,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        self.ExpU_1 = wx.TextCtrl(self, id = wx.ID_ANY)
+        self.ExpU_1 = wx.TextCtrl(self, id = wx.ID_ANY, style=wx.TE_READONLY)
         gbSizer.Add(self.ExpU_1, pos=(4,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        self.ExpU_10 = wx.TextCtrl(self, id = wx.ID_ANY)
+        self.ExpU_10 = wx.TextCtrl(self, id = wx.ID_ANY, style=wx.TE_READONLY)
         gbSizer.Add(self.ExpU_10, pos=(5,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         
         CovFactLbl = wx.StaticText(self,id = wx.ID_ANY, label = 'k:')
         gbSizer.Add(CovFactLbl, pos=(2,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        self.CovFact_01 = wx.TextCtrl(self, id = wx.ID_ANY)
+        self.CovFact_01 = wx.TextCtrl(self, id = wx.ID_ANY, style=wx.TE_READONLY)
         gbSizer.Add(self.CovFact_01, pos=(3,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        self.CovFact_1 = wx.TextCtrl(self, id = wx.ID_ANY)
+        self.CovFact_1 = wx.TextCtrl(self, id = wx.ID_ANY, style=wx.TE_READONLY)
         gbSizer.Add(self.CovFact_1, pos=(4,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        self.CovFact_10 = wx.TextCtrl(self, id = wx.ID_ANY)
+        self.CovFact_10 = wx.TextCtrl(self, id = wx.ID_ANY, style=wx.TE_READONLY)
         gbSizer.Add(self.CovFact_10, pos=(5,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
 
         self.SetSizerAndFit(gbSizer)
+        self.V01_widgets = [self.DeltaV_01,self.PosI_01,self.NegI_01,self.ExpU_01,self.CovFact_01]
+        self.V1_widgets = [self.DeltaV_1,self.PosI_1,self.NegI_1,self.ExpU_1,self.CovFact_1]
+        self.V10_widgets = [self.DeltaV_10,self.PosI_10,self.NegI_10,self.ExpU_10,self.CovFact_10]
+        self.Vout_widgets = {0.1:self.V01_widgets, 1:self.V1_widgets, 10:self.V10_widgets}
         
     def OnAnalyze(self,e):
-#        self.start_row = self.ws['B1'].value
-#        print 'OnAnalyze(): start-row =',self.start_row
-        pass
+        # Details of the Excel file are not available until the user has opened it!
+        self.XLPath = self.GetTopLevelParent().ExcelPath
+        print self.XLPath
+        assert self.XLPath is not "", 'No data file open yet!'
+        
+        self.ws_Data = self.GetTopLevelParent().wb.get_sheet_by_name('Data')
+        self.ws_Params = self.GetTopLevelParent().wb.get_sheet_by_name('Parameters')
+        self.ws_Results = self.GetTopLevelParent().wb.get_sheet_by_name('Results')
+        
+        self.Data_start_row = self.ws_Data['B1'].value
+        self.StartRow.SetValue(str(self.Data_start_row))
+        
+        self.Data_stop_row = self.GetStopRow()
+        self.StopRow.SetValue(str(self.Data_stop_row))
+        
+        self.GetInstrAssignments() # Result: self.role_descr
+        self.GetParams() # Result: self.I_INFO,self.R_INFO
+        DVMT_cor = self.I_INFO[self.role_descr['DVMT']]['correction_100r']
+        
+        V1s = []
+        V2s = []
+        V3s = []
+        GMH_Ts = []
+        T_Rs = []
+        
+#        results = {}
+        
+        DUC_gain = self.ws_Data['B'+str(self.Data_start_row)].value
+        self.Range.SetValue(str(DUC_gain))
+        print'gain =',DUC_gain
+        
+        row = self.Data_start_row
+        while row < self.Data_stop_row:
+            abs_nom_Vout = self.ws_Data['G'+str(row+2)].value
+#            self.DeltaV_01.SetValue(str(abs_nom_Vout))
+            
+            # Construct ureals from raw voltage data
+            for n in range(4):
+                V1s.append(GTC.ureal(self.ws_Data['J'+str(row+n)].value, self.ws_Data['K'+str(row+n)].value, self.ws_Data['F'+str(row+n)].value,
+                                 label = 'OP'+str(abs_nom_Vout)+'_'+self.ws_Data['D'+str(row+n)].value + '_' + str(n)))
+                V2s.append(GTC.ureal(self.ws_Data['J'+str(row+4+n)].value, self.ws_Data['K'+str(row+4+n)].value, self.ws_Data['F'+str(row+4+n)].value,
+                                 label = 'OP'+str(abs_nom_Vout)+'_'+self.ws_Data['D'+str(row+n)].value + '_' + str(n)))
+                V3s.append(GTC.ureal(self.ws_Data['H'+str(row+n)].value, self.ws_Data['I'+str(row+n)].value, self.ws_Data['F'+str(row+n)].value,
+                                 label = 'OP'+str(abs_nom_Vout)+'_'+self.ws_Data['D'+str(row+n)].value + '_' + str(n)))
+                # NOTE: Correct V's for gain!
+                GMH_Ts.append(self.ws_Data['L'+str(row)].value)
+                GMH_Ts.append(self.ws_Data['L'+str(row+4)].value)
+                # NOTE: Correct GMH offsets!
+            
+            # Offset-adjustment
+            V1_pos = V1s[2]-(V1s[0]+V1s[3])/2
+            V1_neg = V1s[1]- (V1s[0]+V1s[3])/2
+            V2_pos = V2s[2]-(V2s[0]+V2s[3])/2
+            V2_neg = V2s[1]- (V2s[0]+V2s[3])/2
+            V3_pos = V3s[2]-(V3s[0]+V3s[3])/2
+            V3_neg = V3s[1]- (V3s[0]+V3s[3])/2
+            
+            # V-drop across Rs
+            V_Rs_pos = V1_pos - V2_pos
+            V_Rs_neg = V1_neg - V2_neg
+            
+            # Value of Rs
+            nom_Rs = self.ws_Data['C'+str(row)].value
+            Rs_name = self.Rs_VAL_NAME[nom_Rs]
+            Rs_0 = self.R_INFO[Rs_name]['R0_LV'] # a ureal
+            Rs_alpha = self.R_INFO[Rs_name]['alpha']
+            Rs_beta = self.R_INFO[Rs_name]['beta']
+            
+            # Rs Temperature
+            for r in range (8):
+                Pt_R_raw = self.ws_Data['M'+str(row+r)].value
+                Pt_R = Pt_R_raw*(1+DVMT_cor)
+                T_Rs.append(self.R_to_T(self.R_INFO['Pt 100r']['alpha'],
+                                        self.R_INFO['Pt 100r']['beta'],Pt_R,  
+                                        self.R_INFO['Pt 100r']['R0_LV'],
+                                        self.R_INFO['Pt 100r']['TRef_LV']))
+                                        
+            av_T_Rs = GTC.ar.result(GTC.ta.estimate(T_Rs),label='av_T_Rs'+ self.Run_id)
+            # NOTE: Include Tdef of ~0.1(?) deg C!
+            
+            # Correct Rs value for temperature
+            Rs = Rs_0*(1+Rs_alpha*av_T_Rs + Rs_beta*av_T_Rs**2)
+            
+            Iin_pos = V_Rs_pos/Rs
+            Iin_neg = V_Rs_neg/Rs
+            
+            I_pos = Iin_pos * abs_nom_Vout/V3_pos
+            I_pos_k = GTC.rp.k_factor(I_pos.df) # P = 95% by default
+            I_pos_EU = I_pos_k*I_pos.u
+            
+            I_neg = Iin_neg * abs_nom_Vout/V3_neg
+            I_neg_k = GTC.rp.k_factor(I_neg.df) # P = 95% by default
+            I_neg_EU = I_neg_k*I_neg.u
+            
+            self.Vout_widgets[abs_nom_Vout][0].SetValue(str(abs_nom_Vout))
+            self.Vout_widgets[abs_nom_Vout][1].SetValue('{0:.8g}'.format(I_pos.x))
+            self.Vout_widgets[abs_nom_Vout][2].SetValue('{0:.8g}'.format(I_neg.x))
+            self.Vout_widgets[abs_nom_Vout][3].SetValue('{0:.3g}'.format(I_pos_EU)) # Just display positive value for now
+            self.Vout_widgets[abs_nom_Vout][4].SetValue(str(round(I_pos_k))) # Just display positive value for now
+            this_result = [DUC_gain, abs_nom_Vout, I_pos, I_pos_EU, I_pos_k, I_neg, I_neg_EU, I_neg_k]
+            
+#            time.sleep(5)
+            row += 8
+
+
+    def GetStopRow(self):
+        row = self.Data_start_row
+        self.Test_Vs = []
+        while row < self.Data_start_row + SEARCH_LIMIT - 1: # Don't search forever, ignore final row
+            NomVOP = self.ws_Data['G'+str(row)].value # scan down column F (Nom Vout)
+            if NomVOP in (None,'Nom. Vout '): # Ran out of data
+                break
+            elif NomVOP in (0.1, 1, 10):
+                self.Test_Vs.append(NomVOP)
+                row += 1
+                continue
+            else: # in (0,-0.1, -1, -10)
+                row += 1
+                continue
+        if len(self.Test_Vs) < 2:
+            print'Incomplete data! - ',self.Test_Vs
+            return self.Data_start_row
+        else:
+            print 'Test Vs:',self.Test_Vs
+            return self.Data_start_row + 4*len(self.Test_Vs) - 1
+   
+
+    def GetInstrAssignments(self):
+        N_ROLES = 7 # 10 roles in total
+        self.role_descr = {}
+        for row in range(self.Data_start_row, self.Data_start_row + N_ROLES):
+            # Read {role:description}
+            temp_dict = {self.ws_Data['S'+str(row)].value : self.ws_Data['T'+str(row)].value}
+            assert temp_dict.keys()[-1] is not None,'Instrument assignment: Missing role!'
+            assert temp_dict.values()[-1] is not None,'Instrument assignment: Missing description!'
+            self.role_descr.update(temp_dict)
+
+
+    def Uncertainize(self,row_items):
+        '''
+        Convert list of data to ureal, where possible
+        '''
+        v = row_items[2]
+        u = row_items[3]
+        d = row_items[4]
+        l = row_items[5]
+        if (u is not None) and isinstance(v, Number):
+            if d == u'inf':
+                un_num = GTC.ureal(v,u,label=l) # default dof = inf
+            else:
+                un_num = GTC.ureal(v,u,d,l)
+            return un_num
+        else: # non-numeric value
+            return v
+
+
+    def GetParams(self):
+        '''
+        Extract resistor and instrument parameters
+        '''
+        print 'Reading parameters...'
+        #log.write('Reading parameters...')
+        headings = (u'Resistor Info:', u'Instrument Info:',
+            u'description', u'parameter', u'value',
+            u'uncert', u'dof', u'label', u'Comment / Reference')
+        
+        # Determine colummn indices from column letters:
+        col_A = cell.cell.column_index_from_string('A') - 1
+        col_B = cell.cell.column_index_from_string('B') - 1
+        col_C = cell.cell.column_index_from_string('C') - 1
+        col_D = cell.cell.column_index_from_string('D') - 1
+        col_E = cell.cell.column_index_from_string('E') - 1
+        col_F = cell.cell.column_index_from_string('F') - 1
+        col_G = cell.cell.column_index_from_string('G') - 1
+
+        col_I = cell.cell.column_index_from_string('I') - 1
+        col_J = cell.cell.column_index_from_string('J') - 1
+        col_K = cell.cell.column_index_from_string('K') - 1
+        col_L = cell.cell.column_index_from_string('L') - 1
+        col_M = cell.cell.column_index_from_string('M') - 1
+        col_N = cell.cell.column_index_from_string('N') - 1
+        col_O = cell.cell.column_index_from_string('O') - 1
+        
+        R_params = []
+        R_row_items = []
+        I_params = []
+        I_row_items = []
+        R_values = []
+        I_values = []
+        R_DESCR = []
+        I_DESCR = []
+        R_sublist = []
+        I_sublist = []
+        
+        for r in self.ws_Params.rows: # a tuple of row objects
+            R_end = 0
+
+            # description, parameter, value, uncert, dof, label:
+            R_row_items = [r[col_A].value, r[col_B].value, r[col_C].value, r[col_D].value,
+                   r[col_E].value, r[col_F].value, r[col_G].value]
+    
+            I_row_items = [r[col_I].value, r[col_J].value, r[col_K].value, r[col_L].value,
+                   r[col_M].value, r[col_N].value, r[col_O].value]
+    
+            if R_row_items[0] == None: # end of R_list
+                R_end = 1
+
+            # check this row for heading text
+            if any(i in I_row_items for i in headings): 
+                continue # Skip headings
+        
+            else: # not header - main data
+                # Get instrument parameters first...
+                last_I_row = r[col_I].row  # Need to know this if we write more data, post-analysis
+                I_params.append(I_row_items[1])
+                I_values.append(self.Uncertainize(I_row_items))
+                if I_row_items[1] == u'test': # last parameter for this description
+                    I_DESCR.append(I_row_items[0]) # build description list
+                    I_sublist.append(dict(zip(I_params,I_values))) # add parameter dictionary to sublist
+                    del I_params[:]
+                    del I_values[:]
+                    
+                # Now attend to resistor parameters...
+                if R_end == 0: # Check we're not at the end of resistor data-block
+                    last_R_row = r[col_A].row # Need to know this if we write more data, post-analysis
+                    R_params.append(R_row_items[1])
+                    R_values.append(self.Uncertainize(R_row_items))
+                    if R_row_items[1] == u'T_sensor': # last parameter for this description
+                        R_DESCR.append(R_row_items[0]) # build description list
+                        R_sublist.append(dict(zip(R_params,R_values))) # add parameter dictionary to sublist
+                        del R_params[:]
+                        del R_values[:] 
+                   
+        # Compile into dictionaries
+        """
+        There are two dictionaries; one for instruments (I_INFO) and one for resistors (R_INFO).
+        each dictionary item is keyed by the description (name) of the instrument (resistor).
+        Each dictionary value is itself a dictionary, keyed by parameter, such as 'address'
+        (for an instrument) or 'R_LV' (for a resistor value, measured at 'low voltage').
+
+        """
+        self.I_INFO = dict(zip(I_DESCR,I_sublist))
+        print len(self.I_INFO),'instruments (%d rows)'%last_I_row
+        #log.write('\n'+str(len(I_INFO))+' instruments ('+str(last_I_row)+') rows')
+
+        self.R_INFO = dict(zip(R_DESCR,R_sublist))
+        print len(self.R_INFO),'resistors.(%d rows)\n'%last_R_row
+        #log.write('\n'+str(len(R_INFO))+' resistors ('+str(last_R_row)+') rows')
+
+
+    def R_to_T(self,alpha,beta,R,R0,T0):
+        # Convert a resistive T-sensor reading from resistance to temperature
+        if beta == 0: # no 2nd-order T-Co
+            T = (R/R0 -1)/alpha + T0
+        else:
+            a = beta
+            b = alpha-2*T0
+            c = 1-alpha*T0 + beta*T0**2 - (R/R0)
+            T = (-b + math.sqrt(b**2-4*a*c))/(2*a)
+        return T

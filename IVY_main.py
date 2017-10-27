@@ -151,7 +151,7 @@ class SplashScreen(wx.SplashScreen):
     def __init__(self, parent=None):
         ivy_bmp = wx.Image(name = "ivy-splash.png").ConvertToBitmap()
         splashStyle = wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_TIMEOUT
-        splashDuration = 3000 # milliseconds
+        splashDuration = 2000 # milliseconds
         wx.SplashScreen.__init__(self, ivy_bmp, splashStyle, splashDuration, parent)
         wx.Yield()
 
