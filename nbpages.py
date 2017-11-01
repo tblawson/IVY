@@ -852,7 +852,9 @@ class CalcPage(wx.Panel):
         # Analysis set-up:
         StartRowLbl = wx.StaticText(self,id = wx.ID_ANY, label = 'Start row:')
         gbSizer.Add(StartRowLbl,pos=(0,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        self.StartRow = wx.TextCtrl(self, id = wx.ID_ANY, style=wx.TE_READONLY)
+        self.StartRow = wx.TextCtrl(self, id = wx.ID_ANY, style=wx.TE_PROCESS_ENTER)
+        self.StartRow.Bind(wx.EVT_TEXT_ENTER, self.OnStartRow)
+        self.StartRow.SetToolTipString("Enter start row here BEFORE clicking 'Analyze' button.")
         gbSizer.Add(self.StartRow,pos=(0,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         
         StopRowLbl = wx.StaticText(self,id = wx.ID_ANY, label = 'Stop row:')
@@ -924,24 +926,35 @@ class CalcPage(wx.Panel):
         self.V10_widgets = [self.DeltaV_10,self.PosI_10,self.NegI_10,self.ExpU_10,self.CovFact_10]
         self.Vout_widgets = {0.1:self.V01_widgets, 1:self.V1_widgets, 10:self.V10_widgets}
         
-    def OnAnalyze(self,e):
+
+    def GetXL(self):       
         # Details of the Excel file are not available until the user has opened it!
         self.XLPath = self.GetTopLevelParent().ExcelPath
-        print self.XLPath
+        print '\n',self.XLPath
         assert self.XLPath is not "", 'No data file open yet!'
         
         self.ws_Data = self.GetTopLevelParent().wb.get_sheet_by_name('Data')
         self.ws_Params = self.GetTopLevelParent().wb.get_sheet_by_name('Parameters')
         self.ws_Results = self.GetTopLevelParent().wb.get_sheet_by_name('Results')
+
+
+    def OnStartRow(self,e):
+        self.GetXL()
+        self.ws_Data['B1'].value = int(e.GetString())
+        
+        
+    def OnAnalyze(self,e):
+        self.GetXL()
         
         self.Data_start_row = self.ws_Data['B1'].value
         self.StartRow.SetValue(str(self.Data_start_row))
         
         self.Data_stop_row = self.GetStopRow()
         self.StopRow.SetValue(str(self.Data_stop_row))
+        self.ws_Data['B1'].value = self.Data_stop_row + 4 # Set start row for next acquisition run.
         
         self.GetInstrAssignments() # Result: self.role_descr
-        self.GetParams() # Result: self.I_INFO,self.R_INFO
+        self.GetParams() # Result: self.I_INFO, self.R_INFO
         DVMT_cor = self.I_INFO[self.role_descr['DVMT']]['correction_100r']
         
         V1s = []
@@ -950,26 +963,39 @@ class CalcPage(wx.Panel):
         GMH_Ts = []
         T_Rs = []
         
-#        results = {}
-        
         DUC_gain = self.ws_Data['B'+str(self.Data_start_row)].value
-        self.Range.SetValue(str(DUC_gain))
+        self.Range.SetValue(str('{0:.2e}'.format(DUC_gain)))
         print'gain =',DUC_gain
         
         row = self.Data_start_row
         while row < self.Data_stop_row:
             abs_nom_Vout = self.ws_Data['G'+str(row+2)].value
-#            self.DeltaV_01.SetValue(str(abs_nom_Vout))
             
-            # Construct ureals from raw voltage data
+            # Construct ureals from raw voltage data, including gain correction
             for n in range(4):
-                V1s.append(GTC.ureal(self.ws_Data['J'+str(row+n)].value, self.ws_Data['K'+str(row+n)].value, self.ws_Data['F'+str(row+n)].value,
-                                 label = 'OP'+str(abs_nom_Vout)+'_'+self.ws_Data['D'+str(row+n)].value + '_' + str(n)))
-                V2s.append(GTC.ureal(self.ws_Data['J'+str(row+4+n)].value, self.ws_Data['K'+str(row+4+n)].value, self.ws_Data['F'+str(row+4+n)].value,
-                                 label = 'OP'+str(abs_nom_Vout)+'_'+self.ws_Data['D'+str(row+n)].value + '_' + str(n)))
-                V3s.append(GTC.ureal(self.ws_Data['H'+str(row+n)].value, self.ws_Data['I'+str(row+n)].value, self.ws_Data['F'+str(row+n)].value,
-                                 label = 'OP'+str(abs_nom_Vout)+'_'+self.ws_Data['D'+str(row+n)].value + '_' + str(n)))
-                # NOTE: Correct V's for gain!
+                V1_v = self.ws_Data['J'+str(row+n)].value
+                V1_u = self.ws_Data['K'+str(row+n)].value
+                V1_d = self.ws_Data['F'+str(row+n)].value
+                V1_l = 'OP' + str(abs_nom_Vout) + '_' + self.ws_Data['D'+str(row+n)].value + '_' + str(n)
+                d = self.role_descr['DVM12'] 
+                V1_gain = self.gain_err(d,V1_v)
+                V1s.append(GTC.ureal(V1_v, V1_u, V1_d, label = V1_l)/V1_gain)
+                
+                V2_v = self.ws_Data['J'+str(row+4+n)].value
+                V2_u = self.ws_Data['K'+str(row+4+n)].value
+                V2_d = self.ws_Data['F'+str(row+4+n)].value
+                V2_l = 'OP' + str(abs_nom_Vout) + '_' + self.ws_Data['D'+str(row+4+n)].value + '_' + str(n)
+                V2_gain = self.gain_err(d,V2_v)
+                V2s.append(GTC.ureal(V2_v, V2_u, V2_d, label = V2_l)/V2_gain)
+
+                V3_v = self.ws_Data['H'+str(row+n)].value
+                V3_u = self.ws_Data['I'+str(row+n)].value
+                V3_d = self.ws_Data['F'+str(row+n)].value
+                V3_l = 'OP' + str(abs_nom_Vout) + '_' + 'V3' + '_' + str(n)
+                d = self.role_descr['DVM3']
+                V3_gain = self.gain_err(d,V3_v)
+                V3s.append(GTC.ureal(V3_v, V3_u, V3_d, label = V3_l)/V3_gain)
+                
                 GMH_Ts.append(self.ws_Data['L'+str(row)].value)
                 GMH_Ts.append(self.ws_Data['L'+str(row+4)].value)
                 # NOTE: Correct GMH offsets!
@@ -988,6 +1014,7 @@ class CalcPage(wx.Panel):
             
             # Value of Rs
             nom_Rs = self.ws_Data['C'+str(row)].value
+            print '\nNominal Rs value:',nom_Rs
             Rs_name = self.Rs_VAL_NAME[nom_Rs]
             Rs_0 = self.R_INFO[Rs_name]['R0_LV'] # a ureal
             Rs_alpha = self.R_INFO[Rs_name]['alpha']
@@ -1063,14 +1090,18 @@ class CalcPage(wx.Panel):
             self.role_descr.update(temp_dict)
 
 
-    def Uncertainize(self,row_items):
+    def Uncertainize(self,items):
         '''
-        Convert list of data to ureal, where possible
+        Convert a list of data to a ureal, where possible
         '''
-        v = row_items[2]
-        u = row_items[3]
-        d = row_items[4]
-        l = row_items[5]
+#        v = row_items[2]
+#        u = row_items[3]
+#        d = row_items[4]
+#        l = row_items[5]
+        v = items[0]
+        u = items[1]
+        d = items[2]
+        l = items[3]
         if (u is not None) and isinstance(v, Number):
             if d == u'inf':
                 un_num = GTC.ureal(v,u,label=l) # default dof = inf
@@ -1085,7 +1116,7 @@ class CalcPage(wx.Panel):
         '''
         Extract resistor and instrument parameters
         '''
-        print 'Reading parameters...'
+        print '\nReading parameters...'
         #log.write('Reading parameters...')
         headings = (u'Resistor Info:', u'Instrument Info:',
             u'description', u'parameter', u'value',
@@ -1124,10 +1155,10 @@ class CalcPage(wx.Panel):
 
             # description, parameter, value, uncert, dof, label:
             R_row_items = [r[col_A].value, r[col_B].value, r[col_C].value, r[col_D].value,
-                   r[col_E].value, r[col_F].value, r[col_G].value]
+                           r[col_E].value, r[col_F].value, r[col_G].value]
     
             I_row_items = [r[col_I].value, r[col_J].value, r[col_K].value, r[col_L].value,
-                   r[col_M].value, r[col_N].value, r[col_O].value]
+                           r[col_M].value, r[col_N].value, r[col_O].value]
     
             if R_row_items[0] == None: # end of R_list
                 R_end = 1
@@ -1140,7 +1171,7 @@ class CalcPage(wx.Panel):
                 # Get instrument parameters first...
                 last_I_row = r[col_I].row  # Need to know this if we write more data, post-analysis
                 I_params.append(I_row_items[1])
-                I_values.append(self.Uncertainize(I_row_items))
+                I_values.append(self.Uncertainize(I_row_items[2:6]))
                 if I_row_items[1] == u'test': # last parameter for this description
                     I_DESCR.append(I_row_items[0]) # build description list
                     I_sublist.append(dict(zip(I_params,I_values))) # add parameter dictionary to sublist
@@ -1151,13 +1182,13 @@ class CalcPage(wx.Panel):
                 if R_end == 0: # Check we're not at the end of resistor data-block
                     last_R_row = r[col_A].row # Need to know this if we write more data, post-analysis
                     R_params.append(R_row_items[1])
-                    R_values.append(self.Uncertainize(R_row_items))
+                    R_values.append(self.Uncertainize(R_row_items[2:6]))
                     if R_row_items[1] == u'T_sensor': # last parameter for this description
                         R_DESCR.append(R_row_items[0]) # build description list
                         R_sublist.append(dict(zip(R_params,R_values))) # add parameter dictionary to sublist
                         del R_params[:]
-                        del R_values[:] 
-                   
+                        del R_values[:]
+
         # Compile into dictionaries
         """
         There are two dictionaries; one for instruments (I_INFO) and one for resistors (R_INFO).
@@ -1175,9 +1206,19 @@ class CalcPage(wx.Panel):
         #log.write('\n'+str(len(R_INFO))+' resistors ('+str(last_R_row)+') rows')
 
 
+    def gain_err(self,descr,V):
+        if abs(V) < 1:
+            nomV = nomRange = '01'
+        else:
+            nomV = nomRange = str(int(abs(round(V)))) # '1' or '10'
+        print 'gain_err(): V=',V,'so, nomV =',nomV,'and nomRange =',nomRange 
+        gain_param = 'Vgain_{0}r{1}'.format(nomV,nomRange)
+        return self.Uncertainize(devices.INSTR_DATA[descr][gain_param])
+
+
     def R_to_T(self,alpha,beta,R,R0,T0):
         # Convert a resistive T-sensor reading from resistance to temperature
-        if beta == 0: # no 2nd-order T-Co
+        if beta == 0: # No 2nd-order T-Co
             T = (R/R0 -1)/alpha + T0
         else:
             a = beta
