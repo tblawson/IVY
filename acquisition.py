@@ -200,6 +200,8 @@ class AqnThread(Thread):
                     time.sleep(3) # Wait 3s after checking F5520A error
 
                     # Set test voltage
+                    devices.ROLES_INSTR['DVM12'].SendCmd('DCV '+str(self.V1_set)) # Set DVM ranges to suit voltages...
+                    devices.ROLES_INSTR['DVM3'].SendCmd('DCV '+str(self.Vout)) # ...they're about to be exposed to.
                     self.RunPage.V1Setting.SetValue(str(self.V1_set))
                     if self._want_abort:
                         self.AbortRun()
@@ -285,7 +287,7 @@ class AqnThread(Thread):
                     row += 1
                     
                     # Reset start row for next measurement
-                    self.ws['B1'].value = row+2
+                    self.ws['B1'].value = row+3
                 # (end of V3_mask loop)
             # (end of node loop)
         # (end of abs_V3 loop)
@@ -324,7 +326,9 @@ class AqnThread(Thread):
     def WriteHeadings(self):
         
         Id_row = self.start_row-2 # Headings
+        self.ws['A'+str(Id_row)].font = Font(b=True)
         self.ws['A'+str(Id_row)] = 'Run ID:'
+        self.ws['B'+str(Id_row)].font = Font(b=True)
         self.ws['B'+str(Id_row)] = self.RunPage.run_id
         
         Head_row = self.start_row-1 # Headings
