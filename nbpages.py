@@ -962,6 +962,7 @@ class CalcPage(wx.Panel):
         V3s = []
         GMH_Ts = []
         T_Rs = []
+        influencies = []
         
         DUC_gain = self.ws_Data['B'+str(self.Data_start_row)].value
         self.Range.SetValue(str('{0:.2e}'.format(DUC_gain)))
@@ -973,32 +974,48 @@ class CalcPage(wx.Panel):
             
             # Construct ureals from raw voltage data, including gain correction
             for n in range(4):
+                label_suffix_1 = str(abs_nom_Vout) + '_' + self.ws_Data['D'+str(row+n)].value + '_' + str(n)
+                label_suffix_2 = str(abs_nom_Vout) + '_' + self.ws_Data['D'+str(row+4+n)].value + '_' + str(n)
+                label_suffix_3 = str(abs_nom_Vout) + '_' + 'V3' + '_' + str(n)
+                
                 V1_v = self.ws_Data['J'+str(row+n)].value
                 V1_u = self.ws_Data['K'+str(row+n)].value
                 V1_d = self.ws_Data['F'+str(row+n)].value
-                V1_l = 'OP' + str(abs_nom_Vout) + '_' + self.ws_Data['D'+str(row+n)].value + '_' + str(n)
+                V1_l = 'OP' + label_suffix_1
                 d = self.role_descr['DVM12'] 
-                V1_gain = self.gain_err(d,V1_v)
-                V1s.append(GTC.ureal(V1_v, V1_u, V1_d, label = V1_l)/V1_gain)
+                V1_gain = GTC.ar.result(self.gain_err(d,V1_v), label = 'G' + label_suffix_1)
+                V1_raw = GTC.ureal(V1_v, V1_u, V1_d, label = V1_l)
+                V1s.append(V1_raw/V1_gain)
                 
                 V2_v = self.ws_Data['J'+str(row+4+n)].value
                 V2_u = self.ws_Data['K'+str(row+4+n)].value
                 V2_d = self.ws_Data['F'+str(row+4+n)].value
-                V2_l = 'OP' + str(abs_nom_Vout) + '_' + self.ws_Data['D'+str(row+4+n)].value + '_' + str(n)
-                V2_gain = self.gain_err(d,V2_v)
-                V2s.append(GTC.ureal(V2_v, V2_u, V2_d, label = V2_l)/V2_gain)
+                V2_l = 'OP' + label_suffix_2
+                # (d still the same)
+                V2_gain = GTC.ar.result(self.gain_err(d,V2_v), label = 'G' + label_suffix_2)
+                V2_raw = GTC.ureal(V2_v, V2_u, V2_d, label = V2_l)
+                V2s.append(V2_raw/V2_gain)
 
                 V3_v = self.ws_Data['H'+str(row+n)].value
                 V3_u = self.ws_Data['I'+str(row+n)].value
                 V3_d = self.ws_Data['F'+str(row+n)].value
-                V3_l = 'OP' + str(abs_nom_Vout) + '_' + 'V3' + '_' + str(n)
+                V3_l = 'OP' + label_suffix_3
                 d = self.role_descr['DVM3']
-                V3_gain = self.gain_err(d,V3_v)
-                V3s.append(GTC.ureal(V3_v, V3_u, V3_d, label = V3_l)/V3_gain)
+                V3_gain = GTC.ar.result(self.gain_err(d,V3_v), label = 'G' + label_suffix_3)
+                V3_raw = GTC.ureal(V3_v, V3_u, V3_d, label = V3_l)
+                V3s.append(V3_raw/V3_gain)
                 
                 GMH_Ts.append(self.ws_Data['L'+str(row)].value)
                 GMH_Ts.append(self.ws_Data['L'+str(row+4)].value)
                 # NOTE: Correct GMH offsets!
+                
+                influencies.append(V1_gain, V1_raw, V2_gain, V2_raw, V3_gain, V3_raw)
+            
+            GMH_T_def = GTC.ureal(0,GTC.type_b.distribution['gaussian'](0.1),3,label='GMH_T_def'+str(abs_nom_Vout))
+            GMH_cor = self.I_INFO['GMH']['T_correction'] # ppm, multiplicative, ureal
+            GMH_raw = GTC.ar.result(GTC.ta.estimate_digitized(GMH_Ts,0.01), label='GMH'+str(abs_nom_Vout))
+            
+            GMH = GMH_raw*(1 + GMH_cor) + GMH_T_def
             
             # Offset-adjustment
             V1_pos = V1s[2]-(V1s[0]+V1s[3])/2
@@ -1029,7 +1046,7 @@ class CalcPage(wx.Panel):
                                         self.R_INFO['Pt 100r']['R0_LV'],
                                         self.R_INFO['Pt 100r']['TRef_LV']))
                                         
-            av_T_Rs = GTC.ar.result(GTC.ta.estimate(T_Rs),label='av_T_Rs'+ self.Run_id)
+            av_T_Rs = GTC.ar.result(GTC.ta.estimate(T_Rs),label='av_T_Rs'+str(abs_nom_Vout))
             # NOTE: Include Tdef of ~0.1(?) deg C!
             
             # Correct Rs value for temperature
