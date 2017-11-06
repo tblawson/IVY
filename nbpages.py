@@ -953,14 +953,26 @@ class CalcPage(wx.Panel):
         self.StopRow.SetValue(str(self.Data_stop_row))
         self.ws_Data['B1'].value = self.Data_stop_row + 4 # Set start row for next acquisition run.
         
+        for V in [0.1,1,10]:
+            for i in range(5):
+                self.Vout_widgets[V][i].SetValue('')
+        
         self.GetInstrAssignments() # Result: self.role_descr
         self.GetParams() # Result: self.I_INFO, self.R_INFO
         DVMT_cor = self.I_INFO[self.role_descr['DVMT']]['correction_100r']
+        Pt_T_def = GTC.ureal(0,GTC.type_b.distribution['gaussian'](0.1),3,label='Pt_T_def')
+        Pt_alpha = self.R_INFO['Pt 100r']['alpha']
+        Pt_beta = self.R_INFO['Pt 100r']['beta']
+        Pt_R0 = self.R_INFO['Pt 100r']['R0_LV']
+        Pt_TRef = self.R_INFO['Pt 100r']['TRef_LV']
+        
+        GMH_T_def = GTC.ureal(0,GTC.type_b.distribution['gaussian'](0.1),3,label='GMH_T_def')
         
         V1s = []
         V2s = []
         V3s = []
         GMH_Ts = []
+        Pt_Rs = []
         T_Rs = []
         influencies = []
         
@@ -1009,13 +1021,13 @@ class CalcPage(wx.Panel):
                 GMH_Ts.append(self.ws_Data['L'+str(row+4)].value)
                 # NOTE: Correct GMH offsets!
                 
-                influencies.append(V1_gain, V1_raw, V2_gain, V2_raw, V3_gain, V3_raw)
+                influencies.extend([V1_gain, V1_raw, V2_gain, V2_raw, V3_gain, V3_raw])
             
-            GMH_T_def = GTC.ureal(0,GTC.type_b.distribution['gaussian'](0.1),3,label='GMH_T_def'+str(abs_nom_Vout))
-            GMH_cor = self.I_INFO['GMH']['T_correction'] # ppm, multiplicative, ureal
-            GMH_raw = GTC.ar.result(GTC.ta.estimate_digitized(GMH_Ts,0.01), label='GMH'+str(abs_nom_Vout))
+            d = self.role_descr['GMH']
+            T_GMH_cor = self.I_INFO[d]['T_correction'] # ppm, multiplicative, ureal
+            T_GMH_raw = GTC.ar.result(GTC.ta.estimate_digitized(GMH_Ts,0.01), label='GMH'+str(abs_nom_Vout))
             
-            GMH = GMH_raw*(1 + GMH_cor) + GMH_T_def
+            T_GMH = T_GMH_raw*(1 + T_GMH_cor) + GMH_T_def
             
             # Offset-adjustment
             V1_pos = V1s[2]-(V1s[0]+V1s[3])/2
@@ -1039,18 +1051,19 @@ class CalcPage(wx.Panel):
             
             # Rs Temperature
             for r in range (8):
+                label_suffix = str(abs_nom_Vout) + '_' + str(r)
                 Pt_R_raw = self.ws_Data['M'+str(row+r)].value
                 Pt_R = Pt_R_raw*(1+DVMT_cor)
-                T_Rs.append(self.R_to_T(self.R_INFO['Pt 100r']['alpha'],
-                                        self.R_INFO['Pt 100r']['beta'],Pt_R,  
-                                        self.R_INFO['Pt 100r']['R0_LV'],
-                                        self.R_INFO['Pt 100r']['TRef_LV']))
+                Pt_Rs.append(GTC.ar.result(Pt_R, label='Pt_R'+ label_suffix))
+                T_Rs.append(self.R_to_T(Pt_alpha, Pt_beta, Pt_R, Pt_R0, Pt_TRef) + Pt_T_def)
                                         
             av_T_Rs = GTC.ar.result(GTC.ta.estimate(T_Rs),label='av_T_Rs'+str(abs_nom_Vout))
-            # NOTE: Include Tdef of ~0.1(?) deg C!
+            influencies.extend(Pt_Rs)
+            influencies.extend([Pt_alpha, Pt_beta, Pt_R0, Pt_TRef, av_T_Rs, DVMT_cor, Pt_T_def])
             
             # Correct Rs value for temperature
             Rs = Rs_0*(1+Rs_alpha*av_T_Rs + Rs_beta*av_T_Rs**2)
+            influencies.extend([Rs_0,Rs_alpha,Rs_beta])
             
             Iin_pos = V_Rs_pos/Rs
             Iin_neg = V_Rs_neg/Rs
@@ -1068,9 +1081,9 @@ class CalcPage(wx.Panel):
             self.Vout_widgets[abs_nom_Vout][2].SetValue('{0:.8g}'.format(I_neg.x))
             self.Vout_widgets[abs_nom_Vout][3].SetValue('{0:.3g}'.format(I_pos_EU)) # Just display positive value for now
             self.Vout_widgets[abs_nom_Vout][4].SetValue(str(round(I_pos_k))) # Just display positive value for now
-            this_result = [DUC_gain, abs_nom_Vout, I_pos, I_pos_EU, I_pos_k, I_neg, I_neg_EU, I_neg_k]
+            this_result = [DUC_gain, abs_nom_Vout, I_pos, I_pos_EU, I_pos_k, I_neg, I_neg_EU, I_neg_k, T_GMH]
             
-#            time.sleep(5)
+            time.sleep(0.5)
             row += 8
 
 
@@ -1109,13 +1122,13 @@ class CalcPage(wx.Panel):
 
     def Uncertainize(self,items):
         '''
-        Convert a list of data to a ureal, where possible
+        Convert a list of data to a ureal, where possible.
+        Expects items to be a list: [value, uncert, dof, label]
+        If 
         '''
-#        v = row_items[2]
-#        u = row_items[3]
-#        d = row_items[4]
-#        l = row_items[5]
         v = items[0]
+        if len(items) < 4:
+            return v
         u = items[1]
         d = items[2]
         l = items[3]
@@ -1125,7 +1138,7 @@ class CalcPage(wx.Panel):
             else:
                 un_num = GTC.ureal(v,u,d,l)
             return un_num
-        else: # non-numeric value
+        else: # non-numeric value or not enough info to make a ureal
             return v
 
 
@@ -1206,8 +1219,8 @@ class CalcPage(wx.Panel):
                         del R_params[:]
                         del R_values[:]
 
-        # Compile into dictionaries
         """
+        Compile into dictionaries:
         There are two dictionaries; one for instruments (I_INFO) and one for resistors (R_INFO).
         each dictionary item is keyed by the description (name) of the instrument (resistor).
         Each dictionary value is itself a dictionary, keyed by parameter, such as 'address'
@@ -1224,11 +1237,10 @@ class CalcPage(wx.Panel):
 
 
     def gain_err(self,descr,V):
-        if abs(V) < 1:
+        if abs(V) < 0.5:
             nomV = nomRange = '01'
         else:
             nomV = nomRange = str(int(abs(round(V)))) # '1' or '10'
-        print 'gain_err(): V=',V,'so, nomV =',nomV,'and nomRange =',nomRange 
         gain_param = 'Vgain_{0}r{1}'.format(nomV,nomRange)
         return self.Uncertainize(devices.INSTR_DATA[descr][gain_param])
 
