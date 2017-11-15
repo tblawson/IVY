@@ -927,22 +927,6 @@ class CalcPage(wx.Panel):
         self.Vout_widgets = {0.1:self.V01_widgets, 1:self.V1_widgets, 10:self.V10_widgets}
         
 
-    def GetXL(self):       
-        # Details of the Excel file are not available until the user has opened it!
-        self.XLPath = self.GetTopLevelParent().ExcelPath
-        print '\n',self.XLPath
-        assert self.XLPath is not "", 'No data file open yet!'
-        
-        self.ws_Data = self.GetTopLevelParent().wb.get_sheet_by_name('Data')
-        self.ws_Params = self.GetTopLevelParent().wb.get_sheet_by_name('Parameters')
-        self.ws_Results = self.GetTopLevelParent().wb.get_sheet_by_name('Results')
-
-
-    def OnStartRow(self,e):
-        self.GetXL()
-        self.ws_Data['B1'].value = int(e.GetString())
-        
-        
     def OnAnalyze(self,e):
         self.GetXL()
         
@@ -1097,11 +1081,12 @@ class CalcPage(wx.Panel):
             print '\nNominal Rs value:',nom_Rs,'Abs. Nom. Vout:',abs_nom_Vout,'\n'
             Rs_name = self.Rs_VAL_NAME[nom_Rs]
             Rs_0 = self.R_INFO[Rs_name]['R0_LV'] # a ureal
+            Rs_Tref = self.R_INFO[Rs_name]['TRef_LV'] # a ureal
             Rs_alpha = self.R_INFO[Rs_name]['alpha']
             Rs_beta = self.R_INFO[Rs_name]['beta']
             
             # Correct Rs value for temperature
-            Rs = Rs_0*(1+Rs_alpha*av_T_Rs + Rs_beta*av_T_Rs**2)
+            Rs = Rs_0*(1+Rs_alpha*(av_T_Rs-Rs_Tref) + Rs_beta*(av_T_Rs-Rs_Tref)**2)
             influencies.extend([Rs_0,Rs_alpha,Rs_beta])
             
             Iin_pos = V_Rs_pos/Rs
@@ -1131,10 +1116,10 @@ class CalcPage(wx.Panel):
                 else:
                     sensitivity_pos = GTC.component(I_pos,i)/i.u
                     sensitivity_neg = GTC.component(I_neg,i)/i.u
-                if GTC.component(I_pos,i) > 0: # Only include non-zero influencies
-                    budget_table_pos.append([i.label,i.x,i.u,i.df,sensitivity_pos,GTC.component(I_pos,i)])
-                if GTC.component(I_neg,i) > 0:
-                    budget_table_neg.append([i.label,i.x,i.u,i.df,sensitivity_neg,GTC.component(I_neg,i)])
+#                if GTC.component(I_pos,i) > 0: # Only include non-zero influencies
+                budget_table_pos.append([i.label,i.x,i.u,i.df,sensitivity_pos,GTC.component(I_pos,i)])
+#                if GTC.component(I_neg,i) > 0:
+                budget_table_neg.append([i.label,i.x,i.u,i.df,sensitivity_neg,GTC.component(I_neg,i)])
                 
             self.budget_table_pos_sorted = sorted(budget_table_pos, key=self.by_u_cont, reverse=True)
             self.budget_table_neg_sorted = sorted(budget_table_neg, key=self.by_u_cont, reverse=True)
@@ -1144,6 +1129,22 @@ class CalcPage(wx.Panel):
             time.sleep(0.1)
             row += 8
             del influencies[:]
+
+
+    def GetXL(self):       
+        # Details of the Excel file are not available until the user has opened it!
+        self.XLPath = self.GetTopLevelParent().ExcelPath
+        print '\n',self.XLPath
+        assert self.XLPath is not "", 'No data file open yet!'
+        
+        self.ws_Data = self.GetTopLevelParent().wb.get_sheet_by_name('Data')
+        self.ws_Params = self.GetTopLevelParent().wb.get_sheet_by_name('Parameters')
+        self.ws_Results = self.GetTopLevelParent().wb.get_sheet_by_name('Results')
+
+
+    def OnStartRow(self,e):
+        self.GetXL()
+        self.ws_Data['B1'].value = int(e.GetString())
 
 
     def GetStopRow(self):
