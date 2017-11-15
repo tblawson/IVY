@@ -1087,7 +1087,7 @@ class CalcPage(wx.Panel):
             
             # Correct Rs value for temperature
             Rs = Rs_0*(1+Rs_alpha*(av_T_Rs-Rs_Tref) + Rs_beta*(av_T_Rs-Rs_Tref)**2)
-            influencies.extend([Rs_0,Rs_alpha,Rs_beta])
+            influencies.extend([Rs_0,Rs_alpha,Rs_beta,Rs_Tref])
             
             Iin_pos = V_Rs_pos/Rs
             Iin_neg = V_Rs_neg/Rs
