@@ -1004,9 +1004,9 @@ class CalcPage(wx.Panel):
         V1s = []
         V2s = []
         V3s = []
-        gains = set()
         row = self.Data_start_row
         while row < self.Data_stop_row:
+            gains = set()
             abs_nom_Vout = self.ws_Data['G'+str(row+2)].value
 
             # Construct ureals from raw voltage data, including gain correction
@@ -1017,7 +1017,7 @@ class CalcPage(wx.Panel):
                 
                 V1_v = self.ws_Data['J'+str(row+n)].value
                 V1_u = self.ws_Data['K'+str(row+n)].value
-                V1_d = self.ws_Data['F'+str(row+n)].value
+                V1_d = self.ws_Data['F'+str(row+n)].value -1
                 V1_l = 'OP' + label_suffix_1
                 d1 = self.role_descr['DVM12']
                 gain_param = self.get_gain_err_param(V1_v)
@@ -1028,7 +1028,7 @@ class CalcPage(wx.Panel):
 
                 V2_v = self.ws_Data['J'+str(row+4+n)].value
                 V2_u = self.ws_Data['K'+str(row+4+n)].value
-                V2_d = self.ws_Data['F'+str(row+4+n)].value
+                V2_d = self.ws_Data['F'+str(row+4+n)].value -1
                 V2_l = 'OP' + label_suffix_2
                 d2 = self.role_descr['DVM12']
                 gain_param = self.get_gain_err_param(V2_v)
@@ -1039,7 +1039,7 @@ class CalcPage(wx.Panel):
 
                 V3_v = self.ws_Data['H'+str(row+n)].value
                 V3_u = self.ws_Data['I'+str(row+n)].value
-                V3_d = self.ws_Data['F'+str(row+n)].value
+                V3_d = self.ws_Data['F'+str(row+n)].value -1
                 V3_l = 'OP' + label_suffix_3
                 d3 = self.role_descr['DVM3']
                 gain_param = self.get_gain_err_param(V3_v)
@@ -1053,6 +1053,9 @@ class CalcPage(wx.Panel):
                 influencies.extend([V1_raw, V2_raw, V3_raw])
     
             influencies.extend(list(gains)) # A list of unique gain corrections - no copies.
+            print 'list of gains:'
+            for g in list(gains):
+                print g
 
             # Offset-adjustment
             V1_pos = GTC.ar.result(V1s[2]-(V1s[0]+V1s[3])/2)
@@ -1068,12 +1071,15 @@ class CalcPage(wx.Panel):
             
             # Rs Temperature
             T_Rs = []
+            Pt_R_cor = []
             for r in range (8):
                 Pt_R_raw = self.ws_Data['M'+str(row+r)].value
-                influencies.append(GTC.ar.result(Pt_R_raw*(1+DVMT_cor),label='Pt_R_'+str(r)))
-                T_Rs.append(GTC.ar.result(self.R_to_T(Pt_alpha, Pt_beta, Pt_R_raw*(1+DVMT_cor), Pt_R0, Pt_TRef)))
-                                        
-            av_T_Rs = GTC.ar.result(GTC.ta.estimate(T_Rs) + Pt_T_def, label='av_T_Rs'+str(abs_nom_Vout))
+                Pt_R_cor.append(GTC.result(Pt_R_raw*(1+DVMT_cor), label='Pt_R_'+str(r)))
+                T_Rs.append(GTC.ar.result(self.R_to_T(Pt_alpha, Pt_beta, Pt_R_cor[r], Pt_R0, Pt_TRef)))
+#                print'uncert-contrib of Pt_R_{} to T_Rs: {}'.format(r, GTC.component(T_Rs[r], Pt_R_cor[r]))
+                      
+            av_T_Rs = GTC.ar.result(GTC.fn.mean(T_Rs) + Pt_T_def, label='av_T_Rs'+str(abs_nom_Vout))
+            influencies.extend(Pt_R_cor)
             influencies.extend([Pt_alpha, Pt_beta, Pt_R0, Pt_TRef, DVMT_cor, Pt_T_def]) # av_T_Rs
             
             # Value of Rs
@@ -1086,17 +1092,18 @@ class CalcPage(wx.Panel):
             Rs_beta = self.R_INFO[Rs_name]['beta']
             
             # Correct Rs value for temperature
-            Rs = Rs_0*(1+Rs_alpha*(av_T_Rs-Rs_Tref) + Rs_beta*(av_T_Rs-Rs_Tref)**2)
+            Rs = GTC.ar.result(Rs_0*(1+Rs_alpha*(av_T_Rs-Rs_Tref) + Rs_beta*(av_T_Rs-Rs_Tref)**2))
             influencies.extend([Rs_0,Rs_alpha,Rs_beta,Rs_Tref])
             
-            Iin_pos = V_Rs_pos/Rs
-            Iin_neg = V_Rs_neg/Rs
+            # Finally, calculate current-change in, for nominal voltage-change out:
+            Iin_pos = GTC.ar.result(V_Rs_pos/Rs)
+            Iin_neg = GTC.ar.result(V_Rs_neg/Rs)
             
-            I_pos = Iin_pos * abs_nom_Vout/V3_pos
+            I_pos = GTC.ar.result(Iin_pos * abs_nom_Vout/V3_pos)
             I_pos_k = GTC.rp.k_factor(I_pos.df) # P = 95% by default
             I_pos_EU = I_pos_k*I_pos.u
             
-            I_neg = Iin_neg * abs_nom_Vout/V3_neg
+            I_neg = GTC.ar.result(Iin_neg * abs_nom_Vout/V3_neg)
             
             self.Vout_widgets[abs_nom_Vout][0].SetValue(str(abs_nom_Vout))
             self.Vout_widgets[abs_nom_Vout][1].SetValue('{0:.8g}'.format(I_pos.x))
@@ -1110,16 +1117,15 @@ class CalcPage(wx.Panel):
             budget_table_pos = []
             budget_table_neg = []
             for i in influencies:
-                print i.s
                 if i.u == 0:
                     sensitivity_pos = sensitivity_neg = 0
                 else:
                     sensitivity_pos = GTC.component(I_pos,i)/i.u
                     sensitivity_neg = GTC.component(I_neg,i)/i.u
-#                if GTC.component(I_pos,i) > 0: # Only include non-zero influencies
-                budget_table_pos.append([i.label,i.x,i.u,i.df,sensitivity_pos,GTC.component(I_pos,i)])
-#                if GTC.component(I_neg,i) > 0:
-                budget_table_neg.append([i.label,i.x,i.u,i.df,sensitivity_neg,GTC.component(I_neg,i)])
+                if GTC.component(I_pos,i) > 0: # Only include non-zero influencies
+                    budget_table_pos.append([i.label,i.x,i.u,i.df,sensitivity_pos,GTC.component(I_pos,i)])
+                if GTC.component(I_neg,i) > 0:
+                    budget_table_neg.append([i.label,i.x,i.u,i.df,sensitivity_neg,GTC.component(I_neg,i)])
                 
             self.budget_table_pos_sorted = sorted(budget_table_pos, key=self.by_u_cont, reverse=True)
             self.budget_table_neg_sorted = sorted(budget_table_neg, key=self.by_u_cont, reverse=True)
@@ -1129,6 +1135,9 @@ class CalcPage(wx.Panel):
             time.sleep(0.1)
             row += 8
             del influencies[:]
+            del V1s[:]
+            del V2s[:]
+            del V3s[:]
 
 
     def GetXL(self):       
@@ -1392,7 +1401,7 @@ class CalcPage(wx.Panel):
             a = beta
             b = alpha-2*beta*T0
             c = 1-alpha*T0 + beta*T0**2 - (R/R0)
-            T = (-b + math.sqrt(b**2-4*a*c))/(2*a)
+            T = (-b + GTC.sqrt(b**2-4*a*c))/(2*a)
         return T
         
     
