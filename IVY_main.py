@@ -15,12 +15,20 @@ This app is intended to offer the same functionality as the original
 TestPoint version but avoiding the clutter. It uses a wxPython notebook,
 with separate pages (tabs) dedicated to:
 * Instrument / file setup,
-* Run controls and
-* Plotting.
+* Run controls,
+* Plotting and 
+* Analysis
 
-The same data input/output protocol as the original will be used, i.e.
-initiation parameters will be read from the same spreadsheet as the results
+The same data input/output protocol as the original is used, i.e.
+initiation parameters are read from the same spreadsheet as the results
 are output to.
+
+NOTE: Because the 'Parameters' sheet of the Excel file is interogated twice -
+once for obtaining instrument control info (INSTR_DATA) and a second time to get
+calibration and uncertainty info (R_INFO and I_INFO), there is redundancy of
+information (especially for instruments). Bear in mind that data stored in 
+INSTR_DATA is just plain numbers or strings, whereas R_INFO and I_INFO can also 
+contain GTC.ureals.
 """
 
 import os
