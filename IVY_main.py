@@ -122,8 +122,7 @@ class MainFrame(wx.Frame):
 
     def OnSave(self, event=None):
         if self.ExcelPath is not "":
-            print 'Main.OnSave(): Saving',
-            self.page1.XLFile.GetValue(), '...'
+            print 'Main.OnSave(): Saving', self.page1.XLFile.GetValue(), '...'
             self.page1.wb.save(self.page1.XLFile.GetValue())
             self.page1.log.close()
         else:
