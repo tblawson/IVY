@@ -146,8 +146,7 @@ class GMH_Sensor(device):
                     self.demo = False  # If we've got this far, probably OK
                     return True
                 else:  # Already have device measurement info
-                    print'devices.GMH_Sensor.Open(): Instrument ready\
-                    - demo=False.'
+                    print'devices.GMH_Sensor.Open(): Instr ready. demo=False.'
                     self.demo = False  # If we've got this far, probably OK
                     return True
             else:  # No response
@@ -286,6 +285,7 @@ class GMH_Sensor(device):
             return self.flData.value
         else:
             assert self.demo is True, 'Illegal denial to demo device!'
+            print'Generating demo data...'
             demo_rtn = {'T': (20.5, 0.2), 'P': (1013, 5), 'RH': (50, 10)}
             return np.random.normal(*demo_rtn[meas])
 
@@ -312,8 +312,8 @@ class instrument(device):
         self.is_open = 0
         self.is_operational = 0
 
-        assert self.Descr in INSTR_DATA, 'Unknown instrument - check instrument \
-        data is loaded from Excel Parameters sheet.'
+        assert self.Descr in INSTR_DATA, 'Unknown instrument ({0:s})- check instrument \
+data is loaded from Excel Parameters sheet.'.format(self.Descr)
 
         self.addr = INSTR_DATA[self.Descr]['addr']
         self.str_addr = INSTR_DATA[self.Descr]['str_addr']
@@ -517,6 +517,7 @@ class instrument(device):
             print'devices.instrument.Read(): from', self.Descr
             if '3458A' in self.Descr:
                 reply = self.instr.read()
+                print reply
                 return reply
             else:
                 reply = self.instr.query('READ?')
