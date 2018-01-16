@@ -122,7 +122,7 @@ class SetupPage(wx.Panel):
         self.GMHroomProbes.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_GMH.append(self.GMHroomProbes)
 
-        IVboxLbl = wx.StaticText(self, label='IVbox (IVbox):', id=wx.ID_ANY)
+        IVboxLbl = wx.StaticText(self, label='IV_box (IVbox):', id=wx.ID_ANY)
         self.IVbox = wx.ComboBox(self, wx.ID_ANY,
                                  choices=self.IVBOX_COMBO_CHOICE,
                                  style=wx.CB_DROPDOWN)
@@ -435,9 +435,9 @@ class SetupPage(wx.Panel):
         Choose from instrument descriptions listed in devices.DESCR
         (Uses address assignments in devices.INSTR_DATA)
         '''
-        self.instrument_choice = {'SRC': 'SRC: D4808',
-                                  'DVM12': 'DVM: HP3458A, s/n452',
-                                  'DVM3': 'DVM: HP3458A, s/n518',
+        self.instrument_choice = {'SRC': 'SRC: F5520A',
+                                  'DVM12': 'DVM: HP3458A, s/n518',
+                                  'DVM3': 'DVM: HP3458A, s/n066',
                                   'DVMT': 'DVM: HP34401A, s/n976',
                                   'GMH': 'GMH: s/n627',
                                   'GMHroom': 'GMH: s/n367',
