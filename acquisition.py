@@ -219,13 +219,18 @@ class AqnThread(Thread):
 
                     '''
                     Set DVM ranges to suit voltages that they're
-                    about to be exposed to:
+                    about to be exposed to. Start on 10V range:
                     '''
-                    devices.ROLES_INSTR['DVM12'].SendCmd('DCV ' +
-                                                         str(self.V1_set))
+                    devices.ROLES_INSTR['DVM12'].SendCmd('DCV 10')
+                    devices.ROLES_INSTR['DVM3'].SendCmd('DCV 10')
+                    time.sleep(0.5)  # wait 0.5s after setting range
+                    
+                    self.RunPage.V1Setting.SetValue(str(self.V1_set))
+                    time.sleep(1)  # wait 1s after applying V
                     devices.ROLES_INSTR['DVM3'].SendCmd('DCV ' +
                                                         str(self.Vout))
-                    self.RunPage.V1Setting.SetValue(str(self.V1_set))
+                    devices.ROLES_INSTR['DVM12'].SendCmd('DCV ' +
+                                                         str(self.V1_set))
                     if self._want_abort:
                         self.AbortRun()
                         return
@@ -250,7 +255,7 @@ class AqnThread(Thread):
                         return
                     time.sleep(1)  # 30
 
-                    status_msg = 'Making 20 measurements each of {0:s} and V3 (V1_nom = {1:.2f} V)'.format(node, self.V1_nom)
+                    status_msg = 'Making {0:d} measurements each of {1:s} and V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
                     print status_msg
                     stat_ev = evts.StatusEvent(msg=status_msg, field=1)
                     wx.PostEvent(self.TopLevel, stat_ev)
@@ -270,10 +275,13 @@ class AqnThread(Thread):
                             return
                     print'\n'
                     time.sleep(1)
-
+                    
+                    assert len(self.V12Data[node]) == NREADS,'Number of {0:s} readings != {1:d}!'.format(node, NREADS)
+                    assert len(self.Times) == NREADS,'Number of timestamps != {1:d}!'.format(NREADS)
                     self.tm = dt.datetime.fromtimestamp(np.mean(self.Times)).strftime("%d/%m/%Y %H:%M:%S")
                     self.V12m[node] = np.mean(self.V12Data[node])
                     self.V12sd[node] = np.std(self.V12Data[node], ddof=1)
+                    print 'V12m[{0:s}] = {1:.6f}'.format(node, self.V12m[node])
                     self.SetNode(node)
                     Update = {'node': node, 'Vm': self.V12m[node],
                               'Vsd': self.V12sd[node], 'time': self.tm,
@@ -284,12 +292,13 @@ class AqnThread(Thread):
                     wx.PostEvent(self.RunPage, update_ev)
                     self.IPrange = devices.ROLES_INSTR['DVM12'].SendCmd('RANGE?')
 
-                    time.sleep(2)
+                    time.sleep(2)  # Give user time to read values before update
 
+                    assert len(self.V3Data) == NREADS,'Number of V3 readings != {1:d}!'.format(NREADS)
                     self.V3m = np.mean(self.V3Data)
                     self.V3sd = np.std(self.V3Data, ddof=1)
                     self.T = devices.ROLES_INSTR['GMH'].Measure('T')
-                    self.OPrange = devices.ROLES_INSTR['DVM3'].SendCmd('RANGE?')
+                    self.OPrange = float(devices.ROLES_INSTR['DVM3'].SendCmd('RANGE?'))
 
                     self.SetNode('V3')
                     Update = {'node': 'V3', 'Vm': self.V3m, 'Vsd': self.V3sd,
@@ -306,12 +315,9 @@ class AqnThread(Thread):
                     time.sleep(5)
 
                     # Record room conditions
-                    if devices.ROLES_INSTR['GMHroom'].demo is False:
-                        self.Troom = devices.ROLES_INSTR['GMHroom'].Measure('T')
-                        self.Proom = devices.ROLES_INSTR['GMHroom'].Measure('P')
-                        self.RHroom = devices.ROLES_INSTR['GMHroom'].Measure('RH')
-                    else:
-                        self.Troom = self.Proom = self.RHroom = 0.0
+                    self.Troom = devices.ROLES_INSTR['GMHroom'].Measure('T')
+                    self.Proom = devices.ROLES_INSTR['GMHroom'].Measure('P')
+                    self.RHroom = devices.ROLES_INSTR['GMHroom'].Measure('RH')
 
                     self.WriteDataThisRow(row, node)
                     self.PlotThisRow(row, node)
@@ -424,6 +430,8 @@ class AqnThread(Thread):
         wx.PostEvent(self.TopLevel, stat_ev)
 
     def SetUpMeasThisRow(self, node):
+#        devices.ROLES_INSTR['DVM12'].SendCmd('DCV AUTO')
+#        devices.ROLES_INSTR['DVM3'].SendCmd('DCV AUTO')
         d = devices.ROLES_INSTR['SRC'].Descr
         if 'F5520A' in d:
             err = devices.ROLES_INSTR['SRC'].CheckErr()  # 'ERR?','*CLS'
@@ -440,9 +448,6 @@ class AqnThread(Thread):
         Just want one set of 20 timestamps -
         could have been either V1 or V2 instead.
         '''
-        if node == 'V3':
-            self.Times.append(time.time())
-
         if node == 'V1':
             if devices.ROLES_INSTR['DVM12'].demo is True:
                 dvmOP = np.random.normal(self.V1_set,
@@ -462,6 +467,7 @@ class AqnThread(Thread):
                 self.V12Data['V2'].append(float(filter(self.filt, dvmOP)))
 
         elif node == 'V3':
+            self.Times.append(time.time())
             if devices.ROLES_INSTR['DVM3'].demo is True:
                 dvmOP = np.random.normal(self.Vout,
                                          1.0e-5*abs(self.Vout)+1e-6)
@@ -495,10 +501,10 @@ class AqnThread(Thread):
         if devices.ROLES_INSTR['DVMT'].demo is True:
             TdvmOP = np.random.normal(108.0, 1.0e-2)
         else:
-            TdvmOP = devices.ROLES_INSTR['DVMT'].SendCmd('READ?')
-        self.ws['M'+str(row)] = TdvmOP
-        self.ws['N'+str(row)] = str(self.IPrange)
-        self.ws['O'+str(row)] = str(self.OPrange)
+            TdvmOP = devices.ROLES_INSTR['DVMT'].Read()  # .SendCmd('READ?')
+        self.ws['M'+str(row)] = filter(self.filt, TdvmOP)
+        self.ws['N'+str(row)] = float(self.IPrange)
+        self.ws['O'+str(row)] = float(self.OPrange)
         self.ws['P'+str(row)] = self.Troom
         self.ws['Q'+str(row)] = self.Proom
         self.ws['R'+str(row)] = self.RHroom
