@@ -36,7 +36,7 @@ import IVY_events as evts
 import devices
 import time
 
-VERSION = "0.1"
+VERSION = "0.2"
 
 print 'IVY', VERSION
 
@@ -114,7 +114,7 @@ class MainFrame(wx.Frame):
     def OnAbout(self, event=None):
         # A message dialog with 'OK' button. wx.OK is a standard wxWidgets ID.
         dlg_description = "IVY v"+VERSION+": A Python'd version of the TestPoint \
-        I-to-V converter program for Light Standards."
+I-to-V converter program for Light Standards."
         dlg_title = "About HighResBridge"
         dlg = wx.MessageDialog(self, dlg_description, dlg_title, wx.OK)
         dlg.ShowModal()  # Show dialog.
