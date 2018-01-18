@@ -821,25 +821,26 @@ class RunPage(wx.Panel):
 
     def OnRs(self, e):
         self.Rs_val = self.Rs_choice_to_val[e.GetString()]  # an INT
-        print 'RunPage.OnRs(): Rs =', self.Rs_val
+        print '\nRunPage.OnRs(): Rs =', self.Rs_val
         if e.GetString() in self.Rs_SWITCHABLE:  # a STRING
             s = str(int(math.log10(self.Rs_val)))  # '3','4','5' or '6'
-            print 'Switching Rs - Sending "%s" to IVbox' % s
+            print '\nSwitching Rs - Sending "%s" to IVbox' % s
             devices.ROLES_INSTR['IVbox'].SendCmd(s)
 
     def OnNode(self, e):
         node = e.GetString()  # 'V1', 'V2', or 'V3'
-        print'RunPage.OnNode():', node
+        print'\nRunPage.OnNode():', node
         s = node[1]
         if s in ('1', '2'):
-            print'RunPage.OnNode():Sending IVbox "', s, '"'
+            print'\nRunPage.OnNode():Sending IVbox "', s, '"'
             devices.ROLES_INSTR['IVbox'].SendCmd(s)
         else:  # '3'
-            print'RunPage.OnNode():IGNORING IVbox cmd "', s, '"'
+            print'\nRunPage.OnNode():IGNORING IVbox cmd "', s, '"'
 
     def OnV1Set(self, e):
         # Called by change in value (manually OR by software!)
         V1 = e.GetValue()
+        print'RunPage.OnV1Set(): V1 =',V1,'(',type(V1),')'
         src = devices.ROLES_INSTR['SRC']
         src.SetV(V1)
         time.sleep(0.5)
