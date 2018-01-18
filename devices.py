@@ -407,6 +407,7 @@ data is loaded from Excel Parameters sheet.'.format(self.Descr)
         elif 'SRC:' in self.Descr:
             # Set voltage-source to V
             s = str(V).join(self.VStr)
+            print'devices.instrument.SetV(): V =',V
             print'devices.instrument.SetV():', self.Descr, 's=', s
             try:
                 self.instr.write(s)
