@@ -162,7 +162,7 @@ class AqnThread(Thread):
             self.V1_nom = self.Rs*abs_V3/self.DUC_G
             self.I_nom = self.V1_nom/self.Rs
             if (abs(self.I_nom) <= I_MIN or abs(self.I_nom) >= I_MAX):
-                warning = 'Nominal I/P test-I outside scope! (%.1g A)' % self.I_nom
+                warning = '\nNominal I/P test-I outside scope! (%.1g A)\n' % self.I_nom
                 print warning
                 stat_ev = evts.StatusEvent(msg=warning, field=1)
                 wx.PostEvent(self.TopLevel, stat_ev)
@@ -176,7 +176,7 @@ class AqnThread(Thread):
                 continue
 
             if abs(self.V1_nom) < V1_MIN or abs(self.V1_nom) > V1_MAX:
-                warning = '\nNom. I/P test-V outside scope! (%.1g V)' % self.V1_nom
+                warning = '\nNom. I/P test-V outside scope! (%.1g V)\n' % self.V1_nom
                 print warning
                 stat_ev = evts.StatusEvent(msg=warning, field=1)
                 wx.PostEvent(self.TopLevel, stat_ev)
@@ -199,9 +199,10 @@ class AqnThread(Thread):
                     Loop over {0,+,-,0} test voltages (assumes negative gain)
                     '''
                     self.Vout = abs_V3*V3_mask  # Nominal output
-                    self.V1_set = -1*self.Vout*self.Rs/self.DUC_G
-                    print'I/P test-V =', self.V1_set, '\tO/P test-V =',
-                    self.Vout
+                    self.V1_set = -1.0*self.Vout*self.Rs/self.DUC_G
+                    if abs(self.V1_set) == 0:
+                        self.V1_set = 0.0
+                    print'I/P test-V =', self.V1_set, '\tO/P test-V =',self.Vout
 
                     stat_ev = evts.StatusEvent(msg='AqnThread.run():', field=0)
                     wx.PostEvent(self.TopLevel, stat_ev)
@@ -221,16 +222,24 @@ class AqnThread(Thread):
                     Set DVM ranges to suit voltages that they're
                     about to be exposed to. Start on 10V range:
                     '''
-                    devices.ROLES_INSTR['DVM12'].SendCmd('DCV 10')
-                    devices.ROLES_INSTR['DVM3'].SendCmd('DCV 10')
+                    devices.ROLES_INSTR['DVM12'].SendCmd('DCV AUTO')
+                    devices.ROLES_INSTR['DVM3'].SendCmd('DCV AUTO')
                     time.sleep(0.5)  # wait 0.5s after setting range
                     
+                    print 'Aqn_thread.run(): masked V1_set =',self.V1_set
                     self.RunPage.V1Setting.SetValue(str(self.V1_set))
                     time.sleep(1)  # wait 1s after applying V
-                    devices.ROLES_INSTR['DVM3'].SendCmd('DCV ' +
-                                                        str(self.Vout))
-                    devices.ROLES_INSTR['DVM12'].SendCmd('DCV ' +
-                                                         str(self.V1_set))
+                    
+#                    cmd = 'DCV ' + str(abs(self.Vout))
+#                    print'DVM3 range cmd:',cmd
+#                    devices.ROLES_INSTR['DVM3'].SendCmd(cmd)
+#
+#                    cmd = 'DCV ' + str(abs(self.V1_set))
+#                    print'DVM12 range cmd:',cmd
+#                    devices.ROLES_INSTR['DVM12'].SendCmd(cmd)
+
+                    time.sleep(0.5)  # wait 0.5s after setting range
+
                     if self._want_abort:
                         self.AbortRun()
                         return
@@ -290,7 +299,7 @@ class AqnThread(Thread):
 
                     update_ev = evts.DataEvent(ud=Update)
                     wx.PostEvent(self.RunPage, update_ev)
-                    self.IPrange = devices.ROLES_INSTR['DVM12'].SendCmd('RANGE?')
+                    self.IPrange = float(devices.ROLES_INSTR['DVM12'].SendCmd('RANGE?'))
 
                     time.sleep(2)  # Give user time to read values before update
 
@@ -314,6 +323,10 @@ class AqnThread(Thread):
                     wx.PostEvent(self.TopLevel, stat_ev)
                     time.sleep(5)
 
+                    # default to 10 V range
+#                    devices.ROLES_INSTR['DVM12'].SendCmd('DCV 10')
+#                    devices.ROLES_INSTR['DVM3'].SendCmd('DCV 10')
+
                     # Record room conditions
                     self.Troom = devices.ROLES_INSTR['GMHroom'].Measure('T')
                     self.Proom = devices.ROLES_INSTR['GMHroom'].Measure('P')
@@ -321,7 +334,7 @@ class AqnThread(Thread):
 
                     self.WriteDataThisRow(row, node)
                     self.PlotThisRow(row, node)
-                    time.sleep(0.1)
+                    time.sleep(1)
                     row += 1
 
                     # Reset start row for next measurement
@@ -455,7 +468,9 @@ class AqnThread(Thread):
                 self.V12Data['V1'].append(dvmOP)
             else:
                 dvmOP = devices.ROLES_INSTR['DVM12'].Read()
-                self.V12Data['V1'].append(float(filter(self.filt, dvmOP)))
+                V = float(filter(self.filt, dvmOP))
+#                assert V <= 1.2*self.V1_set, 'DVM12 reading(V1) = ' + str(V)
+                self.V12Data['V1'].append(V)
 
         elif node == 'V2':
             if devices.ROLES_INSTR['DVM12'].demo is True:
@@ -464,7 +479,9 @@ class AqnThread(Thread):
                 self.V12Data['V2'].append(dvmOP)
             else:
                 dvmOP = devices.ROLES_INSTR['DVM12'].Read()
-                self.V12Data['V2'].append(float(filter(self.filt, dvmOP)))
+                V = float(filter(self.filt, dvmOP))
+#                assert V <= 0.12, 'DVM12 reading(V2) = ' + str(V)
+                self.V12Data['V2'].append(V)
 
         elif node == 'V3':
             self.Times.append(time.time())
@@ -474,7 +491,10 @@ class AqnThread(Thread):
                 self.V3Data.append(dvmOP)
             else:
                 dvmOP = devices.ROLES_INSTR['DVM3'].Read()
-                self.V3Data.append(float(filter(self.filt, dvmOP)))
+                V = float(filter(self.filt, dvmOP))
+                print'dvmOP =',V
+#                assert V <= 1.2*self.Vout, 'DVM3 reading = {0}, Vout = {1}'.format(V, self.Vout)
+                self.V3Data.append(V)
 
         time.sleep(0.1)
         return 1
@@ -502,9 +522,9 @@ class AqnThread(Thread):
             TdvmOP = np.random.normal(108.0, 1.0e-2)
         else:
             TdvmOP = devices.ROLES_INSTR['DVMT'].Read()  # .SendCmd('READ?')
-        self.ws['M'+str(row)] = filter(self.filt, TdvmOP)
-        self.ws['N'+str(row)] = float(self.IPrange)
-        self.ws['O'+str(row)] = float(self.OPrange)
+        self.ws['M'+str(row)] = float(filter(self.filt, TdvmOP))
+        self.ws['N'+str(row)] = self.IPrange
+        self.ws['O'+str(row)] = self.OPrange
         self.ws['P'+str(row)] = self.Troom
         self.ws['Q'+str(row)] = self.Proom
         self.ws['R'+str(row)] = self.RHroom
@@ -523,6 +543,8 @@ class AqnThread(Thread):
         self.RunPage.StartBtn.Enable(True)
         self.RunPage.StopBtn.Enable(False)
         print'\nRun aborted.'
+#        devices.ROLES_INSTR['DVM12'].SendCmd('DCV 10')
+#        devices.ROLES_INSTR['DVM3'].SendCmd('DCV 10')
 
     def FinishRun(self):
         # Run complete - leave system safe and final xl save
@@ -541,6 +563,8 @@ class AqnThread(Thread):
 
         self.RunPage.StartBtn.Enable(True)
         self.RunPage.StopBtn.Enable(False)
+#        devices.ROLES_INSTR['DVM12'].SendCmd('DCV 10')
+#        devices.ROLES_INSTR['DVM3'].SendCmd('DCV 10')
 
     def Standby(self):
         # Set sources to 0V and disable outputs
