@@ -7,7 +7,7 @@ Created on Mon Jul 31 12:00:00 2017
 
 @author: t.lawson
 
-IVY_main.py - Version 0.1
+IVY_main.py - Version 0.2
 A Python version of the I-to-V TestPoint application.
 This app is intended to offer the same functionality as the original
 TestPoint version but avoiding the clutter. It uses a wxPython notebook,

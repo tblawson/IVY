@@ -997,10 +997,10 @@ class CalcPage(wx.Panel):
         gbSizer.Add(StartRowLbl, pos=(0, 0),
                     span=(1, 1), flag=wx.ALL | wx.EXPAND, border=5)
         self.StartRow = wx.TextCtrl(self, id=wx.ID_ANY,
-                                    style=wx.TE_PROCESS_ENTER)
+                                    style=wx.TE_READONLY)  # TE_PROCESS_ENTER
         self.StartRow.Bind(wx.EVT_TEXT_ENTER, self.OnStartRow)
-        self.StartRow.SetToolTipString("Enter start row here BEFORE \
-                                        clicking 'Analyze' button.")
+#        self.StartRow.SetToolTipString("Enter start row here BEFORE \
+# clicking 'Analyze' button.")
         gbSizer.Add(self.StartRow, pos=(0, 1), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
@@ -1106,7 +1106,7 @@ class CalcPage(wx.Panel):
                              1: self.V1_widgets,
                              10: self.V10_widgets}
 
-    def OnAnalyze(self,e):
+    def OnAnalyze(self, e):
         self.GetXL()
 
         self.Data_start_row = self.ws_Data['B1'].value
