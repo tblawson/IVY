@@ -1043,7 +1043,7 @@ class CalcPage(wx.Panel):
         gbSizer.Add(self.DeltaV_10, pos=(5, 1), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
-        PosILbl = wx.StaticText(self,id=wx.ID_ANY, label='+I in (A):')
+        PosILbl = wx.StaticText(self, id=wx.ID_ANY, label='+I in (A):')
         gbSizer.Add(PosILbl, pos=(2, 2), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
         self.PosI_01 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
@@ -1201,7 +1201,9 @@ class CalcPage(wx.Panel):
         row = self.Data_start_row
         while row < self.Data_stop_row:
             gains = set()
-            abs_nom_Vout = self.ws_Data['G'+str(row+2)].value
+            neg_nom_Vout = self.ws_Data['G'+str(row+1)].value
+            pos_nom_Vout = self.ws_Data['G'+str(row+2)].value
+            abs_nom_Vout = pos_nom_Vout
 
             # Construct ureals from raw voltage data, including gain correction
             for n in range(4):
@@ -1218,7 +1220,7 @@ class CalcPage(wx.Panel):
                 gain = self.I_INFO[d1][gain_param]
                 gains.add(gain)
                 V1_raw = GTC.ureal(V1_v, V1_u, V1_d, label=V1_l)
-                V1s.append(GTC.ar.result(V1_raw/gain))
+                V1s.append(GTC.result(V1_raw/gain))
 
                 V2_v = self.ws_Data['J'+str(row+4+n)].value
                 V2_u = self.ws_Data['K'+str(row+4+n)].value
@@ -1229,7 +1231,7 @@ class CalcPage(wx.Panel):
                 gain = self.I_INFO[d2][gain_param]
                 gains.add(gain)
                 V2_raw = GTC.ureal(V2_v, V2_u, V2_d, label=V2_l)
-                V2s.append(GTC.ar.result(V2_raw/gain))
+                V2s.append(GTC.result(V2_raw/gain))
 
                 V3_v = self.ws_Data['H'+str(row+n)].value
                 V3_u = self.ws_Data['I'+str(row+n)].value
@@ -1240,7 +1242,7 @@ class CalcPage(wx.Panel):
                 gain = self.I_INFO[d3][gain_param]
                 gains.add(gain)
                 V3_raw = GTC.ureal(V3_v, V3_u, V3_d, label=V3_l)
-                V3s.append(GTC.ar.result(V3_raw/gain))
+                V3s.append(GTC.result(V3_raw/gain))
 
                 GMH_Ts.append(self.ws_Data['L'+str(row)].value)
                 GMH_Ts.append(self.ws_Data['L'+str(row+4)].value)
@@ -1249,19 +1251,19 @@ class CalcPage(wx.Panel):
             influencies.extend(list(gains))  # A list of unique gain corrections - no copies.
             print 'list of gains:'
             for g in list(gains):
-                print g
+                print g.s
 
             # Offset-adjustment
-            V1_pos = GTC.ar.result(V1s[2] - (V1s[0] + V1s[3]) / 2)
-            V1_neg = GTC.ar.result(V1s[1] - (V1s[0] + V1s[3]) / 2)
-            V2_pos = GTC.ar.result(V2s[2] - (V2s[0] + V2s[3]) / 2)
-            V2_neg = GTC.ar.result(V2s[1] - (V2s[0] + V2s[3]) / 2)
-            V3_pos = GTC.ar.result(V3s[2] - (V3s[0] + V3s[3]) / 2)
-            V3_neg = GTC.ar.result(V3s[1] - (V3s[0] + V3s[3]) / 2)
+            V1_pos = GTC.result(V1s[2] - (V1s[0] + V1s[3]) / 2)
+            V1_neg = GTC.result(V1s[1] - (V1s[0] + V1s[3]) / 2)
+            V2_pos = GTC.result(V2s[2] - (V2s[0] + V2s[3]) / 2)
+            V2_neg = GTC.result(V2s[1] - (V2s[0] + V2s[3]) / 2)
+            V3_pos = GTC.result(V3s[2] - (V3s[0] + V3s[3]) / 2)
+            V3_neg = GTC.result(V3s[1] - (V3s[0] + V3s[3]) / 2)
 
             # V-drop across Rs
-            V_Rs_pos = GTC.ar.result(V1_pos - V2_pos)
-            V_Rs_neg = GTC.ar.result(V1_neg - V2_neg)
+            V_Rs_pos = GTC.result(V1_pos - V2_pos)
+            V_Rs_neg = GTC.result(V1_neg - V2_neg)
 
             # Rs Temperature
             T_Rs = []
@@ -1269,44 +1271,51 @@ class CalcPage(wx.Panel):
             for r in range(8):
                 Pt_R_raw = self.ws_Data['M'+str(row+r)].value
                 Pt_R_cor.append(GTC.result(Pt_R_raw * (1 + DVMT_cor),
-                                           label='Pt_R_'+str(r)))
-                T_Rs.append(GTC.ar.result(self.R_to_T(Pt_alpha, Pt_beta,
+                                           label='Pt_Rcor'+str(r)))
+                T_Rs.append(GTC.result(self.R_to_T(Pt_alpha, Pt_beta,
                                                       Pt_R_cor[r],
                                                       Pt_R0, Pt_TRef)))
 
-            av_T_Rs = GTC.ar.result(GTC.fn.mean(T_Rs) + Pt_T_def,
+            av_T_Rs = GTC.result(GTC.fn.mean(T_Rs),
                                     label='av_T_Rs'+str(abs_nom_Vout))
             influencies.extend(Pt_R_cor)
             influencies.extend([Pt_alpha, Pt_beta, Pt_R0, Pt_TRef,
                                 DVMT_cor, Pt_T_def])  # av_T_Rs
+            assert Pt_alpha in influencies,'Pt_alpha missing from influencies!'
+            assert Pt_beta in influencies,'Pt_beta missing from influencies!'
+            assert Pt_R0 in influencies,'Pt_R0 missing from influencies!'
+            assert Pt_TRef in influencies,'Pt_TRef missing from influencies!'
+            assert DVMT_cor in influencies,'DVMT_cor missing from influencies!'
+            assert Pt_T_def in influencies,'Pt_T_def missing from influencies!'
 
             # Value of Rs
             nom_Rs = self.ws_Data['C'+str(row)].value
             print '\nNominal Rs value:', nom_Rs, 'Abs. Nom. Vout:\
-            ', abs_nom_Vout, '\n'
+', abs_nom_Vout, '\n'
             Rs_name = self.Rs_VAL_NAME[nom_Rs]
             Rs_0 = self.R_INFO[Rs_name]['R0_LV']  # a ureal
-            Rs_Tref = self.R_INFO[Rs_name]['TRef_LV']  # a ureal
+            Rs_TRef = self.R_INFO[Rs_name]['TRef_LV']  # a ureal
             Rs_alpha = self.R_INFO[Rs_name]['alpha']
             Rs_beta = self.R_INFO[Rs_name]['beta']
 
             # Correct Rs value for temperature
-            dT = GTC.ar.result(av_T_Rs-Rs_Tref)
-            Rs = GTC.ar.result(Rs_0*(1+Rs_alpha*dT + Rs_beta*dT**2))
-            influencies.extend([Rs_0, Rs_alpha, Rs_beta, Rs_Tref])
+            dT = GTC.result(av_T_Rs - Rs_TRef + Pt_T_def)
+            Rs = GTC.result(Rs_0*(1 + Rs_alpha*dT + Rs_beta*dT**2))
+
+            influencies.extend([Rs_0, Rs_alpha, Rs_beta, Rs_TRef])
 
             '''
             Finally, calculate current-change in,
             for nominal voltage-change out:
             '''
-            Iin_pos = GTC.ar.result(V_Rs_pos/Rs)
-            Iin_neg = GTC.ar.result(V_Rs_neg/Rs)
+            Iin_pos = GTC.result(V_Rs_pos/Rs)
+            Iin_neg = GTC.result(V_Rs_neg/Rs)
 
-            I_pos = GTC.ar.result(Iin_pos * abs_nom_Vout / V3_pos)
+
+            I_pos = GTC.result(Iin_pos*pos_nom_Vout / V3_pos)
             I_pos_k = GTC.rp.k_factor(I_pos.df)  # P = 95% by default
             I_pos_EU = I_pos_k * I_pos.u
-
-            I_neg = GTC.ar.result(Iin_neg * abs_nom_Vout/V3_neg)
+            I_neg = GTC.result(Iin_neg*neg_nom_Vout/V3_neg)
 
             self.Vout_widgets[abs_nom_Vout][0].SetValue(str(abs_nom_Vout))
             self.Vout_widgets[abs_nom_Vout][1].SetValue('{0:.8g}'.format(I_pos.x))
@@ -1322,21 +1331,27 @@ class CalcPage(wx.Panel):
             budget_table_pos = []
             budget_table_neg = []
             for i in influencies:
+                print'Working through influence variables:', i.label
                 if i.u == 0:
                     sensitivity_pos = sensitivity_neg = 0
                 else:
-                    sensitivity_pos = GTC.component(I_pos, i) / i.u
-                    sensitivity_neg = GTC.component(I_neg, i) / i.u
+                    sensitivity_pos = GTC.component(I_pos, i)/i.u
+                    sensitivity_neg = GTC.component(I_neg, i)/i.u
                 # Only include non-zero influencies:
-                if GTC.component(I_pos, i) > 0:
+                if abs(GTC.component(I_pos, i)) > 0:
+                    print 'Included component of I+:',GTC.component(I_pos, i)
                     budget_table_pos.append([i.label, i.x, i.u, i.df,
                                              sensitivity_pos,
                                              GTC.component(I_pos, i)])
-                if GTC.component(I_neg, i) > 0:
+                else:
+                    print'ZERO COMPONENT of I+'
+                if abs(GTC.component(I_neg, i)) > 0:
+                    print 'Included component of I_neg',GTC.component(I_neg, i)
                     budget_table_neg.append([i.label, i.x, i.u, i.df,
                                              sensitivity_neg,
                                              GTC.component(I_neg, i)])
-
+                else:
+                    print'ZERO COMPONENT of I-'
             self.budget_table_pos_sorted = sorted(budget_table_pos,
                                                   key=self.by_u_cont,
                                                   reverse=True)
@@ -1423,7 +1438,9 @@ class CalcPage(wx.Panel):
         '''
         DELTA = u'\N{GREEK CAPITAL LETTER DELTA}'
         row = self.Results_start_row
-
+        proc_date = dt.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+        proc_string = 'Processesed by IVY v{} on {}'.format(self.version, proc_date)
+        self.ws_Results['H'+str(row)].value = proc_string
         self.ws_Results['A'+str(row)].value = 'Comment:'
         self.ws_Results['B'+str(row)].value = Comment
         self.ws_Results['A'+str(row+1)].value = 'Run Id:'
@@ -1641,12 +1658,12 @@ class CalcPage(wx.Panel):
     def R_to_T(self, alpha, beta, R, R0, T0):
         # Convert a resistive T-sensor reading from resistance to temperature
         if (beta.x == 0 and beta.u == 0):  # No 2nd-order T-Co
-            T = (R / R0 - 1) / alpha + T0
+            T = GTC.result((R/R0 - 1)/alpha + T0)
         else:
-            a = beta
-            b = alpha - 2*beta*T0
-            c = 1 - alpha*T0 + beta*T0**2 - (R/R0)
-            T = (-b + GTC.sqrt(b**2 - 4*a*c))/(2*a)
+            a = GTC.result(beta)
+            b = GTC.result(alpha - 2*beta*T0, True)
+            c = GTC.result(1 - alpha*T0 + beta*T0**2 - (R/R0))
+            T = GTC.result((-b + GTC.sqrt(b**2 - 4*a*c))/(2*a))
         return T
 
     def by_u_cont(self, line):
