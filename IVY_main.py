@@ -124,7 +124,7 @@ I-to-V converter program for Light Standards."
         if self.ExcelPath is not "":
             print 'Main.OnSave(): Saving', self.page1.XLFile.GetValue(), '...'
             self.page1.wb.save(self.page1.XLFile.GetValue())
-            self.page1.log.close()
+#            self.page1.log.close()
         else:
             print 'Main.OnSave(): Nothing to Save.'
 
@@ -153,6 +153,7 @@ I-to-V converter program for Light Standards."
     def OnQuit(self, event=None):
         self.CloseInstrSessions()
         self.OnSave()
+        self.page1.log.close()
         time.sleep(0.1)
         print 'Closing IVY...'
         self.Close()
