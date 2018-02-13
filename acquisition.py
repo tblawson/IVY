@@ -228,7 +228,13 @@ class AqnThread(Thread):
                     
                     print 'Aqn_thread.run(): masked V1_set =',self.V1_set
                     self.RunPage.V1Setting.SetValue(str(self.V1_set))
-                    time.sleep(1)  # wait 1s after applying V
+                    time.sleep(0.5)  # wait 0.5s after setting V
+                    if self.V1_set == 0:
+                        devices.ROLES_INSTR['SRC'].Oper()  # Over-ride 0V STBY
+                    if self._want_abort:
+                        self.AbortRun()
+                        return
+                    time.sleep(30)  # wait 30s after applying V
                     
 #                    cmd = 'DCV ' + str(abs(self.Vout))
 #                    print'DVM3 range cmd:',cmd
@@ -238,7 +244,7 @@ class AqnThread(Thread):
 #                    print'DVM12 range cmd:',cmd
 #                    devices.ROLES_INSTR['DVM12'].SendCmd(cmd)
 
-                    time.sleep(0.5)  # wait 0.5s after setting range
+#                    time.sleep(0.5)  # wait 0.5s after setting range
 
                     if self._want_abort:
                         self.AbortRun()
@@ -262,7 +268,7 @@ class AqnThread(Thread):
                     if self._want_abort:
                         self.AbortRun()
                         return
-                    time.sleep(1)  # 30
+                    time.sleep(30)  # 30
 
                     status_msg = 'Making {0:d} measurements each of {1:s} and V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
                     print status_msg
@@ -322,10 +328,6 @@ class AqnThread(Thread):
                                                field=1)
                     wx.PostEvent(self.TopLevel, stat_ev)
                     time.sleep(5)
-
-                    # default to 10 V range
-#                    devices.ROLES_INSTR['DVM12'].SendCmd('DCV 10')
-#                    devices.ROLES_INSTR['DVM3'].SendCmd('DCV 10')
 
                     # Record room conditions
                     self.Troom = devices.ROLES_INSTR['GMHroom'].Measure('T')
