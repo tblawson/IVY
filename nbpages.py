@@ -657,7 +657,7 @@ class RunPage(wx.Panel):
         self.Rs.Bind(wx.EVT_COMBOBOX, self.OnRs)
         SettleDelLbl = wx.StaticText(self, id=wx.ID_ANY, label='Settle delay:')
         self.SettleDel = wx.SpinCtrl(self, id=wx.ID_ANY, value='0',
-                                     min=0, max=600)
+                                     min=0, max=3600)
         SrcLbl = wx.StaticText(self, id=wx.ID_ANY, style=wx.ALIGN_LEFT,
                                label='V1 Setting:')
         self.V1Setting = NumCtrl(self, id=wx.ID_ANY, integerWidth=3,
@@ -1201,6 +1201,8 @@ class CalcPage(wx.Panel):
         row = self.Data_start_row
         while row < self.Data_stop_row:
             gains = set()
+            # 'neg' and 'pos' refer to polarity of OUTPUT VOLTAGE, not
+            # input current!
             neg_nom_Vout = self.ws_Data['G'+str(row+1)].value
             pos_nom_Vout = self.ws_Data['G'+str(row+2)].value
             abs_nom_Vout = pos_nom_Vout
