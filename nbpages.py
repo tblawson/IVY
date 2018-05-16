@@ -1177,9 +1177,9 @@ class CalcPage(wx.Panel):
             row += 1
 
         d = self.role_descr['GMH']
-        T_GMH_cor = self.I_INFO[d]['T_correction']  # ppm, multiplicative, ureal
+        T_GMH_cor = self.I_INFO[d]['T_correction']  # deg C, additive, ureal
         T_GMH_raw = GTC.ta.estimate_digitized(GMH_Ts, 0.01)
-        T_GMH = T_GMH_raw*(1 + T_GMH_cor) + GMH_T_def
+        T_GMH = T_GMH_raw + T_GMH_cor + GMH_T_def
 
         d = self.role_descr['GMHroom']
         RH_cor = self.I_INFO[d]['RH_correction']
