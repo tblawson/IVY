@@ -241,11 +241,9 @@ class GMH_Sensor(device):
                                    ct.byref(self.unit_str))
                 units.append(self.unit_str.value)
 
-                print'Found', self.meas_str.value, '(', self.unit_str.value,
-                ')', 'at address', Address
+                print'Found', self.meas_str.value, '(', self.unit_str.value, ')', 'at address', Address
             else:
-                print'devices.GMH_Sensor.GetSensorInfo(): Exhausted addresses \
-                at', Address
+                print'devices.GMH_Sensor.GetSensorInfo(): Exhausted addresses at', Address
                 if Address > 1:  # Don't let last address tried screw it up.
                     self.error_code.value = 0
                     self.demo = False

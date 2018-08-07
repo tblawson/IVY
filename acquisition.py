@@ -132,7 +132,7 @@ class AqnThread(Thread):
             return
         stat_ev = evts.StatusEvent(msg=' Post-initialise delay (3s)', field=1)
         wx.PostEvent(self.TopLevel, stat_ev)
-        time.sleep(3)  # 3
+        time.sleep(3)
 
         self.WriteInstrAssignments()
 
@@ -290,7 +290,7 @@ class AqnThread(Thread):
                             return
                     print'\n'
                     time.sleep(1)
-                    
+
                     assert len(self.V12Data[node]) == NREADS,'Number of {0:s} readings != {1:d}!'.format(node, NREADS)
                     assert len(self.Times) == NREADS,'Number of timestamps != {1:d}!'.format(NREADS)
                     self.tm = dt.datetime.fromtimestamp(np.mean(self.Times)).strftime("%d/%m/%Y %H:%M:%S")

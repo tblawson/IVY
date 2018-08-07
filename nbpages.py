@@ -984,9 +984,9 @@ class CalcPage(wx.Panel):
         self.Run_id = self.GetTopLevelParent().page2.run_id
 
         self.Rs_VALUES = self.GetTopLevelParent().page2.Rs_VALUES
-        self.Rs_NAMES = ['Auto 1k', 'Auto 10k',
-                         'Auto 100k', 'Auto 1M', 'Auto 10M',
-                         'Auto 100M', 'Auto 1G']
+        self.Rs_NAMES = ['I-V 1k', 'I-V 10k',
+                         'I-V 100k', 'I-V 1M', 'I-V 10M',
+                         'I-V 100M', 'I-V 1G']
         self.Rs_VAL_NAME = dict(zip(self.Rs_VALUES, self.Rs_NAMES))
 
         gbSizer = wx.GridBagSizer()

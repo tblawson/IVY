@@ -124,9 +124,9 @@ I-to-V converter program for Light Standards."
         if self.ExcelPath is not "":
             print 'Main.OnSave(): Saving', self.page1.XLFile.GetValue(), '...'
             self.page1.wb.save(self.page1.XLFile.GetValue())
-#            self.page1.log.close()
         else:
             print 'Main.OnSave(): Nothing to Save.'
+        print 'DONE.'
 
     def OnOpen(self, event=None):
         dlg = wx.FileDialog(self, message="Select data file",
