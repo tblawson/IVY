@@ -1177,6 +1177,7 @@ class CalcPage(wx.Panel):
             row += 1
 
         d = self.role_descr['GMH']
+        print'role:GMH ->', d
         T_GMH_cor = self.I_INFO[d]['T_correction']  # deg C, additive, ureal
         T_GMH_raw = GTC.ta.estimate_digitized(GMH_Ts, 0.01)
         T_GMH = T_GMH_raw + T_GMH_cor + GMH_T_def
@@ -1187,7 +1188,11 @@ class CalcPage(wx.Panel):
         RH = RH_raw*(1 + RH_cor)
 
         # Re-use d (same instrument description)
-        P_cor = self.I_INFO[d]['P_correction']
+        if 'P_correction' in self.I_INFO[d].keys():
+            P_cor = self.I_INFO[d]['P_correction']
+        else:
+            P_cor = GTC.ureal(0, 0)
+
         P_raw = GTC.ta.estimate_digitized(GMHroom_Ps, 0.1)
         P = P_raw*(1 + P_cor)
 
@@ -1397,6 +1402,7 @@ class CalcPage(wx.Panel):
         while row < self.Data_start_row + SEARCH_LIMIT - 1:
             NomVOP = self.ws_Data['G'+str(row)].value
             if NomVOP in (None, 'Nom. Vout '):  # Ran out of data
+                print'Break row =', row
                 break
             elif NomVOP in (0.1, 1, 10):
                 self.Test_Vs.append(NomVOP)
@@ -1494,11 +1500,14 @@ class CalcPage(wx.Panel):
         return row+8
 
     def GetInstrAssignments(self):
-        N_ROLES = 7  # 10 roles in total
+        N_ROLES = 7  # 7 roles in total
         self.role_descr = {}
         for row in range(self.Data_start_row, self.Data_start_row + N_ROLES):
             # Read {role:description}
-            temp_dict = {self.ws_Data['S' + str(row)].value: self.ws_Data['T' + str(row)].value}
+            role = self.ws_Data['S' + str(row)].value
+            descrip = self.ws_Data['T' + str(row)].value
+            temp_dict = {role: descrip}
+            print temp_dict
             assert temp_dict.keys()[-1] is not None, 'Instrument assignment: Missing role!'
             assert temp_dict.values()[-1] is not None, 'Instrument assignment: Missing description!'
             self.role_descr.update(temp_dict)
