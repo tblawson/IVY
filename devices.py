@@ -8,7 +8,7 @@ All device data is collected in a 'dictionary of dictionaries' - INSTR_DATA
 Each piece of information is accessed as:
 INSTR_DATA[<instrument description>][<parameter>].
 E.g. the 'set function' string for the HP3458(s/n518) is:
-INSTR_DATA['DVM: HP3458A, s/n518']['setfn_str'],
+INSTR_DATA['DVM_3458A:s/n518']['init_str'],
 which retrieves the string 'FUNC OHMF;OCOMP ON'.
 Note that some of the strings are LISTS of strings (i.e. multiple commands)
 
@@ -29,9 +29,74 @@ ROLES_WIDGETS: Dictionary of GUI widgets keyed by role.
 ROLES_INSTR: Dictionary of GMH_sensor or Instrument objects,
 keyed by role.
 '''
-INSTR_DATA = {}
-DESCR = []
-sublist = []
+INSTR_DATA = {
+    'none': {'addr': 0, 'str_addr': None,
+             'test': None,
+             'role': None},
+    'GMH:s/n628': {'addr': 5, 'str_addr': 'COM5',
+                   'test': 'T',
+                   'role': None},
+    'GMH:s/n367': {'addr': 8, 'str_addr': 'COM8',
+                   'test': 'RH',
+                   'role': None},
+    'GMH:s/n627': {'addr': 9, 'str_addr': 'COM9',
+                   'test': 'T',
+                   'role': None},
+    'DVM_34420A:s/n130': {'addr': 7, 'str_addr': 'GPIB0::7::INSTR',
+                          'test': '*IDN?',
+                          'init_str': 'FUNC OHMF;OCOMP ON',
+                          'role': None},
+    'DVM_34401A:s/n976': {'addr': 17, 'str_addr': 'GPIB0::17::INSTR',
+                          'test': '*IDN?',
+                          'init_str': 'FUNC OHMF;OCOMP ON',
+                          'role': None},
+    'DVM_3458A:s/n066': {'addr': 20, 'str_addr': 'GPIB0::20::INSTR',  # Was 0
+                         'test': 'ID?',
+                         'init_str': 'DCV',
+                         'role': None},
+    'DVM_3458A:s/n129': {'addr': 25, 'str_addr': 'GPIB0::25::INSTR',
+                         'test': 'ID?',
+                         'init_str': 'DCV',
+                         'role': None},
+    'DVM_3458A:s/n230': {'addr': 21, 'str_addr': 'GPIB0::21::INSTR',  # Was 22
+                         'test': 'ID?',
+                         'init_str': 'DCV',
+                         'role': None},
+    'DVM_3458A:s/n382': {'addr': 22, 'str_addr': 'GPIB0::22::INSTR',
+                         'test': 'ID?',
+                         'init_str': 'DCV',
+                         'role': None},
+    'DVM_3458A:s/n452': {'addr': 23, 'str_addr': 'GPIB0::23::INSTR',
+                         'test': 'ID?',
+                         'init_str': 'DCV',
+                         'role': None},
+    'DVM_3458A:s/n518': {'addr': 24, 'str_addr': 'GPIB0::24::INSTR',
+                         'test': 'ID?',
+                         'init_str': 'DCV',
+                         'role': None},
+    'DVM_3458A:s/n452': {'addr': 23, 'str_addr': 'GPIB0::23::INSTR',
+                         'test': 'ID?',
+                         'init_str': 'DCV',
+                         'role': None},
+    'SRC_D4808': {'addr': 2, 'str_addr': 'GPIB0::2::INSTR',
+                  'test': 'X8=',
+                  'init_str': ['F0G0D0S0=', 'M+0O1=', 'R0='],
+                  'setV_str': ['M', '='],
+                  'oper_str': 'O1=',
+                  'stby_str': 'O0=',
+                  'role': None},
+    'SRC_F5520A': {'addr': 4, 'str_addr': 'GPIB0::4::INSTR',
+                   'test': '*IDN?',
+                   'init_str': None,
+                   'SetV_str': ['OUT', 'V,0Hz'],
+                   'oper_str': 'OPER',
+                   'stby_str': 'STBY',
+                   'chk_err_str': ['ERR?', '*CLS'],
+                   'role': None}
+}
+
+# DESCR = []
+# sublist = []
 ROLES_WIDGETS = {}
 ROLES_INSTR = {}
 

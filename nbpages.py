@@ -379,53 +379,53 @@ class SetupPage(wx.Panel):
         # Read parameters sheet - gather instrument info:
         self.GetTopLevelParent().wb = load_workbook(self.XLFile.GetValue(), data_only = True) # Need cell VALUE, not FORMULA, so set data_only = True
         self.wb = self.GetTopLevelParent().wb
-        self.ws_params = self.wb.get_sheet_by_name('Parameters')
+#        self.ws_params = self.wb.get_sheet_by_name('Parameters')
 
-        headings = (None, u'description', u'Instrument Info:',
-                    u'parameter', u'value', u'uncert', u'dof', u'label')
+#        headings = (None, u'description', u'Instrument Info:',
+#                    u'parameter', u'value', u'uncert', u'dof', u'label')
 
         # Determine colummn indices from column letters:
-        col_I = cell.cell.column_index_from_string('I') - 1
-        col_J = cell.cell.column_index_from_string('J') - 1
-        col_K = cell.cell.column_index_from_string('K') - 1
-        col_L = cell.cell.column_index_from_string('L') - 1
-        col_M = cell.cell.column_index_from_string('M') - 1
-        col_N = cell.cell.column_index_from_string('N') - 1
+#        col_I = cell.cell.column_index_from_string('I') - 1
+#        col_J = cell.cell.column_index_from_string('J') - 1
+#        col_K = cell.cell.column_index_from_string('K') - 1
+#        col_L = cell.cell.column_index_from_string('L') - 1
+#        col_M = cell.cell.column_index_from_string('M') - 1
+#        col_N = cell.cell.column_index_from_string('N') - 1
 
-        params = []
-        values = []
+#        params = []
+#        values = []
 
-        for r in self.ws_params.rows:  # a tuple of row objects
-            descr = r[col_I].value  # cell.value
-            param = r[col_J].value  # cell.value
-            v_u_d_l = [r[col_K].value, r[col_L].value, r[col_M].value, r[col_N].value]  # value,uncert,dof,label
-
-            if descr in headings and param in headings:
-                continue  # Skip this row
-            else:  # not header
-                params.append(param)
-                if v_u_d_l[1] is None:  # single-valued (no uncert)
-                    values.append(v_u_d_l[0])  # append value as next item
-                    print descr, ' : ', param, ' = ', v_u_d_l[0]
-                    print >>self.log, descr, ' : ', param, ' = ', v_u_d_l[0]
-                else:  # multi-valued
-                    while v_u_d_l[-1] is None:  # remove empty cells
-                        del v_u_d_l[-1]  # v_u_d_l.pop()
-                    values.append(v_u_d_l)  # append value-list as next item
-                    print descr, ' : ', param, ' = ', v_u_d_l
-                    print >>self.log, descr, ' : ', param, ' = ', v_u_d_l
-
-                if param == u'test':  # last parameter for this description
-                    devices.DESCR.append(descr)  # build description list
-                    devices.sublist.append(dict(zip(params, values)))
-                    del params[:]
-                    del values[:]
-
-        print '----END OF PARAMETER LIST----'
-        print >>self.log, '----END OF PARAMETER LIST----'
-
-        # Compile into a dictionary that lives in devices.py...
-        devices.INSTR_DATA = dict(zip(devices.DESCR, devices.sublist))
+#        for r in self.ws_params.rows:  # a tuple of row objects
+#            descr = r[col_I].value  # cell.value
+#            param = r[col_J].value  # cell.value
+#            v_u_d_l = [r[col_K].value, r[col_L].value, r[col_M].value, r[col_N].value]  # value,uncert,dof,label
+#
+#            if descr in headings and param in headings:
+#                continue  # Skip this row
+#            else:  # not header
+#                params.append(param)
+#                if v_u_d_l[1] is None:  # single-valued (no uncert)
+#                    values.append(v_u_d_l[0])  # append value as next item
+#                    print descr, ' : ', param, ' = ', v_u_d_l[0]
+#                    print >>self.log, descr, ' : ', param, ' = ', v_u_d_l[0]
+#                else:  # multi-valued
+#                    while v_u_d_l[-1] is None:  # remove empty cells
+#                        del v_u_d_l[-1]  # v_u_d_l.pop()
+#                    values.append(v_u_d_l)  # append value-list as next item
+#                    print descr, ' : ', param, ' = ', v_u_d_l
+#                    print >>self.log, descr, ' : ', param, ' = ', v_u_d_l
+#
+#                if param == u'test':  # last parameter for this description
+#                    devices.DESCR.append(descr)  # build description list
+#                    devices.sublist.append(dict(zip(params, values)))
+#                    del params[:]
+#                    del values[:]
+#
+#        print '----END OF PARAMETER LIST----'
+#        print >>self.log, '----END OF PARAMETER LIST----'
+#
+#        # Compile into a dictionary that lives in devices.py...
+#        devices.INSTR_DATA = dict(zip(devices.DESCR, devices.sublist))
         self.BuildComboChoices()
         self.OnAutoPop(wx.EVT_BUTTON)  # Populate combo boxes immediately
 
@@ -435,13 +435,13 @@ class SetupPage(wx.Panel):
         Choose from instrument descriptions listed in devices.DESCR
         (Uses address assignments in devices.INSTR_DATA)
         '''
-        self.instrument_choice = {'SRC': 'SRC: F5520A',
-                                  'DVM12': 'DVM: HP3458A, s/n518',
-                                  'DVM3': 'DVM: HP3458A, s/n066',
-                                  'DVMT': 'DVM: HP34401A, s/n976',
-                                  'GMH': 'GMH: s/n627',
-                                  'GMHroom': 'GMH: s/n367',
-                                  'IVbox': 'IV_box'}
+        self.instrument_choice = {'SRC': 'SRC_F5520A',
+                                  'DVM12': 'DVM_3458A:s/n518',
+                                  'DVM3': 'DVM_3458A:s/n066',
+                                  'DVMT': 'DVM_34401A:s/n976',
+                                  'GMH': 'GMH:s/n627',
+                                  'GMHroom': 'GMH:s/n367'}
+#                                  'IVbox': 'IV_box'}
         for r in self.instrument_choice.keys():
             d = self.instrument_choice[r]
             devices.ROLES_WIDGETS[r]['icb'].SetValue(d)  # Update i_cb
