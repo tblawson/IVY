@@ -368,7 +368,7 @@ class GMH_Sensor(device):
         else:
             assert self.demo is True, 'Illegal denial to demo device!'
             print'Generating demo data...'
-            demo_rtn = {'T': (20.5, 0.2), 'P': (1013, 5), 'RH': (50, 10)}
+            demo_rtn = {'T': (-20.5, 0.2), 'P': (-1013, 5), 'RH': (-50, 10)}
             return np.random.normal(*demo_rtn[meas])
 
     def Test(self, meas):
@@ -572,7 +572,7 @@ class instrument(device):
             return -1
 
     def SendCmd(self, s):
-        demo_reply = 'SendCmd(): '+self.Descr+' - DEMO resp. to '+s
+        demo_reply = self.Descr + ' - DEMO resp. to ' + s
         reply = 1
         if self.role == 'IVbox':  # update icb
             pass  # may need an event here...

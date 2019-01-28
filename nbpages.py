@@ -61,7 +61,8 @@ class SetupPage(wx.Panel):
                                    'Rs=10^3': '3',
                                    'Rs=10^4': '4',
                                    'Rs=10^5': '5',
-                                   'Rs=10^6': '6'}
+                                   'Rs=10^6': '6',
+                                   '': None}
         self.T_SENSOR_CHOICE = devices.T_Sensors
         self.cbox_addr_COM = []
         self.cbox_addr_GPIB = []
@@ -452,7 +453,6 @@ class SetupPage(wx.Panel):
                                   'DVMT': 'DVM_34401A:s/n976',
                                   'GMH': 'GMH:s/n627',
                                   'GMHroom': 'GMH:s/n367'}
-#                                  'IVbox': 'IV_box'}
         for r in self.instrument_choice.keys():
             d = self.instrument_choice[r]
             devices.ROLES_WIDGETS[r]['icb'].SetValue(d)  # Update i_cb
@@ -552,14 +552,17 @@ class SetupPage(wx.Panel):
         self.status.SetStatusText('Testing %s with cmd %s' % (d, test), 0)
 
     def OnIVBoxTest(self, e):
-        # config is the configuration description NOT the test string:
+        # NOTE: config is the configuration description NOT the test string:
         config = devices.ROLES_WIDGETS['IVbox']['icb'].GetValue()
         test = self.IVBOX_COMBO_CHOICE[config]
-        try:
-            devices.ROLES_INSTR['IVbox'].Test(test)
-            self.Response.SetValue(config)
-        except devices.visa.VisaIOError:
-            self.Response.SetValue('IV_box test failed!')
+        if test is not None:
+            try:
+                devices.ROLES_INSTR['IVbox'].Test(test)
+                self.Response.SetValue(config)
+            except devices.visa.VisaIOError:
+                self.Response.SetValue('IV_box test failed!')
+        else:
+            self.Response.SetValue('IV_box: empty test!')
 
     def BuildCommStr(self, e):
         # Called by a change in GMH probe selection, or DUC name
