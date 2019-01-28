@@ -30,53 +30,66 @@ ROLES_INSTR: Dictionary of GMH_sensor or Instrument objects,
 keyed by role.
 '''
 INSTR_DATA = {
-    'none': {'addr': 0, 'str_addr': None,
+    'none': {'addr': 0, 'str_addr': 'NOADDRESS',
              'test': None,
+             'demo': True,
              'role': None},
     'GMH:s/n628': {'addr': 5, 'str_addr': 'COM5',
                    'test': 'T',
+                   'demo': True,
                    'role': None},
     'GMH:s/n367': {'addr': 8, 'str_addr': 'COM8',
                    'test': 'RH',
+                   'demo': True,
                    'role': None},
     'GMH:s/n627': {'addr': 9, 'str_addr': 'COM9',
                    'test': 'T',
+                   'demo': True,
                    'role': None},
     'DVM_34420A:s/n130': {'addr': 7, 'str_addr': 'GPIB0::7::INSTR',
                           'test': '*IDN?',
                           'init_str': 'FUNC OHMF;OCOMP ON',
+                          'demo': True,
                           'role': None},
     'DVM_34401A:s/n976': {'addr': 17, 'str_addr': 'GPIB0::17::INSTR',
                           'test': '*IDN?',
                           'init_str': 'FUNC OHMF;OCOMP ON',
+                          'demo': True,
                           'role': None},
     'DVM_3458A:s/n066': {'addr': 20, 'str_addr': 'GPIB0::20::INSTR',  # Was 0
                          'test': 'ID?',
                          'init_str': 'DCV',
+                         'demo': True,
                          'role': None},
     'DVM_3458A:s/n129': {'addr': 25, 'str_addr': 'GPIB0::25::INSTR',
                          'test': 'ID?',
                          'init_str': 'DCV',
+                         'demo': True,
                          'role': None},
     'DVM_3458A:s/n230': {'addr': 21, 'str_addr': 'GPIB0::21::INSTR',  # Was 22
                          'test': 'ID?',
                          'init_str': 'DCV',
+                         'demo': True,
                          'role': None},
     'DVM_3458A:s/n382': {'addr': 22, 'str_addr': 'GPIB0::22::INSTR',
                          'test': 'ID?',
                          'init_str': 'DCV',
+                         'demo': True,
                          'role': None},
     'DVM_3458A:s/n452': {'addr': 23, 'str_addr': 'GPIB0::23::INSTR',
                          'test': 'ID?',
                          'init_str': 'DCV',
+                         'demo': True,
                          'role': None},
     'DVM_3458A:s/n518': {'addr': 24, 'str_addr': 'GPIB0::24::INSTR',
                          'test': 'ID?',
                          'init_str': 'DCV',
+                         'demo': True,
                          'role': None},
     'DVM_3458A:s/n452': {'addr': 23, 'str_addr': 'GPIB0::23::INSTR',
                          'test': 'ID?',
                          'init_str': 'DCV',
+                         'demo': True,
                          'role': None},
     'SRC_D4808': {'addr': 2, 'str_addr': 'GPIB0::2::INSTR',
                   'test': 'X8=',
@@ -84,6 +97,7 @@ INSTR_DATA = {
                   'setV_str': ['M', '='],
                   'oper_str': 'O1=',
                   'stby_str': 'O0=',
+                  'demo': True,
                   'role': None},
     'SRC_F5520A': {'addr': 4, 'str_addr': 'GPIB0::4::INSTR',
                    'test': '*IDN?',
@@ -92,7 +106,12 @@ INSTR_DATA = {
                    'oper_str': 'OPER',
                    'stby_str': 'STBY',
                    'chk_err_str': ['ERR?', '*CLS'],
-                   'role': None}
+                   'demo': True,
+                   'role': None},
+    'IV_box': {'addr': 4, 'str_addr': 'COM4',
+               'test': None,  # Depends on icb setting
+               'demo': True,
+               'role': 'IVbox'}
 }
 
 # DESCR = []
@@ -375,8 +394,9 @@ class instrument(device):
         self.is_open = 0
         self.is_operational = 0
 
-        assert self.Descr in INSTR_DATA, 'Unknown instrument ({0:s})- check instrument \
-data is loaded from Excel Parameters sheet.'.format(self.Descr)
+        assert_msg = 'Unknown instrument ({0:s})'.format(self.Descr)
+        # check instrument data is loaded from Excel Parameters sheet.'
+        assert self.Descr in INSTR_DATA, assert_msg
 
         self.addr = INSTR_DATA[self.Descr]['addr']
         self.str_addr = INSTR_DATA[self.Descr]['str_addr']
@@ -410,7 +430,6 @@ data is loaded from Excel Parameters sheet.'.format(self.Descr)
     def Open(self):
         try:
             self.instr = RM.open_resource(self.str_addr)
-            self.is_open = 1
             if '3458A' in self.Descr:
                 self.instr.read_termination = '\r\n'
                 self.instr.write_termination = '\r\n'
@@ -419,12 +438,12 @@ data is loaded from Excel Parameters sheet.'.format(self.Descr)
             self.demo = False  # A real instrument ONLY on Open() success
             print 'devices.instrument.Open():', self.Descr,
             'session handle=', self.instr.session
+            self.is_open = 1
         except visa.VisaIOError:
             self.instr = None
             self.demo = True  # default to demo mode if can't open
             INSTR_DATA[self.Descr]['demo'] = True
-            print 'devices.instrument.Open() failed:', self.Descr,
-            'opened in demo mode'
+            print 'devices.instrument.Open() failed:', self.Descr, 'opened in demo mode'  
         return self.instr
 
     def Close(self):

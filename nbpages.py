@@ -56,7 +56,12 @@ class SetupPage(wx.Panel):
         self.SRC_COMBO_CHOICE = ['none']
         self.DVM_COMBO_CHOICE = ['none']
         self.GMH_COMBO_CHOICE = ['none']
-        self.IVBOX_COMBO_CHOICE = ['IV_box', 'none']
+        self.IVBOX_COMBO_CHOICE = {'node=V1': '1',
+                                   'node=V2': '2',
+                                   'Rs=10^3': '3',
+                                   'Rs=10^4': '4',
+                                   'Rs=10^5': '5',
+                                   'Rs=10^6': '6'}
         self.T_SENSOR_CHOICE = devices.T_Sensors
         self.cbox_addr_COM = []
         self.cbox_addr_GPIB = []
@@ -122,11 +127,12 @@ class SetupPage(wx.Panel):
         self.GMHroomProbes.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_GMH.append(self.GMHroomProbes)
 
-        IVboxLbl = wx.StaticText(self, label='IV_box (IVbox):', id=wx.ID_ANY)
+        IVboxLbl = wx.StaticText(self, label='IV_box (IVbox) setting:',
+                                 id=wx.ID_ANY)
         self.IVbox = wx.ComboBox(self, wx.ID_ANY,
-                                 choices=self.IVBOX_COMBO_CHOICE,
+                                 choices=self.IVBOX_COMBO_CHOICE.keys(),
                                  style=wx.CB_DROPDOWN)
-        self.IVbox.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
+#        self.IVbox.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
 
         # Addresses
         self.SrcAddr = wx.ComboBox(self, wx.ID_ANY,
@@ -332,6 +338,11 @@ class SetupPage(wx.Panel):
                                                 'acb': self.IVboxAddr,
                                                 'tbtn': self.IVboxTest}})
 
+        # Create IV-box 'instrument once:
+        d = 'IV_box'  # Description
+        r = 'IVbox'  # Role
+        self.CreateInstr(d, r)
+
     def BuildComboChoices(self):
         for d in devices.INSTR_DATA.keys():
             if 'SRC:' in d:
@@ -376,9 +387,9 @@ class SetupPage(wx.Panel):
         self.GetTopLevelParent().log = open(logfile, 'a')
         self.log = self.GetTopLevelParent().log
 
-        # Read parameters sheet - gather instrument info:
-        self.GetTopLevelParent().wb = load_workbook(self.XLFile.GetValue(), data_only = True) # Need cell VALUE, not FORMULA, so set data_only = True
-        self.wb = self.GetTopLevelParent().wb
+#         Read parameters sheet - gather instrument info:
+#        self.GetTopLevelParent().wb = load_workbook(self.XLFile.GetValue(), data_only = True) # Need cell VALUE, not FORMULA, so set data_only = True
+#        self.wb = self.GetTopLevelParent().wb
 #        self.ws_params = self.wb.get_sheet_by_name('Parameters')
 
 #        headings = (None, u'description', u'Instrument Info:',
@@ -461,10 +472,13 @@ class SetupPage(wx.Panel):
         self.CreateInstr(d, r)
 
     def CreateInstr(self, d, r):
-        # Called by both OnAutoPop() and UpdateInstr()
-        # Create each instrument in software & open visa session (GPIB only)
-        # For GMH instruments, use GMH dll, not visa
-
+        '''
+         Called by both OnAutoPop() and UpdateInstr().
+         Create each instrument in software & open visa session
+         (GPIB and IVbox only).
+         For GMH instruments, use GMH dll, not visa.
+        '''
+        print '\nCreateInstr(%s,%s)...' % (d, r)
         if 'GMH' in r:  # Changed from d to r
             # create and open a GMH instrument instance
             print'\nnbpages.SetupPage.CreateInstr(): \
@@ -481,17 +495,17 @@ class SetupPage(wx.Panel):
     def SetInstr(self, d, r):
         """
         Called by CreateInstr().
-        Updates internal info (INSTR_DATA) and Enables/disables testbuttons
-        as necessary.
+        Updates internal info (INSTR_DATA), updates the addresses
+        and Enables/disables testbuttons as necessary.
         """
-        assert d in devices.INSTR_DATA, 'Unknown instrument: %s - \
-        check Excel file is loaded.' % d
-        assert 'role' in devices.INSTR_DATA[d], 'Unknown instrument parameter - \
-        check Excel Parameters sheet is populated.'
+        assert d in devices.INSTR_DATA, 'Unknown instrument: %s' % d
+        assert_msg = 'Unknown parameter ("role") for %s: .' % d
+        assert 'role' in devices.INSTR_DATA[d], assert_msg
         devices.INSTR_DATA[d]['role'] = r  # update default role
 
-        # Set the address cb to correct value (according to devices.INSTR_DATA)
+        # Set the address cb to correct value (refer to devices.INSTR_DATA)
         a_cb = devices.ROLES_WIDGETS[r]['acb']
+        print 'SetInstr(): Address =', devices.INSTR_DATA[d]['str_addr']
         a_cb.SetValue((devices.INSTR_DATA[d]['str_addr']))
         if d == 'none':
             devices.ROLES_WIDGETS[r]['tbtn'].Enable(False)
@@ -505,7 +519,10 @@ class SetupPage(wx.Panel):
         acb = e.GetEventObject()  # 'a'ddress 'c'ombo 'b'ox
         for r in devices.ROLES_WIDGETS.keys():
             if devices.ROLES_WIDGETS[r]['acb'] == acb:
-                d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
+                if r == 'IVbox':
+                    d = 'IV_box'
+                else:
+                    d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
                 break  # stop looking when we've found the instr descr
 
         # ...Now change INSTR_DATA...
@@ -527,21 +544,22 @@ class SetupPage(wx.Panel):
                 d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
                 break  # stop looking when we've found right instr descr
         print'\nnbpages.SetupPage.OnTest():', d
-        assert 'test' in devices.INSTR_DATA[d], 'No test exists \
-        for this device.'
+        assert_msg = '%s has no "test" parameter' % d
+        assert 'test' in devices.INSTR_DATA[d], assert_msg
         test = devices.INSTR_DATA[d]['test']  # test string
         print '\tTest string:', test
         self.Response.SetValue(str(devices.ROLES_INSTR[r].Test(test)))
         self.status.SetStatusText('Testing %s with cmd %s' % (d, test), 0)
 
     def OnIVBoxTest(self, e):
-        resource = self.IVboxAddr.GetValue()
-        config = str(devices.IVBOX_CONFIGS['V1'])
+        # config is the configuration description NOT the test string:
+        config = devices.ROLES_WIDGETS['IVbox']['icb'].GetValue()
+        test = self.IVBOX_COMBO_CHOICE[config]
         try:
-            instr = devices.RM.open_resource(resource)
-            instr.write(config)
+            devices.ROLES_INSTR['IVbox'].Test(test)
+            self.Response.SetValue(config)
         except devices.visa.VisaIOError:
-            self.Response.SetValue('Couldn\'t open visa resource for IV_box!')
+            self.Response.SetValue('IV_box test failed!')
 
     def BuildCommStr(self, e):
         # Called by a change in GMH probe selection, or DUC name
@@ -554,7 +572,8 @@ class SetupPage(wx.Panel):
             # Update our knowledge of role <-> instr. descr. association
             self.CreateInstr(d, r)
         RunPage = self.GetParent().GetPage(1)
-        params = {'DUC': self.DUCName.GetValue(), 'GMH': self.GMHProbes.GetValue()}
+        params = {'DUC': self.DUCName.GetValue(),
+                  'GMH': self.GMHProbes.GetValue()}
         joinstr = ' monitored by '
         commstr = 'IVY v.' + self.version + '. DUC: ' + params['DUC'] + joinstr + params['GMH']
         evt = evts.UpdateCommentEvent(str=commstr)
