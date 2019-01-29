@@ -81,53 +81,55 @@ class SetupPage(wx.Panel):
         self.test_btns = []  # list of test buttons
 
         # Instruments
-        SrcLbl = wx.StaticText(self, label='V1 source (SRC):', id=wx.ID_ANY)
+        self.SrcLbl = wx.StaticText(self, label='V1 source (SRC):',
+                                    id=wx.ID_ANY)
         self.Sources = wx.ComboBox(self, wx.ID_ANY,
                                    choices=self.SRC_COMBO_CHOICE,
                                    size=(150, 10), style=wx.CB_DROPDOWN)
         self.Sources.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_SRC.append(self.Sources)
 
-        IP_DVM_Lbl = wx.StaticText(self, label='Input DVM (DVM12):',
-                                   id=wx.ID_ANY)
+        self.IP_DVM_Lbl = wx.StaticText(self, label='Input DVM (DVM12):',
+                                        id=wx.ID_ANY)
         self.IP_Dvms = wx.ComboBox(self, wx.ID_ANY,
                                    choices=self.DVM_COMBO_CHOICE,
                                    style=wx.CB_DROPDOWN)
         self.IP_Dvms.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_DVM.append(self.IP_Dvms)
-        OP_DVM_Lbl = wx.StaticText(self, label='Output DVM (DVM3):',
-                                   id=wx.ID_ANY)
+        self.OP_DVM_Lbl = wx.StaticText(self, label='Output DVM (DVM3):',
+                                        id=wx.ID_ANY)
         self.OP_Dvms = wx.ComboBox(self, wx.ID_ANY,
                                    choices=self.DVM_COMBO_CHOICE,
                                    style=wx.CB_DROPDOWN)
         self.OP_Dvms.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_DVM.append(self.OP_Dvms)
-        TDvmLbl = wx.StaticText(self, label='T-probe DVM (DVMT):',
-                                id=wx.ID_ANY)
+        self.TDvmLbl = wx.StaticText(self, label='T-probe DVM (DVMT):',
+                                     id=wx.ID_ANY)
         self.TDvms = wx.ComboBox(self, wx.ID_ANY,
                                  choices=self.DVM_COMBO_CHOICE,
                                  style=wx.CB_DROPDOWN)
         self.TDvms.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_DVM.append(self.TDvms)
 
-        GMHLbl = wx.StaticText(self, label='GMH probe (GMH):', id=wx.ID_ANY)
+        self.GMHLbl = wx.StaticText(self, label='GMH probe (GMH):',
+                                    id=wx.ID_ANY)
         self.GMHProbes = wx.ComboBox(self, wx.ID_ANY,
                                      choices=self.GMH_COMBO_CHOICE,
                                      style=wx.CB_DROPDOWN)
         self.GMHProbes.Bind(wx.EVT_COMBOBOX, self.BuildCommStr)
         self.cbox_instr_GMH.append(self.GMHProbes)
 
-        GMHroomLbl = wx.StaticText(self,
-                                   label='Room conds. GMH probe (GMHroom):',
-                                   id=wx.ID_ANY)
+        self.GMHroomLbl = wx.StaticText(self,
+                                        label='Room conds. GMH probe (GMHroom):',
+                                        id=wx.ID_ANY)
         self.GMHroomProbes = wx.ComboBox(self, wx.ID_ANY,
                                          choices=self.GMH_COMBO_CHOICE,
                                          style=wx.CB_DROPDOWN)
         self.GMHroomProbes.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_GMH.append(self.GMHroomProbes)
 
-        IVboxLbl = wx.StaticText(self, label='IV_box (IVbox) setting:',
-                                 id=wx.ID_ANY)
+        self.IVboxLbl = wx.StaticText(self, label='IV_box (IVbox) setting:',
+                                      id=wx.ID_ANY)
         self.IVbox = wx.ComboBox(self, wx.ID_ANY,
                                  choices=self.IVBOX_COMBO_CHOICE.keys(),
                                  style=wx.CB_DROPDOWN)
@@ -228,31 +230,31 @@ class SetupPage(wx.Panel):
         gbSizer = wx.GridBagSizer()
 
         # Instruments
-        gbSizer.Add(SrcLbl, pos=(0, 0), span=(1, 1),
+        gbSizer.Add(self.SrcLbl, pos=(0, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.Sources, pos=(0, 1), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(IP_DVM_Lbl, pos=(1, 0), span=(1, 1),
+        gbSizer.Add(self.IP_DVM_Lbl, pos=(1, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.IP_Dvms, pos=(1, 1), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(OP_DVM_Lbl, pos=(2, 0), span=(1, 1),
+        gbSizer.Add(self.OP_DVM_Lbl, pos=(2, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.OP_Dvms, pos=(2, 1), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(TDvmLbl, pos=(3, 0), span=(1, 1),
+        gbSizer.Add(self.TDvmLbl, pos=(3, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.TDvms, pos=(3, 1), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(GMHLbl, pos=(4, 0), span=(1, 1),
+        gbSizer.Add(self.GMHLbl, pos=(4, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.GMHProbes, pos=(4, 1), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(GMHroomLbl, pos=(5, 0), span=(1, 1),
+        gbSizer.Add(self.GMHroomLbl, pos=(5, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.GMHroomProbes, pos=(5, 1), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(IVboxLbl, pos=(6, 0), span=(1, 1),
+        gbSizer.Add(self.IVboxLbl, pos=(6, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.IVbox, pos=(6, 1), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
@@ -315,25 +317,32 @@ class SetupPage(wx.Panel):
         self.SetSizerAndFit(gbSizer)
 
         # Roles and corresponding comboboxes/test btns are associated here:
-        devices.ROLES_WIDGETS = {'SRC': {'icb': self.Sources,
+        devices.ROLES_WIDGETS = {'SRC': {'lbl': self.SrcLbl,
+                                         'icb': self.Sources,
                                          'acb': self.SrcAddr,
                                          'tbtn': self.STest}}
-        devices.ROLES_WIDGETS.update({'DVM12': {'icb': self.IP_Dvms,
+        devices.ROLES_WIDGETS.update({'DVM12': {'lbl': self.IP_DVM_Lbl,
+                                                'icb': self.IP_Dvms,
                                                 'acb': self.IP_DvmAddr,
                                                 'tbtn': self.D12Test}})
-        devices.ROLES_WIDGETS.update({'DVM3': {'icb': self.OP_Dvms,
+        devices.ROLES_WIDGETS.update({'DVM3': {'lbl': self.OP_DVM_Lbl,
+                                               'icb': self.OP_Dvms,
                                                'acb': self.OP_DvmAddr,
                                                'tbtn': self.D3Test}})
-        devices.ROLES_WIDGETS.update({'DVMT': {'icb': self.TDvms,
+        devices.ROLES_WIDGETS.update({'DVMT': {'lbl': self.TDvmLbl,
+                                               'icb': self.TDvms,
                                                'acb': self.TDvmAddr,
                                                'tbtn': self.DTTest}})
-        devices.ROLES_WIDGETS.update({'GMH': {'icb': self.GMHProbes,
+        devices.ROLES_WIDGETS.update({'GMH': {'lbl': self.GMHLbl,
+                                              'icb': self.GMHProbes,
                                               'acb': self.GMHPorts,
                                               'tbtn': self.GMHTest}})
-        devices.ROLES_WIDGETS.update({'GMHroom': {'icb': self.GMHroomProbes,
+        devices.ROLES_WIDGETS.update({'GMHroom': {'lbl': self.GMHroomLbl,
+                                                  'icb': self.GMHroomProbes,
                                                   'acb': self.GMHroomPorts,
                                                   'tbtn': self.GMHroomTest}})
-        devices.ROLES_WIDGETS.update({'IVbox': {'icb': self.IVbox,
+        devices.ROLES_WIDGETS.update({'IVbox': {'lbl': self.IVboxLbl,
+                                                'icb': self.IVbox,
                                                 'acb': self.IVboxAddr,
                                                 'tbtn': self.IVboxTest}})
 
@@ -405,9 +414,10 @@ class SetupPage(wx.Panel):
                                   'GMHroom': 'GMH:s/n367'}
         for r in self.instrument_choice.keys():
             d = self.instrument_choice[r]
-            devices.ROLES_WIDGETS[r]['icb'].SetValue(d)  # Update i_cb
+            devices.ROLES_WIDGETS[r]['icb'].SetValue(d)  # Update instr. cbox
             self.CreateInstr(d, r)
         if self.DUCName.GetValue() == u'DUC Name':
+            self.DUCName.SetForegroundColour((255, 0, 0))
             self.DUCName.SetValue('CHANGE_THIS!')
 
     def UpdateInstr(self, e):
@@ -433,12 +443,12 @@ class SetupPage(wx.Panel):
             # create and open a GMH instrument instance
             print'\nnbpages.SetupPage.CreateInstr(): \
             Creating GMH device (%s -> %s).' % (d, r)
-            devices.ROLES_INSTR.update({r: devices.GMH_Sensor(d)})
+            devices.ROLES_INSTR.update({r: devices.GMH_Sensor(d, r)})
         else:
             # create a visa instrument instance
             print'\nnbpages.SetupPage.CreateInstr(): \
             Creating VISA device (%s -> %s).' % (d, r)
-            devices.ROLES_INSTR.update({r: devices.instrument(d)})
+            devices.ROLES_INSTR.update({r: devices.instrument(d, r)})
             devices.ROLES_INSTR[r].Open()
         self.SetInstr(d, r)
 
@@ -524,6 +534,11 @@ class SetupPage(wx.Panel):
                     break
             # Update our knowledge of role <-> instr. descr. association
             self.CreateInstr(d, r)
+        else:  # DUC name has been set or changed
+            if d in ('CHANGE_THIS!', 'DUC Name'):  # DUC not yet specified!
+                self.DUCName.SetForegroundColour((255, 0, 0))
+            else:
+                self.DUCName.SetForegroundColour((0, 127, 0))
         RunPage = self.GetParent().GetPage(1)
         params = {'DUC': self.DUCName.GetValue(),
                   'GMH': self.GMHProbes.GetValue()}

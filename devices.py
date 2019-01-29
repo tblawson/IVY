@@ -114,8 +114,9 @@ INSTR_DATA = {
                'role': 'IVbox'}
 }
 
-# DESCR = []
-# sublist = []
+RED = (255, 0, 0)
+GREEN = (0, 127, 0)
+
 ROLES_WIDGETS = {}
 ROLES_INSTR = {}
 
@@ -166,7 +167,7 @@ class GMH_Sensor(device):
     A class to wrap around the low-level functions of GMH3x32E.dll.
     For use with most Greisinger GMH devices.
     """
-    def __init__(self, descr, demo=True):
+    def __init__(self, descr, role, demo=True):
         self.Descr = descr
         self.demo = demo
 
@@ -175,7 +176,7 @@ class GMH_Sensor(device):
         '''
         self.addr = int(INSTR_DATA[self.Descr]['addr'])
         self.str_addr = INSTR_DATA[self.Descr]['str_addr']
-        self.role = INSTR_DATA[self.Descr]['role']
+        self.role = role
 
         '''
         self.flData: pointer to output data -
@@ -222,12 +223,14 @@ class GMH_Sensor(device):
                 # Ensure max poweroff time
                 self.intData.value = 120  # 120 mins B4 power-off
                 self.Transmit(1, self.SetPowOffFn)
-            
+
                 self.Transmit(1, self.ValFn)
                 if len(self.info) == 0:  # No device info yet
                     print 'devices.GMH_Sensor.Open(): Getting sensor info...'
                     self.GetSensorInfo()
                     self.demo = False  # If we've got this far, probably OK
+                    ROLES_WIDGETS[self.role]['lbl'].SetForegroundColour(GREEN)
+                    ROLES_WIDGETS[self.role]['lbl'].Refresh()
                     return True
                 else:  # Already have device measurement info
                     print'devices.GMH_Sensor.Open(): Instr ready. demo=False.'
@@ -237,10 +240,14 @@ class GMH_Sensor(device):
                 print 'devices.GMH_Sensor.Open():', self.error_msg.value
                 self.Close()
                 self.demo = True
+                ROLES_WIDGETS[self.role]['lbl'].SetForegroundColour(RED)
+                ROLES_WIDGETS[self.role]['lbl'].Refresh()
                 return False
 
         else:  # Com open failed
             print'devices.GMH_Sensor.Open() FAILED:', self.Descr
+            ROLES_WIDGETS[self.role]['lbl'].SetForegroundColour(RED)
+            ROLES_WIDGETS[self.role]['lbl'].Refresh()
             self.Close()
             self.demo = True
             return False
@@ -388,7 +395,7 @@ class instrument(device):
     A class for associating instrument data with a VISA instance of
     that instrument
     '''
-    def __init__(self, descr, demo=True):  # Default to demo mode
+    def __init__(self, descr, role, demo=True):  # Default to demo mode
         self.Descr = descr
         self.demo = demo
         self.is_open = 0
@@ -400,7 +407,7 @@ class instrument(device):
 
         self.addr = INSTR_DATA[self.Descr]['addr']
         self.str_addr = INSTR_DATA[self.Descr]['str_addr']
-        self.role = INSTR_DATA[self.Descr]['role']
+        self.role = role
 
         if 'init_str' in INSTR_DATA[self.Descr]:
             self.InitStr = INSTR_DATA[self.Descr]['init_str']  # tuple of str
@@ -436,12 +443,17 @@ class instrument(device):
             self.instr.timeout = 2000  # default 2 s timeout
             INSTR_DATA[self.Descr]['demo'] = False  # A real working instrument
             self.demo = False  # A real instrument ONLY on Open() success
+            green = (0, 255, 0)
+            ROLES_WIDGETS[self.role]['lbl'].SetBackgroundColour(green)
             print 'devices.instrument.Open():', self.Descr,
             'session handle=', self.instr.session
             self.is_open = 1
         except visa.VisaIOError:
             self.instr = None
             self.demo = True  # default to demo mode if can't open
+            red = (255, 0, 0)
+            ROLES_WIDGETS[self.role]['lbl'].SetForegroundColour(red)
+            ROLES_WIDGETS[self.role]['lbl'].Refresh()
             INSTR_DATA[self.Descr]['demo'] = True
             print 'devices.instrument.Open() failed:', self.Descr, 'opened in demo mode'  
         return self.instr
