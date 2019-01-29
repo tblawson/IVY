@@ -36,6 +36,7 @@ import nbpages as page
 import IVY_events as evts
 import devices
 import time
+import datetime as dt
 
 VERSION = "0.3"
 
@@ -104,6 +105,12 @@ class MainFrame(wx.Frame):
         sizer = wx.BoxSizer()
         sizer.Add(self.NoteBook, 1, wx.EXPAND)
         self.MainPanel.SetSizer(sizer)
+
+        # Open logfile
+        logname = 'IVYv'+str(self.version)+'_'+str(dt.date.today())+'.log'
+        logfile = os.path.join(os.getcwd(), logname)
+        print '\n### IVY_main.py: logfile:', logfile
+        self.log = open(logfile, 'a')
 
     def UpdateStatus(self, e):
         if e.field == 'b':

@@ -70,8 +70,6 @@ class SetupPage(wx.Panel):
         self.cbox_instr_DVM = []
         self.cbox_instr_GMH = []
 
-        self.BuildComboChoices()
-
         self.GMH1Addr = self.GMH2Addr = 0  # invalid initial address as default
 
         self.ResourceList = []
@@ -344,13 +342,15 @@ class SetupPage(wx.Panel):
         r = 'IVbox'  # Role
         self.CreateInstr(d, r)
 
+        self.BuildComboChoices()
+
     def BuildComboChoices(self):
         for d in devices.INSTR_DATA.keys():
-            if 'SRC:' in d:
+            if 'SRC' in d:
                 self.SRC_COMBO_CHOICE.append(d)
-            elif 'DVM:' in d:
+            elif 'DVM' in d:
                 self.DVM_COMBO_CHOICE.append(d)
-            elif 'GMH:' in d:
+            elif 'GMH' in d:
                 self.GMH_COMBO_CHOICE.append(d)
 
         # Re-build combobox choices from list of SRC's
@@ -382,64 +382,14 @@ class SetupPage(wx.Panel):
         '''
         self.XLFile.SetValue(e.XLpath)
 
-        # Open logfile
-        logname = 'IVYv'+str(e.v)+'_'+str(dt.date.today())+'.log'
-        logfile = os.path.join(e.d, logname)
-        self.GetTopLevelParent().log = open(logfile, 'a')
-        self.log = self.GetTopLevelParent().log
+#        # Open logfile
+#        logname = 'IVYv'+str(e.v)+'_'+str(dt.date.today())+'.log'
+#        logfile = os.path.join(e.d, logname)
+#        self.GetTopLevelParent().log = open(logfile, 'a')
+#        self.log = self.GetTopLevelParent().log
 
-#         Read parameters sheet - gather instrument info:
-#        self.GetTopLevelParent().wb = load_workbook(self.XLFile.GetValue(), data_only = True) # Need cell VALUE, not FORMULA, so set data_only = True
-#        self.wb = self.GetTopLevelParent().wb
-#        self.ws_params = self.wb.get_sheet_by_name('Parameters')
-
-#        headings = (None, u'description', u'Instrument Info:',
-#                    u'parameter', u'value', u'uncert', u'dof', u'label')
-
-        # Determine colummn indices from column letters:
-#        col_I = cell.cell.column_index_from_string('I') - 1
-#        col_J = cell.cell.column_index_from_string('J') - 1
-#        col_K = cell.cell.column_index_from_string('K') - 1
-#        col_L = cell.cell.column_index_from_string('L') - 1
-#        col_M = cell.cell.column_index_from_string('M') - 1
-#        col_N = cell.cell.column_index_from_string('N') - 1
-
-#        params = []
-#        values = []
-
-#        for r in self.ws_params.rows:  # a tuple of row objects
-#            descr = r[col_I].value  # cell.value
-#            param = r[col_J].value  # cell.value
-#            v_u_d_l = [r[col_K].value, r[col_L].value, r[col_M].value, r[col_N].value]  # value,uncert,dof,label
-#
-#            if descr in headings and param in headings:
-#                continue  # Skip this row
-#            else:  # not header
-#                params.append(param)
-#                if v_u_d_l[1] is None:  # single-valued (no uncert)
-#                    values.append(v_u_d_l[0])  # append value as next item
-#                    print descr, ' : ', param, ' = ', v_u_d_l[0]
-#                    print >>self.log, descr, ' : ', param, ' = ', v_u_d_l[0]
-#                else:  # multi-valued
-#                    while v_u_d_l[-1] is None:  # remove empty cells
-#                        del v_u_d_l[-1]  # v_u_d_l.pop()
-#                    values.append(v_u_d_l)  # append value-list as next item
-#                    print descr, ' : ', param, ' = ', v_u_d_l
-#                    print >>self.log, descr, ' : ', param, ' = ', v_u_d_l
-#
-#                if param == u'test':  # last parameter for this description
-#                    devices.DESCR.append(descr)  # build description list
-#                    devices.sublist.append(dict(zip(params, values)))
-#                    del params[:]
-#                    del values[:]
-#
-#        print '----END OF PARAMETER LIST----'
-#        print >>self.log, '----END OF PARAMETER LIST----'
-#
-#        # Compile into a dictionary that lives in devices.py...
-#        devices.INSTR_DATA = dict(zip(devices.DESCR, devices.sublist))
-        self.BuildComboChoices()
-        self.OnAutoPop(wx.EVT_BUTTON)  # Populate combo boxes immediately
+#        self.BuildComboChoices()
+#        self.OnAutoPop(wx.EVT_BUTTON)  # Populate combo boxes immediately
 
     def OnAutoPop(self, e):
         '''
@@ -654,13 +604,13 @@ class RunPage(wx.Panel):
         self.Comment = wx.TextCtrl(self, id=wx.ID_ANY, size=(600, 20))
         self.Comment.Bind(wx.EVT_TEXT, self.OnComment)
         comtip = 'This string is auto-generated from data on the Setup page.\
-        Other notes may be added manually at the end.'
+Other notes may be added manually at the end.'
         self.Comment.SetToolTipString(comtip)
 
         self.NewRunIDBtn = wx.Button(self, id=wx.ID_ANY,
                                      label='Create new run id')
-        idcomtip = 'Create new id to uniquely identify this set of \
-        measurement data.'
+        idcomtip = 'Create new id to uniquely identify this set of\
+measurement data.'
         self.NewRunIDBtn.SetToolTipString(idcomtip)
         self.NewRunIDBtn.Bind(wx.EVT_BUTTON, self.OnNewRunID)
         self.RunID = wx.TextCtrl(self, id=wx.ID_ANY)  # size=(500,20)
