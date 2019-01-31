@@ -9,6 +9,7 @@ Created on Tue Jun 30 10:10:16 2015
 """
 
 import os
+import logging
 
 import wx
 from wx.lib.masked import NumCtrl
@@ -35,7 +36,7 @@ from numbers import Number
 
 matplotlib.rc('lines', linewidth=1, color='blue')
 
-
+logger = logging.getLogger(__name__)
 '''
 ------------------------
 # Setup Page definition:
@@ -439,15 +440,18 @@ class SetupPage(wx.Panel):
          For GMH instruments, use GMH dll, not visa.
         '''
         print '\nCreateInstr(%s,%s)...' % (d, r)
+        logger.info('Instr: %s; role: %s)...', d, r)
         if 'GMH' in r:  # Changed from d to r
             # create and open a GMH instrument instance
-            print'\nnbpages.SetupPage.CreateInstr(): \
-            Creating GMH device (%s -> %s).' % (d, r)
+            print'\nnbpages.SetupPage.CreateInstr(): Creating GMH device \
+ (%s -> %s).' % (d, r)
+            logger.info('Creating GMH device (%s -> %s).', d, r)
             devices.ROLES_INSTR.update({r: devices.GMH_Sensor(d, r)})
         else:
             # create a visa instrument instance
             print'\nnbpages.SetupPage.CreateInstr(): \
-            Creating VISA device (%s -> %s).' % (d, r)
+Creating VISA device (%s -> %s).' % (d, r)
+            logger.info('Creating VISA device (%s -> %s).', d, r)
             devices.ROLES_INSTR.update({r: devices.instrument(d, r)})
             devices.ROLES_INSTR[r].Open()
         self.SetInstr(d, r)
@@ -466,6 +470,7 @@ class SetupPage(wx.Panel):
         # Set the address cb to correct value (refer to devices.INSTR_DATA)
         a_cb = devices.ROLES_WIDGETS[r]['acb']
         print 'SetInstr(): Address =', devices.INSTR_DATA[d]['str_addr']
+        logger.info('Address = %s', devices.INSTR_DATA[d]['str_addr'])
         a_cb.SetValue((devices.INSTR_DATA[d]['str_addr']))
         if d == 'none':
             devices.ROLES_WIDGETS[r]['tbtn'].Enable(False)
@@ -495,6 +500,7 @@ class SetupPage(wx.Panel):
             devices.INSTR_DATA[d]['addr'] = int(addr)
             devices.ROLES_INSTR[r].addr = int(addr)
         print'UpdateAddr():', r, 'using', d, 'set to addr', addr, '(', a, ')'
+        logger.info('%s using %s,  set to addr %d (%s)', r, d, addr, a)
 
     def OnTest(self, e):
         # Called when a 'test' button is clicked
@@ -504,10 +510,12 @@ class SetupPage(wx.Panel):
                 d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
                 break  # stop looking when we've found right instr descr
         print'\nnbpages.SetupPage.OnTest():', d
+        logger.info('%s', d)
         assert_msg = '%s has no "test" parameter' % d
         assert 'test' in devices.INSTR_DATA[d], assert_msg
         test = devices.INSTR_DATA[d]['test']  # test string
         print '\tTest string:', test
+        logger.info('Test string: %s', test)
         self.Response.SetValue(str(devices.ROLES_INSTR[r].Test(test)))
         self.status.SetStatusText('Testing %s with cmd %s' % (d, test), 0)
 
@@ -785,7 +793,7 @@ measurement data.'
     def UpdateData(self, e):
         # Triggered by an 'update data' event
         # event parameter is a dictionary:
-        #  ud{'node:,'Vm':,'Vsd':,'time':,'row':,'Prog':,'end_flag':[0,1]}
+        # ud{'node:,'Vm':,'Vsd':,'time':,'row':,'Prog':,'end_flag':[0,1]}
         if 'node' in e.ud:
             self.Node.SetValue(str(e.ud['node']))
         if 'Vm' in e.ud:
@@ -809,25 +817,31 @@ measurement data.'
     def OnRs(self, e):
         self.Rs_val = self.Rs_choice_to_val[e.GetString()]  # an INT
         print '\nRunPage.OnRs(): Rs =', self.Rs_val
+        logger.info('Rs = %d', self.Rs_val)
         if e.GetString() in self.Rs_SWITCHABLE:  # a STRING
             s = str(int(math.log10(self.Rs_val)))  # '3','4','5' or '6'
             print '\nSwitching Rs - Sending "%s" to IVbox' % s
+            logger.info('Switching Rs - Sending "%s" to IVbox', s)
             devices.ROLES_INSTR['IVbox'].SendCmd(s)
 
     def OnNode(self, e):
         node = e.GetString()  # 'V1', 'V2', or 'V3'
         print'\nRunPage.OnNode():', node
+        logger.info('Node = %s', node)
         s = node[1]
         if s in ('1', '2'):
             print'\nRunPage.OnNode():Sending IVbox "', s, '"'
+            logger.info('Sending IVbox "%s"', s)
             devices.ROLES_INSTR['IVbox'].SendCmd(s)
         else:  # '3'
             print'\nRunPage.OnNode():IGNORING IVbox cmd "', s, '"'
+            logger.info('IGNORING IVbox cmd "%s"', s)
 
     def OnV1Set(self, e):
         # Called by change in value (manually OR by software!)
         V1 = e.GetValue()
-        print'RunPage.OnV1Set(): V1 =',V1,'(',type(V1),')'
+        print'RunPage.OnV1Set(): V1 =', V1, '(', type(V1), ')'
+        logger.info('V1 = %s', V1)
         src = devices.ROLES_INSTR['SRC']
         src.SetV(V1)
         time.sleep(0.5)
@@ -842,11 +856,13 @@ measurement data.'
         src = devices.ROLES_INSTR['SRC']
         if self.V1Setting.GetValue() == 0:
             print'RunPage.OnZeroVolts(): Zero/Stby directly'
+            logger.info('Zero/Stby directly')
             src.SetV(0)
             src.Stby()
         else:
             self.V1Setting.SetValue('0')  # Calls OnV1Set() ONLY IF VAL CHANGES
             print'RunPage.OnZeroVolts():  Zero/Stby via V1 display'
+            logger.info('Zero/Stby via V1 display')
 
     def OnStart(self, e):
         self.Progress.SetValue(0)
@@ -928,7 +944,9 @@ class PlotPage(wx.Panel):
 
     def UpdatePlot(self, e):
         print'PlotPage.UpdatePlot(): len(t)=', len(e.t)
+        logger.info('len(t) = %d', len(e.t))
         print e.node, 'len(V1)=', len(e.V12), 'len(V3)=', len(e.V3)
+        logger.info('%s, len(V1) = %d, len(V3) = %d', len(e.V12), len(e.V3))
         if e.node == 'V1':
             self.V1ax.plot_date(e.t, e.V12, 'bo')
         else:  # V2 data
@@ -1098,10 +1116,12 @@ class CalcPage(wx.Panel):
 
         self.Data_start_row = self.ws_Data['B1'].value
         print'Start row =', self.Data_start_row
+        logger.info('Start row = %d', self.Data_start_row)
         self.StartRow.SetValue(str(self.Data_start_row))
 
         self.Data_stop_row = self.GetStopRow()
         print'Stop row =', self.Data_stop_row
+        logger.info('Stop row = %d', self.Data_stop_row)
         self.StopRow.SetValue(str(self.Data_stop_row))
 
         # Set start row for next acquisition run:
@@ -1148,6 +1168,8 @@ class CalcPage(wx.Panel):
         print'Run_Id:', Run_Id
         print'gain =', DUC_gain
         print 'Mean_date:', Mean_date
+        logger.info('Comment: %s\nRun_Id: s\ngain = %d\nMean_date: %s',
+                     Comment, Run_Id, DUC_gain, Mean_date)
 
         # Determine mean env. conditions
         GMH_Ts = []
@@ -1165,6 +1187,7 @@ class CalcPage(wx.Panel):
 
         d = self.role_descr['GMH']
         print'role:GMH ->', d
+        logger.info('role:GMH -> %s', d)
         T_GMH_cor = self.I_INFO[d]['T_correction']  # deg C, additive, ureal
         T_GMH_raw = GTC.ta.estimate_digitized(GMH_Ts, 0.01)
         T_GMH = T_GMH_raw + T_GMH_cor + GMH_T_def
@@ -1267,25 +1290,27 @@ class CalcPage(wx.Panel):
                 Pt_R_cor.append(GTC.result(Pt_R_raw * (1 + DVMT_cor),
                                            label='Pt_Rcor'+str(r)))
                 T_Rs.append(GTC.result(self.R_to_T(Pt_alpha, Pt_beta,
-                                                      Pt_R_cor[r],
-                                                      Pt_R0, Pt_TRef)))
+                                                   Pt_R_cor[r],
+                                                   Pt_R0, Pt_TRef)))
 
             av_T_Rs = GTC.result(GTC.fn.mean(T_Rs),
-                                    label='av_T_Rs'+str(abs_nom_Vout))
+                                 label='av_T_Rs'+str(abs_nom_Vout))
             influencies.extend(Pt_R_cor)
             influencies.extend([Pt_alpha, Pt_beta, Pt_R0, Pt_TRef,
                                 DVMT_cor, Pt_T_def])  # av_T_Rs
-            assert Pt_alpha in influencies,'Pt_alpha missing from influencies!'
-            assert Pt_beta in influencies,'Pt_beta missing from influencies!'
-            assert Pt_R0 in influencies,'Pt_R0 missing from influencies!'
-            assert Pt_TRef in influencies,'Pt_TRef missing from influencies!'
-            assert DVMT_cor in influencies,'DVMT_cor missing from influencies!'
-            assert Pt_T_def in influencies,'Pt_T_def missing from influencies!'
+            assert Pt_alpha in influencies, 'Pt_alpha missing from influencies!'
+            assert Pt_beta in influencies, 'Pt_beta missing from influencies!'
+            assert Pt_R0 in influencies, 'Pt_R0 missing from influencies!'
+            assert Pt_TRef in influencies, 'Pt_TRef missing from influencies!'
+            assert DVMT_cor in influencies, 'DVMT_cor missing from influencies!'
+            assert Pt_T_def in influencies, 'Pt_T_def missing from influencies!'
 
             # Value of Rs
             nom_Rs = self.ws_Data['C'+str(row)].value
             print '\nNominal Rs value:', nom_Rs, 'Abs. Nom. Vout:\
 ', abs_nom_Vout, '\n'
+            logger.info('Nominal Rs value: %d\nAbs. Nom. Vout: %d',
+                         nom_Rs, abs_nom_Vout)
             Rs_name = self.Rs_VAL_NAME[nom_Rs]
             Rs_0 = self.R_INFO[Rs_name]['R0_LV']  # a ureal
             Rs_TRef = self.R_INFO[Rs_name]['TRef_LV']  # a ureal
@@ -1326,6 +1351,7 @@ class CalcPage(wx.Panel):
             budget_table_neg = []
             for i in influencies:
                 print'Working through influence variables:', i.label
+                logger.info('Working through influence variables: %s', i.label)
                 if i.u == 0:
                     sensitivity_pos = sensitivity_neg = 0
                 else:
@@ -1334,18 +1360,24 @@ class CalcPage(wx.Panel):
                 # Only include non-zero influencies:
                 if abs(GTC.component(I_pos, i)) > 0:
                     print 'Included component of I+:',GTC.component(I_pos, i)
+                    logger.info('Included component of I+: %d',
+                                 GTC.component(I_pos, i))
                     budget_table_pos.append([i.label, i.x, i.u, i.df,
                                              sensitivity_pos,
                                              GTC.component(I_pos, i)])
                 else:
                     print'ZERO COMPONENT of I+'
+                    logger.info('ZERO COMPONENT of I+')
                 if abs(GTC.component(I_neg, i)) > 0:
-                    print 'Included component of I_neg',GTC.component(I_neg, i)
+                    print 'Included component of I-:',GTC.component(I_neg, i)
+                    logger.info('Included component of I-: %d',
+                                 GTC.component(I_neg, i))
                     budget_table_neg.append([i.label, i.x, i.u, i.df,
                                              sensitivity_neg,
                                              GTC.component(I_neg, i)])
                 else:
                     print'ZERO COMPONENT of I-'
+                    logger.info('ZERO COMPONENT of I-')
             self.budget_table_pos_sorted = sorted(budget_table_pos,
                                                   key=self.by_u_cont,
                                                   reverse=True)
@@ -1369,6 +1401,7 @@ class CalcPage(wx.Panel):
         '''
         self.XLPath = self.GetTopLevelParent().ExcelPath
         print '\n', self.XLPath
+        logger.info('%s', self.XLPath)
         assert self.XLPath is not "", 'No data file open yet!'
 
         self.ws_Data = self.GetTopLevelParent().wb.get_sheet_by_name('Data')
@@ -1526,7 +1559,7 @@ class CalcPage(wx.Panel):
         Extract resistor and instrument parameters
         '''
         print '\nReading parameters...'
-        # log.write('Reading parameters...')
+        logger.info('Reading parameters...')
         headings = (u'Resistor Info:', u'Instrument Info:',
                     u'description', u'parameter', u'value',
                     u'uncert', u'dof', u'label', u'Comment / Reference')
@@ -1677,6 +1710,7 @@ class CalcPage(wx.Panel):
         '''
         r = self.result_row
         print'WriteThisResult(): Starting result_row =', r
+        logger.info('Starting result_row = %d', r)
         sh = self.ws_Results
 
         # Positive results 1st..
@@ -1724,5 +1758,6 @@ class CalcPage(wx.Panel):
             r += 1
 
         print'WriteThisResult(): Final result_row =', r
+        logger.info('Final result_row = %d', r)
         self.ws_Results['B1'].value = r+1
         return r+1  # Blank line between results

@@ -19,6 +19,7 @@ from threading import Thread
 import datetime as dt
 import time
 import numpy as np
+import logging
 
 from openpyxl.styles import Font, Border, Side
 
@@ -35,6 +36,7 @@ V1_MIN = 0.01  # 10 mV (S/N issues, noise limit)
 V1_MAX = 10  # 10 V (Opamp output limit)
 P_MAX = 480  # Maximum progress (20 measurement-cycles * 24 rows)
 
+logger = logging.getLogger(__name__)
 
 class AqnThread(Thread):
     """Acquisition Thread Class."""
@@ -54,21 +56,24 @@ class AqnThread(Thread):
         self.V12m = {'V1': 0, 'V2': 0}
         self.V12sd = {'V1': 0, 'V2': 0}
 
-        self.log = self.SetupPage.log
+#        self.log = self.SetupPage.log
 
         print'Role -> Instrument:'
-        print >>self.log, 'Role -> Instrument:'
+#        print >>self.log, 'Role -> Instrument:'
         print'------------------------------'
-        print >>self.log, '------------------------------'
+#        print >>self.log, '------------------------------'
+        logger.info('Role -> Instrument:')
         # Print all device objects
         for r in devices.ROLES_WIDGETS.keys():
             d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
             print'%s \t-> %s' % (devices.INSTR_DATA[d]['role'], d)
-            print >>self.log, '%s \t-> %s' % (devices.INSTR_DATA[d]['role'], d)
+            logger.info('%s \t-> %s', (devices.INSTR_DATA[d]['role'], d))
+#            print >>self.log, '%s \t-> %s' % (devices.INSTR_DATA[d]['role'], d)
             if r != devices.INSTR_DATA[d]['role']:
                 devices.INSTR_DATA[d]['role'] = r
                 print'Role data corrected to:', r, '->', d
-                print >>self.log, 'Role data corrected to:', r, '->', d
+                logger.info('Role data corrected to: %s -> %s', r, d)
+#                print >>self.log, 'Role data corrected to:', r, '->', d
 
         # Get filename of Excel file
         self.xlfilename = self.SetupPage.XLFile.GetValue()  # Full path
@@ -99,6 +104,7 @@ class AqnThread(Thread):
         This is where all the important stuff goes, in a repeated cycle.
         '''
         print'\nRUN START...\n'
+        logger.info('RUN START...')
 
         # Set button availability
         self.RunPage.StopBtn.Enable(True)
@@ -159,11 +165,13 @@ class AqnThread(Thread):
 
         for abs_V3 in TEST_V_OUT:  # Loop over desired output voltages
             print'\nV3:', abs_V3, 'V'
+            logger.info('V3: %d V', abs_V3)
             self.V1_nom = self.Rs*abs_V3/self.DUC_G
             self.I_nom = self.V1_nom/self.Rs
             if (abs(self.I_nom) <= I_MIN or abs(self.I_nom) >= I_MAX):
                 warning = '\nNominal I/P test-I outside scope! (%.1g A)\n' % self.I_nom
                 print warning
+                logger.warning(warning)
                 stat_ev = evts.StatusEvent(msg=warning, field=1)
                 wx.PostEvent(self.TopLevel, stat_ev)
                 pbar += 160
@@ -178,6 +186,7 @@ class AqnThread(Thread):
             if abs(self.V1_nom) < V1_MIN or abs(self.V1_nom) > V1_MAX:
                 warning = '\nNom. I/P test-V outside scope! (%.1g V)\n' % self.V1_nom
                 print warning
+                logger.warning(warning)
                 stat_ev = evts.StatusEvent(msg=warning, field=1)
                 wx.PostEvent(self.TopLevel, stat_ev)
                 pbar += 160
@@ -203,6 +212,7 @@ class AqnThread(Thread):
                     if abs(self.V1_set) == 0:
                         self.V1_set = 0.0
                     print'I/P test-V =', self.V1_set, '\tO/P test-V =',self.Vout
+                    logger.info('I/P test-V = %f \tO/P test-V = %f', self.V1_set, self.Vout)
 
                     stat_ev = evts.StatusEvent(msg='AqnThread.run():', field=0)
                     wx.PostEvent(self.TopLevel, stat_ev)
@@ -225,8 +235,9 @@ class AqnThread(Thread):
                     devices.ROLES_INSTR['DVM12'].SendCmd('DCV AUTO')
                     devices.ROLES_INSTR['DVM3'].SendCmd('DCV AUTO')
                     time.sleep(0.5)  # wait 0.5s after setting range
-                    
-                    print 'Aqn_thread.run(): masked V1_set =',self.V1_set
+
+                    print 'Aqn_thread.run(): masked V1_set =', self.V1_set
+                    logger.info('masked V1_set = %f', self.V1_set)
                     self.RunPage.V1Setting.SetValue(str(self.V1_set))
                     time.sleep(0.5)  # wait 0.5s after setting V
                     if self.V1_set == 0:
@@ -235,7 +246,7 @@ class AqnThread(Thread):
                         self.AbortRun()
                         return
                     time.sleep(30)  # wait 30s after applying V
-                    
+
 #                    cmd = 'DCV ' + str(abs(self.Vout))
 #                    print'DVM3 range cmd:',cmd
 #                    devices.ROLES_INSTR['DVM3'].SendCmd(cmd)
@@ -270,8 +281,10 @@ class AqnThread(Thread):
                         return
                     time.sleep(30)  # 30
 
-                    status_msg = 'Making {0:d} measurements each of {1:s} and V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
+                    status_msg = 'Making {0:d} measurements each of {1:s} and\
+V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
                     print status_msg
+                    logger.info(status_msg)
                     stat_ev = evts.StatusEvent(msg=status_msg, field=1)
                     wx.PostEvent(self.TopLevel, stat_ev)
 
@@ -296,7 +309,9 @@ class AqnThread(Thread):
                     self.tm = dt.datetime.fromtimestamp(np.mean(self.Times)).strftime("%d/%m/%Y %H:%M:%S")
                     self.V12m[node] = np.mean(self.V12Data[node])
                     self.V12sd[node] = np.std(self.V12Data[node], ddof=1)
-                    print 'V12m[{0:s}] = {1:.6f}'.format(node, self.V12m[node])
+                    meas_status = 'V12m[{0:s}] = {1:.6f}'.format(node, self.V12m[node])
+                    print meas_status
+                    logger.info(meas_status)
                     self.SetNode(node)
                     Update = {'node': node, 'Vm': self.V12m[node],
                               'Vsd': self.V12sd[node], 'time': self.tm,
@@ -353,13 +368,16 @@ class AqnThread(Thread):
         Update Node ComboBox and Change I/P node relays in IV-box
         '''
         print'AqnThread.SetNode(): ', node
+        logger.info('Node = %s', node)
         self.RunPage.Node.SetValue(node)  # Update widget value
         s = node[1]
         if s in ('1', '2'):
             print'AqnThread.SetNode():Sending IVbox "', s, '"'
+            logger.info('Sending IVbox "%s"', s)
             devices.ROLES_INSTR['IVbox'].SendCmd(s)
         else:  # '3'
             print'AqnThread.SetNode():IGNORING IVbox cmd "', s, '"'
+            logger.info('IGNORING IVbox cmd "%s"', s)
         time.sleep(1)
 
     def PlotThisRow(self, row, node):
@@ -431,11 +449,13 @@ class AqnThread(Thread):
             # Open non-GMH devices:
             if 'GMH' not in devices.ROLES_INSTR[r].Descr:
                 print'AqnThread.initialise(): Opening', d
-                print >>self.log, 'AqnThread.initialise(): Opening', d
+                logger.info('Opening %s', d)
+#                print >>self.log, 'AqnThread.initialise(): Opening', d
                 devices.ROLES_INSTR[r].Open()
             else:
                 print'AqnThread.initialise(): %s already open' % d
-                print >>self.log, 'AqnThread.initialise(): %s already open' % d
+                logger.info('%s already open', d)
+#                print >>self.log, 'AqnThread.initialise(): %s already open' % d
 
             stat_ev = evts.StatusEvent(msg=d, field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
@@ -545,6 +565,7 @@ class AqnThread(Thread):
         self.RunPage.StartBtn.Enable(True)
         self.RunPage.StopBtn.Enable(False)
         print'\nRun aborted.'
+        logger.info('Run aborted.')
 #        devices.ROLES_INSTR['DVM12'].SendCmd('DCV 10')
 #        devices.ROLES_INSTR['DVM3'].SendCmd('DCV 10')
 
@@ -581,7 +602,7 @@ class AqnThread(Thread):
         self._want_abort = 1
         time.sleep(1)
 
-    def filt(self,char):
+    def filt(self, char):
         '''
         A helper function to filter rubbish from DVM o/p unicode string
         and retain any number (as a string)

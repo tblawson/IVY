@@ -21,7 +21,10 @@ import numpy as np
 import os
 import ctypes as ct
 import visa
+import logging
 
+
+logger = logging.getLogger(__name__)
 '''
 INSTR_DATA:Dictionary of instrument parameter dictionaries,
 keyed by description.
@@ -216,6 +219,7 @@ class GMH_Sensor(device):
 
         if self.error_code.value in range(0, 4) or self.error_code.value == -2:
             print 'devices.GMH_Sensor.Open(): ', self.str_addr, 'is open.'
+            logger.info('%s is open', self.str_addr)
 
             # We're not there yet - test device responsiveness
             self.GetErrMsg()
@@ -227,6 +231,7 @@ class GMH_Sensor(device):
                 self.Transmit(1, self.ValFn)
                 if len(self.info) == 0:  # No device info yet
                     print 'devices.GMH_Sensor.Open(): Getting sensor info...'
+                    logger.info('Getting sensor info...')
                     self.GetSensorInfo()
                     self.demo = False  # If we've got this far, probably OK
                     ROLES_WIDGETS[self.role]['lbl'].SetForegroundColour(GREEN)
@@ -234,10 +239,12 @@ class GMH_Sensor(device):
                     return True
                 else:  # Already have device measurement info
                     print'devices.GMH_Sensor.Open(): Instr ready. demo=False.'
+                    logger.info('Instr ready. demo=False.')
                     self.demo = False  # If we've got this far, probably OK
                     return True
             else:  # No response
                 print 'devices.GMH_Sensor.Open():', self.error_msg.value
+                logger.info('%s', self.error_msg.value)
                 self.Close()
                 self.demo = True
                 ROLES_WIDGETS[self.role]['lbl'].SetForegroundColour(RED)
@@ -246,6 +253,7 @@ class GMH_Sensor(device):
 
         else:  # Com open failed
             print'devices.GMH_Sensor.Open() FAILED:', self.Descr
+            logger.warning('FAILED: %s', self.Descr)
             ROLES_WIDGETS[self.role]['lbl'].SetForegroundColour(RED)
             ROLES_WIDGETS[self.role]['lbl'].Refresh()
             self.Close()
@@ -255,6 +263,7 @@ class GMH_Sensor(device):
     def Init(self):
         print'devices.GMH_Sensor.Init():', self.Descr,
         'initiated (nothing happens here).'
+        logger.info('%s initiated (nothing happens here).', self.Descr)
         pass
 
     def Close(self):
@@ -277,9 +286,11 @@ class GMH_Sensor(device):
         self.GetErrMsg()
         if self.error_code.value < 0:
             print'\ndevices.GMH_Sensor.Transmit():FAIL'
+            logger.warning('FAIL')
             return False
         else:
             print'\ndevices.GMH_Sensor.Transmit():PASS'
+            logger.info('PASS')
             return True
 
     def GetErrMsg(self):
@@ -333,8 +344,11 @@ class GMH_Sensor(device):
                 units.append(self.unit_str.value)
 
                 print'Found', self.meas_str.value, '(', self.unit_str.value, ')', 'at address', Address
+                logger.info('Found %s (%s) at address %d',
+                            self.meas_str.value, self.unit_str.value, Address)
             else:
                 print'devices.GMH_Sensor.GetSensorInfo(): Exhausted addresses at', Address
+                logger.info('Exhausted addresses at %d', Address)
                 if Address > 1:  # Don't let last address tried screw it up.
                     self.error_code.value = 0
                     self.demo = False
@@ -345,6 +359,7 @@ class GMH_Sensor(device):
         self.info = dict(zip(measurements, zip(addresses, units)))
         print 'devices.GMH_Sensor.GetSensorInfo():\n', self.info,
         'demo =', self.demo
+        logger.info('%s demo = %s', self.info, self.demo)
         return len(self.info)
 
     def Measure(self, meas):
@@ -371,16 +386,19 @@ class GMH_Sensor(device):
 
             print'devices.Measure():', self.meas_alias[meas],
             '=', self.flData.value
+            logger.info('%s = %f', self.meas_alias[meas], self.flData.value)
             return self.flData.value
         else:
             assert self.demo is True, 'Illegal denial to demo device!'
             print'Generating demo data...'
+            logger.info('Generating demo data...')
             demo_rtn = {'T': (-20.5, 0.2), 'P': (-1013, 5), 'RH': (-50, 10)}
             return np.random.normal(*demo_rtn[meas])
 
     def Test(self, meas):
         """ Used to test that the device is functioning. """
         print'\ndevices.GMH_Sensor.Test()...'
+        logger.info('Testing %s with cmd %s...', self.Descr, meas)
         result = self.Measure(meas)
         return result
 
@@ -447,6 +465,8 @@ class instrument(device):
             ROLES_WIDGETS[self.role]['lbl'].SetBackgroundColour(green)
             print 'devices.instrument.Open():', self.Descr,
             'session handle=', self.instr.session
+            logger.info('%s: session handle=%d', self.Descr,
+                        self.instr.session)
             self.is_open = 1
         except visa.VisaIOError:
             self.instr = None
@@ -455,7 +475,8 @@ class instrument(device):
             ROLES_WIDGETS[self.role]['lbl'].SetForegroundColour(red)
             ROLES_WIDGETS[self.role]['lbl'].Refresh()
             INSTR_DATA[self.Descr]['demo'] = True
-            print 'devices.instrument.Open() failed:', self.Descr, 'opened in demo mode'  
+            print 'devices.instrument.Open() failed:', self.Descr, 'opened in demo mode' 
+            logger.warning('Failed: %s opened in demo mode', self.Descr)
         return self.instr
 
     def Close(self):
@@ -463,13 +484,17 @@ class instrument(device):
         if self.demo is True:
             print 'devices.instrument.Close():', self.Descr,
             'in demo mode - nothing to close'
+            logger.info('%s in demo mode - nothing to close.', self.Descr)
         elif self.instr is not None:
             print 'devices.instrument.Close(): Closing', self.Descr,
             '(session handle=', self.instr.session, ')'
+            logger.info('Closing %s (session handle=%d)',
+                        self.Descr, self.instr.session)
             self.instr.close()
         else:
             print 'devices.instrument.Close():', self.Descr,
             'is "None" or already closed'
+            logger.info('%s is "None" or already closed', self.Descr)
         self.is_open = 0
 
     def Init(self):
@@ -477,6 +502,8 @@ class instrument(device):
         if self.demo is True:
             print 'devices.instrument.Init():', self.Descr,
             'in demo mode - no initiation necessary'
+            logger.info('%s in demo mode - no initiation necessary',
+                        self.Descr)
             return 1
         else:
             reply = 1
@@ -486,10 +513,13 @@ class instrument(device):
                         self.instr.write(s)
                     except visa.VisaIOError:
                         print'Failed to write "%s" to %s' % (s, self.Descr)
+                        logger.warning('Failed to write "%s" to %s',
+                                       s, self.Descr)
                         reply = -1
                         return reply
             print 'devices.instrument.Init():', self.Descr,
             'initiated with cmd:', s
+            logger.info('%s initiated with cmd: %s', self.Descr, s)
         return reply
 
     def SetV(self, V):
@@ -501,13 +531,16 @@ class instrument(device):
         elif 'SRC:' in self.Descr:
             # Set voltage-source to V
             s = str(V).join(self.VStr)
-            print'devices.instrument.SetV(): V =',V
+            print'devices.instrument.SetV(): V =', V
             print'devices.instrument.SetV():', self.Descr, 's=', s
+            logging.info('%s: V = %f; s = "%s"', self.Descr, V, s)
             try:
                 self.instr.write(s)
             except visa.VisaIOError:
                 print'Failed to write "%s" to %s,\
                 via handle %s' % (s, self.Descr, self.instr.session)
+                logger.warning('Failed to write "%s" to %s via handle %s',
+                               s, self.Descr, self.instr.session)
                 return -1
             return 1
         elif 'DVM:' in self.Descr:
@@ -517,6 +550,7 @@ class instrument(device):
             return 1
         else:  # 'none' in self.Descr, (or something odd has happened)
             print 'Invalid function for instrument', self.Descr
+            logger.warning('Invalid function for instrument %s', self.Descr)
             return -1
 
     def SetFn(self):
@@ -528,9 +562,11 @@ class instrument(device):
             if s != '':
                 self.instr.write(s)
             print'devices.instrument.SetFn():', self.Descr, '- OK.'
+            logger.info('%s OK', self.Descr)
             return 1
         else:
             print'devices.instrument.SetFn(): Invalid function for', self.Descr
+            logger.warning('Invalid function for %s', self.Descr)
             return -1
 
     def Oper(self):
@@ -545,11 +581,14 @@ class instrument(device):
                     self.instr.write(s)
                 except visa.VisaIOError:
                     print'Failed to write "%s" to %s' % (s, self.Descr)
+                    logger.warning('Failed to write "%s" to %s', s, self.Descr)
                     return -1
             print'devices.instrument.Oper():', self.Descr, 'output ENABLED.'
+            logger.info('%s output ENABLED.', self.Descr)
             return 1
         else:
             print'devices.instrument.Oper(): Invalid function for', self.Descr
+            logger.warning('Invalid function for %s', self.Descr)
             return -1
 
     def Stby(self):
@@ -562,9 +601,11 @@ class instrument(device):
             if s != '':
                 self.instr.write(s)  # was: query(s)
             print'devices.instrument.Stby():', self.Descr, 'output DISABLED.'
+            logger.info('%s output DISABLED.', self.Descr)
             return 1
         else:
             print'devices.instrument.Stby(): Invalid function for', self.Descr
+            logger.warning('Invalid function for %s', self.Descr)
             return -1
 
     def CheckErr(self):
@@ -581,6 +622,7 @@ class instrument(device):
         else:
             print'devices.instrument.CheckErr(): Invalid function for',
             self.Descr
+            logger.warning('Invalid function for %s', self.Descr)
             return -1
 
     def SendCmd(self, s):
@@ -610,15 +652,18 @@ class instrument(device):
             return reply
         if 'DVM' in self.Descr:
             print'devices.instrument.Read(): from', self.Descr
+            logger.info('Reading from %s...', self.Descr)
             if '3458A' in self.Descr:
                 reply = self.instr.read()
                 print reply
+                logger.info('Reply = %s', reply)
                 return reply
             else:
                 reply = self.instr.query('READ?')
                 return reply
         else:
             print 'devices.instrument.Read(): Invalid function for', self.Descr
+            logger.warning('Invalid function for %s', self.Descr)
             return reply
 
     def Test(self, s):

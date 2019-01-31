@@ -37,15 +37,28 @@ import IVY_events as evts
 import devices
 import time
 import datetime as dt
+import logging
 
 VERSION = "0.3"
 
 print 'IVY', VERSION
 
-""" MainFrame Definition: holds the MainPanel in which the appliction runs"""
+# Start logging
+logname = 'IVYv'+VERSION+'_'+str(dt.date.today())+'.log'
+logfile = os.path.join(os.getcwd(), logname)
+
+fmt = '%(asctime)s %(levelname)s %(name)s:%(funcName)s(%(lineno)d): %(message)s'
+datefmt = '%Y-%m-%d %H:%M:%S'
+logging.basicConfig(filename=logfile, format=fmt, datefmt=datefmt,
+                    level=logging.INFO)
+logger = logging.getLogger('IVY.main')
+logger.info('\n_____________START____________')
 
 
 class MainFrame(wx.Frame):
+    '''
+    MainFrame Definition: holds the MainPanel in which the appliction runs
+    '''
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, size=(900, 500), *args, **kwargs)
         self.version = VERSION
@@ -106,11 +119,17 @@ class MainFrame(wx.Frame):
         sizer.Add(self.NoteBook, 1, wx.EXPAND)
         self.MainPanel.SetSizer(sizer)
 
-        # Open logfile
-        logname = 'IVYv'+str(self.version)+'_'+str(dt.date.today())+'.log'
-        logfile = os.path.join(os.getcwd(), logname)
-        print '\n### IVY_main.py: logfile:', logfile
-        self.log = open(logfile, 'a')
+#        # Start logging
+#        logname = 'IVYv'+str(self.version)+'_'+str(dt.date.today())+'.log'
+#        logfile = os.path.join(os.getcwd(), logname)
+#
+#        logging.basicConfig(filename=logfile,
+#                            format='%(levelname)s:%(name)s:%(funcName)s:\
+#  %(asctime)s:$(message)s', level=logging.INFO)
+#        logger = logging.getLogger('IVY.main')
+#        logger.info('### IVY_main.py: logfile: %s', logfile)
+#        print '\n### IVY_main.py: logfile:', logfile
+#        self.log = open(logfile, 'a')
 
     def UpdateStatus(self, e):
         if e.field == 'b':
