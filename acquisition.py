@@ -20,6 +20,7 @@ import datetime as dt
 import time
 import numpy as np
 import logging
+import json
 
 from openpyxl.styles import Font, Border, Side
 
@@ -37,6 +38,7 @@ V1_MAX = 10  # 10 V (Opamp output limit)
 P_MAX = 480  # Maximum progress (20 measurement-cycles * 24 rows)
 
 logger = logging.getLogger(__name__)
+
 
 class AqnThread(Thread):
     """Acquisition Thread Class."""
@@ -56,24 +58,18 @@ class AqnThread(Thread):
         self.V12m = {'V1': 0, 'V2': 0}
         self.V12sd = {'V1': 0, 'V2': 0}
 
-#        self.log = self.SetupPage.log
-
         print'Role -> Instrument:'
-#        print >>self.log, 'Role -> Instrument:'
         print'------------------------------'
-#        print >>self.log, '------------------------------'
         logger.info('Role -> Instrument:')
         # Print all device objects
         for r in devices.ROLES_WIDGETS.keys():
             d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
             print'%s \t-> %s' % (devices.INSTR_DATA[d]['role'], d)
             logger.info('%s \t-> %s', (devices.INSTR_DATA[d]['role'], d))
-#            print >>self.log, '%s \t-> %s' % (devices.INSTR_DATA[d]['role'], d)
             if r != devices.INSTR_DATA[d]['role']:
                 devices.INSTR_DATA[d]['role'] = r
                 print'Role data corrected to:', r, '->', d
                 logger.info('Role data corrected to: %s -> %s', r, d)
-#                print >>self.log, 'Role data corrected to:', r, '->', d
 
         # Get filename of Excel file
         self.xlfilename = self.SetupPage.XLFile.GetValue()  # Full path
@@ -169,7 +165,8 @@ class AqnThread(Thread):
             self.V1_nom = self.Rs*abs_V3/self.DUC_G
             self.I_nom = self.V1_nom/self.Rs
             if (abs(self.I_nom) <= I_MIN or abs(self.I_nom) >= I_MAX):
-                warning = '\nNominal I/P test-I outside scope! (%.1g A)\n' % self.I_nom
+                I_nom_str = '(%.1g A)' % self.I_nom
+                warning = '\nNominal I/P test-I outside scope! '+I_nom_str
                 print warning
                 logger.warning(warning)
                 stat_ev = evts.StatusEvent(msg=warning, field=1)
@@ -184,7 +181,8 @@ class AqnThread(Thread):
                 continue
 
             if abs(self.V1_nom) < V1_MIN or abs(self.V1_nom) > V1_MAX:
-                warning = '\nNom. I/P test-V outside scope! (%.1g V)\n' % self.V1_nom
+                V_nom_str = '(%.1g V)' % self.V1_nom
+                warning = '\nNom. I/P test-V outside scope! '+V_nom_str
                 print warning
                 logger.warning(warning)
                 stat_ev = evts.StatusEvent(msg=warning, field=1)
@@ -211,8 +209,10 @@ class AqnThread(Thread):
                     self.V1_set = -1.0*self.Vout*self.Rs/self.DUC_G
                     if abs(self.V1_set) == 0:
                         self.V1_set = 0.0
-                    print'I/P test-V =', self.V1_set, '\tO/P test-V =',self.Vout
-                    logger.info('I/P test-V = %f \tO/P test-V = %f', self.V1_set, self.Vout)
+                    print'I/P test-V = %f \tO/P test-V = %f' % (self.V1_set,
+                                                                self.Vout)
+                    logger.info('I/P test-V = %f \tO/P test-V = %f',
+                                self.V1_set, self.Vout)
 
                     stat_ev = evts.StatusEvent(msg='AqnThread.run():', field=0)
                     wx.PostEvent(self.TopLevel, stat_ev)
@@ -246,16 +246,6 @@ class AqnThread(Thread):
                         self.AbortRun()
                         return
                     time.sleep(30)  # wait 30s after applying V
-
-#                    cmd = 'DCV ' + str(abs(self.Vout))
-#                    print'DVM3 range cmd:',cmd
-#                    devices.ROLES_INSTR['DVM3'].SendCmd(cmd)
-#
-#                    cmd = 'DCV ' + str(abs(self.V1_set))
-#                    print'DVM12 range cmd:',cmd
-#                    devices.ROLES_INSTR['DVM12'].SendCmd(cmd)
-
-#                    time.sleep(0.5)  # wait 0.5s after setting range
 
                     if self._want_abort:
                         self.AbortRun()
@@ -304,8 +294,8 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
                     print'\n'
                     time.sleep(1)
 
-                    assert len(self.V12Data[node]) == NREADS,'Number of {0:s} readings != {1:d}!'.format(node, NREADS)
-                    assert len(self.Times) == NREADS,'Number of timestamps != {1:d}!'.format(NREADS)
+                    assert len(self.V12Data[node]) == NREADS, 'Number of {0:s} readings != {1:d}!'.format(node, NREADS)
+                    assert len(self.Times) == NREADS, 'Number of timestamps != {1:d}!'.format(NREADS)
                     self.tm = dt.datetime.fromtimestamp(np.mean(self.Times)).strftime("%d/%m/%Y %H:%M:%S")
                     self.V12m[node] = np.mean(self.V12Data[node])
                     self.V12sd[node] = np.std(self.V12Data[node], ddof=1)
@@ -322,7 +312,7 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
                     wx.PostEvent(self.RunPage, update_ev)
                     self.IPrange = float(devices.ROLES_INSTR['DVM12'].SendCmd('RANGE?'))
 
-                    time.sleep(2)  # Give user time to read values before update
+                    time.sleep(2)  # Give user time to read vas before update
 
                     assert len(self.V3Data) == NREADS,'Number of V3 readings != {1:d}!'.format(NREADS)
                     self.V3m = np.mean(self.V3Data)
@@ -450,12 +440,10 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
             if 'GMH' not in devices.ROLES_INSTR[r].Descr:
                 print'AqnThread.initialise(): Opening', d
                 logger.info('Opening %s', d)
-#                print >>self.log, 'AqnThread.initialise(): Opening', d
                 devices.ROLES_INSTR[r].Open()
             else:
                 print'AqnThread.initialise(): %s already open' % d
                 logger.info('%s already open', d)
-#                print >>self.log, 'AqnThread.initialise(): %s already open' % d
 
             stat_ev = evts.StatusEvent(msg=d, field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
@@ -465,8 +453,6 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
         wx.PostEvent(self.TopLevel, stat_ev)
 
     def SetUpMeasThisRow(self, node):
-#        devices.ROLES_INSTR['DVM12'].SendCmd('DCV AUTO')
-#        devices.ROLES_INSTR['DVM3'].SendCmd('DCV AUTO')
         d = devices.ROLES_INSTR['SRC'].Descr
         if 'F5520A' in d:
             err = devices.ROLES_INSTR['SRC'].CheckErr()  # 'ERR?','*CLS'
@@ -491,7 +477,6 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
             else:
                 dvmOP = devices.ROLES_INSTR['DVM12'].Read()
                 V = float(filter(self.filt, dvmOP))
-#                assert V <= 1.2*self.V1_set, 'DVM12 reading(V1) = ' + str(V)
                 self.V12Data['V1'].append(V)
 
         elif node == 'V2':
@@ -502,7 +487,6 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
             else:
                 dvmOP = devices.ROLES_INSTR['DVM12'].Read()
                 V = float(filter(self.filt, dvmOP))
-#                assert V <= 0.12, 'DVM12 reading(V2) = ' + str(V)
                 self.V12Data['V2'].append(V)
 
         elif node == 'V3':
@@ -514,8 +498,7 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
             else:
                 dvmOP = devices.ROLES_INSTR['DVM3'].Read()
                 V = float(filter(self.filt, dvmOP))
-                print'dvmOP =',V
-#                assert V <= 1.2*self.Vout, 'DVM3 reading = {0}, Vout = {1}'.format(V, self.Vout)
+                print'dvmOP =', V
                 self.V3Data.append(V)
 
         time.sleep(0.1)
@@ -566,8 +549,6 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
         self.RunPage.StopBtn.Enable(False)
         print'\nRun aborted.'
         logger.info('Run aborted.')
-#        devices.ROLES_INSTR['DVM12'].SendCmd('DCV 10')
-#        devices.ROLES_INSTR['DVM3'].SendCmd('DCV 10')
 
     def FinishRun(self):
         # Run complete - leave system safe and final xl save
@@ -586,8 +567,6 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
 
         self.RunPage.StartBtn.Enable(True)
         self.RunPage.StopBtn.Enable(False)
-#        devices.ROLES_INSTR['DVM12'].SendCmd('DCV 10')
-#        devices.ROLES_INSTR['DVM3'].SendCmd('DCV 10')
 
     def Standby(self):
         # Set sources to 0V and disable outputs
