@@ -50,41 +50,79 @@ class AqnThread(Thread):
         self.PlotPage = self.RunPage.GetParent().GetPage(2)
         self.TopLevel = self.RunPage.GetTopLevelParent()
         self.Comment = self.RunPage.Comment.GetValue()
+
         self._want_abort = 0
 
+#        self.widg = devices.ROLES_WIDGETS
         self.V12Data = {'V1': [], 'V2': []}
         self.V3Data = []
         self.Times = []
         self.V12m = {'V1': 0, 'V2': 0}
         self.V12sd = {'V1': 0, 'V2': 0}
 
+        # Dictionary for accumulating data for this run:
+        self.run_dict = {'RunID': self.RunPage.run_id,
+                         'Comment': self.Comment,
+                         'Rs': self.RunPage.Rs_val,
+                         'DUC_G': float(self.RunPage.DUCgain.GetValue()),
+                         'Instruments': {
+                             'SRC': devices.ROLES_INSTR['SRC'].Descr,
+                             'DVM12': devices.ROLES_INSTR['DVM12'].Descr,
+                             'DVM3': devices.ROLES_INSTR['DVM3'].Descr,
+                             'DVMT': devices.ROLES_INSTR['DVMT'].Descr,
+                             'GMH': devices.ROLES_INSTR['GMH'].Descr,
+                             'GMHroom': devices.ROLES_INSTR['GMHroom'].Descr
+#                             'SRC': self.widg['SRC']['icb'].GetValue(),
+#                             'DVM12': self.widg['DVM12']['icb'].GetValue(),
+#                             'DVM3': self.widg['DVM3']['icb'].GetValue(),
+#                             'DVMT': self.widg['DVMT']['icb'].GetValue(),
+#                             'GMH': self.widg['GMH']['icb'].GetValue(),
+#                             'GMHroom': self.widg['GMHroom']['icb'].GetValue()
+                                         },
+                         'Nreads': NREADS,
+                         'Date_time': [],
+                         'Node': [],
+                         'Nom_Vout': [],
+                         'OP_V': {'val': [], 'sd': []},
+                         'OPrange': [],
+                         'IP_V': {'val': [], 'sd': []},
+                         'IPrange': [],
+                         'T_GMH': [],
+                         'Pt_DVM': [],
+                         'Room_conds': {'T': [], 'P': [], 'RH': []},
+                         }
+
         print'Role -> Instrument:'
         print'------------------------------'
         logger.info('Role -> Instrument:')
         # Print all device objects
         for r in devices.ROLES_WIDGETS.keys():
-            d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
+            if r == 'IVbox':
+                d = 'IV_box'
+            else:
+                d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
+            self.run_dict[r] = d
             print'%s \t-> %s' % (devices.INSTR_DATA[d]['role'], d)
-            logger.info('%s \t-> %s', (devices.INSTR_DATA[d]['role'], d))
-            if r != devices.INSTR_DATA[d]['role']:
-                devices.INSTR_DATA[d]['role'] = r
-                print'Role data corrected to:', r, '->', d
-                logger.info('Role data corrected to: %s -> %s', r, d)
+            logger.info('%s \t-> %s', devices.INSTR_DATA[d]['role'], d)
+#            if r != devices.INSTR_DATA[d]['role']:
+#                devices.INSTR_DATA[d]['role'] = r
+#                print'Role data corrected to:', r, '->', d
+#                logger.info('Role data corrected to: %s -> %s', r, d)
 
         # Get filename of Excel file
         self.xlfilename = self.SetupPage.XLFile.GetValue()  # Full path
         self.path_components = self.xlfilename.split('\\')
         self.directory = '\\'.join(self.path_components[0:-1])
 
-        # Find existing workbook
-        self.wb_io = self.SetupPage.wb
-        self.ws = self.wb_io.get_sheet_by_name('Data')
+#        # Find existing workbook
+#        self.wb_io = self.SetupPage.wb
+#        self.ws = self.wb_io.get_sheet_by_name('Data')
+#
+#        # read start row number from Excel file
+#        self.start_row = self.ws['B1'].value
 
-        # read start row number from Excel file
-        self.start_row = self.ws['B1'].value
-
-        strt_ev = evts.StartRowEvent(row=self.start_row)
-        wx.PostEvent(self.RunPage, strt_ev)
+#        strt_ev = evts.StartRowEvent(row=self.start_row)
+#        wx.PostEvent(self.RunPage, strt_ev)
 
         self.settle_time = self.RunPage.SettleDel.GetValue()
 
@@ -110,7 +148,7 @@ class AqnThread(Thread):
         clr_plot_ev = evts.ClearPlotEvent()
         wx.PostEvent(self.PlotPage, clr_plot_ev)
 
-        self.WriteHeadings()
+#        self.WriteHeadings()
 
         stat_ev = evts.StatusEvent(msg='AqnThread.run():', field=0)
         wx.PostEvent(self.TopLevel, stat_ev)
@@ -134,16 +172,17 @@ class AqnThread(Thread):
             return
         stat_ev = evts.StatusEvent(msg=' Post-initialise delay (3s)', field=1)
         wx.PostEvent(self.TopLevel, stat_ev)
-        time.sleep(3)
+#        time.sleep(3)
 
-        self.WriteInstrAssignments()
+#        self.WriteInstrAssignments()
 
-        row = self.start_row  # Start of data
+#        row = self.start_row  # Start of data
+        row = 1
         pbar = 0
 
         '''
         The following sequence progresses through three blocks with nominal
-        output voltage of 0.1, 1 or 10 V. In each output voltage sub-block
+        output voltages of 0.1, 1 or 10 V. For each output voltage block
         the input DVM switches between the two nodes V1 and V2.
         For each input node, a mask is applied to the output voltage (and
         thus input V) causing the value to be set to 0 V, each polarity,
@@ -151,10 +190,10 @@ class AqnThread(Thread):
 
         Nominal input voltage and current are calculated based on nominal
         DUC gain and Rs. If the nominal input current would be outside the
-        scope {1e-11 < I < 1e-3} A, that 8-row block is skipped. If the nominal
-        calculated input voltage, required to result in the prescribed output,
-        would be outside the scope {0.01V < V < 10V}, that 8-row block is
-        skipped.
+        scope {1e-11 A < I < 1e-3 A}, that 8-row block is skipped. If the
+        nominal calculated input voltage, required to result in the prescribed
+        output, would be outside the scope {0.01 V < V < 10 V}, that 8-row
+        block is skipped.
         '''
         self.Rs = self.RunPage.Rs_val
         self.DUC_G = float(self.RunPage.DUCgain.GetValue())
@@ -194,6 +233,7 @@ class AqnThread(Thread):
                 update_ev = evts.DataEvent(ud=Update)
                 wx.PostEvent(self.RunPage, update_ev)
                 continue
+
             Update = {'node': '-', 'Vm': 0, 'Vsc': 0, 'time': '-', 'row': row,
                       'progress': 100.0*pbar/P_MAX, 'end_flag': 0}
             update_ev = evts.DataEvent(ud=Update)
@@ -222,35 +262,40 @@ class AqnThread(Thread):
                                                str(self.Vout), field=1)
                     wx.PostEvent(self.TopLevel, stat_ev)
 
-                    self.SetUpMeasThisRow(node)  # Clear F5520A errors, data
+                    self.SetUpMeasThisRow(node)  # Clear F5520A errors & data
                     if self._want_abort:
                         self.AbortRun()
                         return
-                    time.sleep(3)  # Wait 3s after checking F5520A error
+                    if not devices.ROLES_INSTR['SRC'].demo:
+                        time.sleep(3)  # Wait 3s after checking F5520A error
 
                     '''
                     Set DVM ranges to suit voltages that they're
-                    about to be exposed to. Start on 10V range:
+                    about to be exposed to:
                     '''
                     devices.ROLES_INSTR['DVM12'].SendCmd('DCV AUTO')
                     devices.ROLES_INSTR['DVM3'].SendCmd('DCV AUTO')
-                    time.sleep(0.5)  # wait 0.5s after setting range
+                    if not (devices.ROLES_INSTR['DVM12'].demo and
+                            devices.ROLES_INSTR['DVM3'].demo):
+                                time.sleep(0.5)  # Settle after setting range
 
                     print 'Aqn_thread.run(): masked V1_set =', self.V1_set
                     logger.info('masked V1_set = %f', self.V1_set)
                     self.RunPage.V1Setting.SetValue(str(self.V1_set))
-                    time.sleep(0.5)  # wait 0.5s after setting V
+                    if not devices.ROLES_INSTR['SRC'].demo:
+                        time.sleep(0.5)  # Settle after setting V
                     if self.V1_set == 0:
                         devices.ROLES_INSTR['SRC'].Oper()  # Over-ride 0V STBY
                     if self._want_abort:
                         self.AbortRun()
                         return
-                    time.sleep(30)  # wait 30s after applying V
+                    if not devices.ROLES_INSTR['SRC'].demo:
+                        time.sleep(30)  # wait after applying V and OPER mode.
 
-                    if self._want_abort:
-                        self.AbortRun()
-                        return
-                    time.sleep(5)  # wait 5s after setting voltage
+#                    if self._want_abort:
+#                        self.AbortRun()
+#                        return
+#                    time.sleep(5)  # wait 5s after setting voltage
 
                     # Prepare DVMs...
                     stat_ev = evts.StatusEvent(msg='Preparing DVMs...',
@@ -262,17 +307,20 @@ class AqnThread(Thread):
                     if self._want_abort:
                         self.AbortRun()
                         return
-                    time.sleep(3)
+                    if not (devices.ROLES_INSTR['DVM12'].demo and
+                            devices.ROLES_INSTR['DVM3'].demo):
+                                time.sleep(3)
 
                     devices.ROLES_INSTR['DVM12'].SendCmd('AZERO ONCE')
                     devices.ROLES_INSTR['DVM3'].SendCmd('AZERO ON')
                     if self._want_abort:
                         self.AbortRun()
                         return
-                    time.sleep(30)  # 30
+                    if not (devices.ROLES_INSTR['DVM12'].demo and devices.ROLES_INSTR['DVM3'].demo):
+                        time.sleep(30)  # 30
 
                     status_msg = 'Making {0:d} measurements each of {1:s} and\
-V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
+ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
                     print status_msg
                     logger.info(status_msg)
                     stat_ev = evts.StatusEvent(msg=status_msg, field=1)
@@ -310,15 +358,21 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
 
                     update_ev = evts.DataEvent(ud=Update)
                     wx.PostEvent(self.RunPage, update_ev)
-                    self.IPrange = float(devices.ROLES_INSTR['DVM12'].SendCmd('RANGE?'))
+                    IPrange = devices.ROLES_INSTR['DVM12'].SendCmd('RANGE?')
+                    if not isinstance(IPrange, float):
+                        IPrange = 0.0
+                    self.IPrange = IPrange
 
-                    time.sleep(2)  # Give user time to read vas before update
+                    time.sleep(2)  # Give user time to read vals before update
 
-                    assert len(self.V3Data) == NREADS,'Number of V3 readings != {1:d}!'.format(NREADS)
+                    assert len(self.V3Data) == NREADS, 'Number of V3 readings != {1:d}!'.format(NREADS)
                     self.V3m = np.mean(self.V3Data)
                     self.V3sd = np.std(self.V3Data, ddof=1)
                     self.T = devices.ROLES_INSTR['GMH'].Measure('T')
-                    self.OPrange = float(devices.ROLES_INSTR['DVM3'].SendCmd('RANGE?'))
+                    OPrange = devices.ROLES_INSTR['DVM3'].SendCmd('RANGE?')
+                    if not isinstance(OPrange, float):
+                        OPrange = 0.0
+                    self.OPrange = OPrange
 
                     self.SetNode('V3')
                     Update = {'node': 'V3', 'Vm': self.V3m, 'Vsd': self.V3sd,
@@ -332,7 +386,7 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
                     stat_ev = evts.StatusEvent(msg="Post-acqisn. delay (5s)",
                                                field=1)
                     wx.PostEvent(self.TopLevel, stat_ev)
-                    time.sleep(5)
+#                    time.sleep(5)
 
                     # Record room conditions
                     self.Troom = devices.ROLES_INSTR['GMHroom'].Measure('T')
@@ -341,11 +395,11 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
 
                     self.WriteDataThisRow(row, node)
                     self.PlotThisRow(row, node)
-                    time.sleep(1)
+                    time.sleep(0.1)
                     row += 1
 
                     # Reset start row for next measurement
-                    self.ws['B1'].value = row+3
+#                    self.ws['B1'].value = row+3
                 # (end of V3_mask loop)
             # (end of node loop)
         # (end of abs_V3 loop)
@@ -368,7 +422,8 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
         else:  # '3'
             print'AqnThread.SetNode():IGNORING IVbox cmd "', s, '"'
             logger.info('IGNORING IVbox cmd "%s"', s)
-        time.sleep(1)
+        if not devices.ROLES_INSTR['IVbox'].demo:
+            time.sleep(1)
 
     def PlotThisRow(self, row, node):
         # Plot data
@@ -376,7 +431,8 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
         for d in self.Times:
             Dates.append(dt.datetime.fromtimestamp(d))
         clear_plot = 0
-        if row == self.start_row:
+#        if row == self.start_row:
+        if row == 1:
             clear_plot = 1  # start each run with a clear plot
 
         plot_ev = evts.PlotEvent(t=Dates, V12=self.V12Data[node],
@@ -434,8 +490,10 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
         wx.PostEvent(self.TopLevel, stat_ev)
 
         for r in devices.ROLES_INSTR.keys():
-            d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
-
+            if r == 'IVbox':
+                d = 'IV_box'
+            else:
+                d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
             # Open non-GMH devices:
             if 'GMH' not in devices.ROLES_INSTR[r].Descr:
                 print'AqnThread.initialise(): Opening', d
@@ -448,7 +506,8 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
             stat_ev = evts.StatusEvent(msg=d, field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
             devices.ROLES_INSTR[r].Init()
-            time.sleep(1)
+            if not devices.ROLES_INSTR[r].demo:
+                time.sleep(1)
         stat_ev = evts.StatusEvent(msg='Done', field=0)
         wx.PostEvent(self.TopLevel, stat_ev)
 
@@ -457,7 +516,7 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
         if 'F5520A' in d:
             err = devices.ROLES_INSTR['SRC'].CheckErr()  # 'ERR?','*CLS'
             print'Cleared F5520A error:', err
-            print >>self.log, 'Cleared F5520A error:', err
+            logger.info('Cleared F5520A error: %s', err)
 
         del self.V12Data[node][:]
         del self.V3Data[:]
@@ -465,10 +524,7 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
 
     def MeasureV(self, node):
         assert node in ('V1', 'V2', 'V3'), 'Unknown argument to MeasureV().'
-        '''
-        Just want one set of 20 timestamps -
-        could have been either V1 or V2 instead.
-        '''
+
         if node == 'V1':
             if devices.ROLES_INSTR['DVM12'].demo is True:
                 dvmOP = np.random.normal(self.V1_set,
@@ -490,6 +546,10 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
                 self.V12Data['V2'].append(V)
 
         elif node == 'V3':
+            '''
+            Just want one set of 20 timestamps -
+            could have been either V1 or V2 instead.
+            '''
             self.Times.append(time.time())
             if devices.ROLES_INSTR['DVM3'].demo is True:
                 dvmOP = np.random.normal(self.Vout,
@@ -500,8 +560,9 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
                 V = float(filter(self.filt, dvmOP))
                 print'dvmOP =', V
                 self.V3Data.append(V)
-
-        time.sleep(0.1)
+        if not (devices.ROLES_INSTR['DVM12'].demo and
+                devices.ROLES_INSTR['DVM3'].demo):
+                    time.sleep(0.1)
         return 1
 
     def WriteDataThisRow(self, row, node):
@@ -511,31 +572,49 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
         stat_ev = evts.StatusEvent(msg='Row '+str(row), field=1)
         wx.PostEvent(self.TopLevel, stat_ev)
 
-        self.ws['A'+str(row)] = self.Comment
-        self.ws['B'+str(row)] = self.DUC_G
-        self.ws['C'+str(row)] = self.Rs
-        self.ws['D'+str(row)] = node
-        self.ws['E'+str(row)] = str(dt.datetime.fromtimestamp(np.mean(self.Times)).strftime("%d/%m/%Y %H:%M:%S"))
-        self.ws['F'+str(row)] = NREADS
-        self.ws['G'+str(row)] = self.Vout  # Nominal output
-        self.ws['H'+str(row)] = self.V3m  # Measured output
-        self.ws['I'+str(row)] = self.V3sd
-        self.ws['J'+str(row)] = self.V12m[node]
-        self.ws['K'+str(row)] = self.V12sd[node]
-        self.ws['L'+str(row)] = self.T
+#        self.ws['A'+str(row)] = self.Comment
+#        self.ws['B'+str(row)] = self.DUC_G
+#        self.ws['C'+str(row)] = self.Rs
+#        self.ws['D'+str(row)] = node
+#        self.ws['E'+str(row)] = str(dt.datetime.fromtimestamp(np.mean(self.Times)).strftime("%d/%m/%Y %H:%M:%S"))
+#        self.ws['F'+str(row)] = NREADS
+#        self.ws['G'+str(row)] = self.Vout  # Nominal output
+#        self.ws['H'+str(row)] = self.V3m  # Measured output
+#        self.ws['I'+str(row)] = self.V3sd
+#        self.ws['J'+str(row)] = self.V12m[node]
+#        self.ws['K'+str(row)] = self.V12sd[node]
+#        self.ws['L'+str(row)] = self.T
         if devices.ROLES_INSTR['DVMT'].demo is True:
             TdvmOP = np.random.normal(108.0, 1.0e-2)
+            self.TdvmOP = TdvmOP
         else:
             TdvmOP = devices.ROLES_INSTR['DVMT'].Read()  # .SendCmd('READ?')
-        self.ws['M'+str(row)] = float(filter(self.filt, TdvmOP))
-        self.ws['N'+str(row)] = self.IPrange
-        self.ws['O'+str(row)] = self.OPrange
-        self.ws['P'+str(row)] = self.Troom
-        self.ws['Q'+str(row)] = self.Proom
-        self.ws['R'+str(row)] = self.RHroom
+            self.TdvmOP = float(filter(self.filt, TdvmOP))
+#        self.ws['M'+str(row)] = self.TdvmOP
+#        self.ws['N'+str(row)] = self.IPrange
+#        self.ws['O'+str(row)] = self.OPrange
+#        self.ws['P'+str(row)] = self.Troom
+#        self.ws['Q'+str(row)] = self.Proom
+#        self.ws['R'+str(row)] = self.RHroom
+#
+#        # Save after every row
+#        self.wb_io.save(self.xlfilename)
 
-        # Save after every row
-        self.wb_io.save(self.xlfilename)
+        # Update run_dict:
+        self.run_dict['Node'].append(node)
+        self.run_dict['Nom_Vout'].append(self.Vout)
+        self.run_dict['Date_time'].append(self.tm)
+        self.run_dict['IP_V']['val'].append(self.V12m[node])
+        self.run_dict['IP_V']['sd'].append(self.V12sd[node])
+        self.run_dict['IPrange'].append(self.IPrange)
+        self.run_dict['OP_V']['val'].append(self.V3m)
+        self.run_dict['OP_V']['sd'].append(self.V3sd)
+        self.run_dict['OPrange'].append(self.OPrange)
+        self.run_dict['Pt_DVM'].append(self.TdvmOP)
+        self.run_dict['T_GMH'].append(self.T)
+        self.run_dict['Room_conds']['T'].append(self.Troom)
+        self.run_dict['Room_conds']['P'].append(self.Proom)
+        self.run_dict['Room_conds']['RH'].append(self.RHroom)
 
     def AbortRun(self):
         # prematurely end run, prompted by regular checks of _want_abort flag
@@ -552,7 +631,11 @@ V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
 
     def FinishRun(self):
         # Run complete - leave system safe and final xl save
-        self.wb_io.save(self.xlfilename)
+#        self.wb_io.save(self.xlfilename)
+
+        run_data_jsn = json.dumps(self.run_dict, indent=4)
+        with open('IVY_RawRunData.json', 'a') as IVY_out:
+            IVY_out.write(run_data_jsn)
 
         self.Standby()  # Set sources to 0V and leave system safe
 

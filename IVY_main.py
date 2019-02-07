@@ -47,7 +47,7 @@ print 'IVY', VERSION
 logname = 'IVYv'+VERSION+'_'+str(dt.date.today())+'.log'
 logfile = os.path.join(os.getcwd(), logname)
 
-fmt = '%(asctime)s %(levelname)s %(name)s:%(funcName)s(%(lineno)d): %(message)s'
+fmt = '%(asctime)s %(levelname)s %(name)s:%(funcName)s(L%(lineno)d): %(message)s'
 datefmt = '%Y-%m-%d %H:%M:%S'
 logging.basicConfig(filename=logfile, format=fmt, datefmt=datefmt,
                     level=logging.INFO)

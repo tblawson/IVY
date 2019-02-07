@@ -440,7 +440,7 @@ class SetupPage(wx.Panel):
          For GMH instruments, use GMH dll, not visa.
         '''
         print '\nCreateInstr(%s,%s)...' % (d, r)
-        logger.info('Instr: %s; role: %s)...', d, r)
+        logger.info('Instr = %s; role = %s)...', d, r)
         if 'GMH' in r:  # Changed from d to r
             # create and open a GMH instrument instance
             print'\nnbpages.SetupPage.CreateInstr(): Creating GMH device \
@@ -946,7 +946,7 @@ class PlotPage(wx.Panel):
         print'PlotPage.UpdatePlot(): len(t)=', len(e.t)
         logger.info('len(t) = %d', len(e.t))
         print e.node, 'len(V1)=', len(e.V12), 'len(V3)=', len(e.V3)
-        logger.info('%s, len(V1) = %d, len(V3) = %d', len(e.V12), len(e.V3))
+        logger.info('len(V1) = %d, len(V3) = %d', len(e.V12), len(e.V3))
         if e.node == 'V1':
             self.V1ax.plot_date(e.t, e.V12, 'bo')
         else:  # V2 data
