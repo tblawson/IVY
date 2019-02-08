@@ -53,7 +53,6 @@ class AqnThread(Thread):
 
         self._want_abort = 0
 
-#        self.widg = devices.ROLES_WIDGETS
         self.V12Data = {'V1': [], 'V2': []}
         self.V3Data = []
         self.Times = []
@@ -61,24 +60,10 @@ class AqnThread(Thread):
         self.V12sd = {'V1': 0, 'V2': 0}
 
         # Dictionary for accumulating data for this run:
-        self.run_dict = {'RunID': self.RunPage.run_id,
-                         'Comment': self.Comment,
+        self.run_dict = {'Comment': self.Comment,
                          'Rs': self.RunPage.Rs_val,
                          'DUC_G': float(self.RunPage.DUCgain.GetValue()),
-                         'Instruments': {
-                             'SRC': devices.ROLES_INSTR['SRC'].Descr,
-                             'DVM12': devices.ROLES_INSTR['DVM12'].Descr,
-                             'DVM3': devices.ROLES_INSTR['DVM3'].Descr,
-                             'DVMT': devices.ROLES_INSTR['DVMT'].Descr,
-                             'GMH': devices.ROLES_INSTR['GMH'].Descr,
-                             'GMHroom': devices.ROLES_INSTR['GMHroom'].Descr
-#                             'SRC': self.widg['SRC']['icb'].GetValue(),
-#                             'DVM12': self.widg['DVM12']['icb'].GetValue(),
-#                             'DVM3': self.widg['DVM3']['icb'].GetValue(),
-#                             'DVMT': self.widg['DVMT']['icb'].GetValue(),
-#                             'GMH': self.widg['GMH']['icb'].GetValue(),
-#                             'GMHroom': self.widg['GMHroom']['icb'].GetValue()
-                                         },
+                         'Instruments': {},
                          'Nreads': NREADS,
                          'Date_time': [],
                          'Node': [],
@@ -96,12 +81,13 @@ class AqnThread(Thread):
         print'------------------------------'
         logger.info('Role -> Instrument:')
         # Print all device objects
-        for r in devices.ROLES_WIDGETS.keys():
+        for r in devices.ROLES_INSTR.keys():
             if r == 'IVbox':
                 d = 'IV_box'
             else:
-                d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
-            self.run_dict[r] = d
+                d = devices.ROLES_INSTR[r].Descr
+            sub_dict = {r: d}
+            self.run_dict['Instruments'].update(sub_dict)
             print'%s \t-> %s' % (devices.INSTR_DATA[d]['role'], d)
             logger.info('%s \t-> %s', devices.INSTR_DATA[d]['role'], d)
 #            if r != devices.INSTR_DATA[d]['role']:
@@ -633,9 +619,10 @@ class AqnThread(Thread):
         # Run complete - leave system safe and final xl save
 #        self.wb_io.save(self.xlfilename)
 
-        run_data_jsn = json.dumps(self.run_dict, indent=4)
-        with open('IVY_RawRunData.json', 'a') as IVY_out:
-            IVY_out.write(run_data_jsn)
+        RunID = str(self.RunPage.run_id)
+        self.RunPage.master_run_dict.update({RunID: self.run_dict})
+        with open('IVY_RunData.json', 'w') as IVY_out:
+            json.dump(self.RunPage.master_run_dict, IVY_out)
 
         self.Standby()  # Set sources to 0V and leave system safe
 

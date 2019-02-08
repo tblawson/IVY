@@ -37,6 +37,7 @@ from numbers import Number
 matplotlib.rc('lines', linewidth=1, color='blue')
 
 logger = logging.getLogger(__name__)
+
 '''
 ------------------------
 # Setup Page definition:
@@ -765,6 +766,8 @@ measurement data.'
 
         self.autocomstr = ''
         self.manstr = ''
+
+        self.master_run_dict = {}  # Dict to hold all runs for this app session
 
     def OnNewRunID(self, e):
         start = self.fullstr.find('DUC: ')
