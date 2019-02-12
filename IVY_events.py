@@ -29,7 +29,7 @@ ClearPlotEvent, EVT_CLEARPLOT = wx.lib.newevent.NewEvent()
 # Event to pass massages back to MainFrame, to update status bar
 StatusEvent, EVT_STAT = wx.lib.newevent.NewEvent()
 
-# Event to update RunPage start_row display 
+# Event to update RunPage start_row display
 StartRowEvent, EVT_START_ROW = wx.lib.newevent.NewEvent()
 
 # Event to update RunPage stop_row display
@@ -42,7 +42,7 @@ RowEvent, EVT_ROW = wx.lib.newevent.NewEvent()
 DelaysEvent, EVT_DELAYS = wx.lib.newevent.NewEvent()
 
 # Event to update Run Id
-#RunIdEvent, EVT_RUNID = wx.lib.newevent.NewEvent()
+# RunIdEvent, EVT_RUNID = wx.lib.newevent.NewEvent()
 
 # Event to update file path text_ctrl on SetupPage
 FilePathEvent, EVT_FILEPATH = wx.lib.newevent.NewEvent()

@@ -16,6 +16,7 @@ from wx.lib.masked import NumCtrl
 import datetime as dt
 import time
 import math
+import json
 
 import matplotlib
 matplotlib.use('WXAgg')  # Agg renderer for drawing on a wx canvas
@@ -26,7 +27,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.ticker as mtick
 
-from openpyxl import load_workbook, cell
+#from openpyxl import load_workbook, cell
 import IVY_events as evts
 import acquisition as acq
 import devices
@@ -607,6 +608,7 @@ class RunPage(wx.Panel):
         self.status = self.GetTopLevelParent().sb
         self.version = self.GetTopLevelParent().version
         self.run_id = 'none'
+        self.data_file = 'IVY_RunData.json'
 
         self.GAINS_CHOICE = ['1e3', '1e4', '1e5', '1e6',
                              '1e7', '1e8', '1e9', '1e10']
@@ -989,7 +991,8 @@ class CalcPage(wx.Panel):
         wx.Panel.__init__(self, parent)
 
         self.version = self.GetTopLevelParent().version
-        self.Run_id = self.GetTopLevelParent().page2.run_id
+#        self.Run_id = self.GetTopLevelParent().page2.run_id
+        self.data_file = self.GetTopLevelParent().page2.data_file
 
         self.Rs_VALUES = self.GetTopLevelParent().page2.Rs_VALUES
         self.Rs_NAMES = ['I-V 1k', 'I-V 10k',
@@ -997,146 +1000,190 @@ class CalcPage(wx.Panel):
                          'I-V 100M', 'I-V 1G']
         self.Rs_VAL_NAME = dict(zip(self.Rs_VALUES, self.Rs_NAMES))
 
+#        self.RunID_choices = []
+
         gbSizer = wx.GridBagSizer()
 
         # Analysis set-up:
-        StartRowLbl = wx.StaticText(self,
-                                    id=wx.ID_ANY, label='Data Start row:')
-        gbSizer.Add(StartRowLbl, pos=(0, 0),
-                    span=(1, 1), flag=wx.ALL | wx.EXPAND, border=5)
-        self.StartRow = wx.TextCtrl(self, id=wx.ID_ANY,
-                                    style=wx.TE_READONLY)  # TE_PROCESS_ENTER
-        self.StartRow.Bind(wx.EVT_TEXT_ENTER, self.OnStartRow)
+#        RunIDLbl = wx.StaticText(self, id=wx.ID_ANY, label='Run ID:')
+#        StartRowLbl = wx.StaticText(self,
+#                                    id=wx.ID_ANY, label='Data Start row:')
+#        gbSizer.Add(RunIDLbl, pos=(0, 0), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#        self.StartRow.Bind(wx.EVT_TEXT_ENTER, self.OnStartRow)
 #        self.StartRow.SetToolTipString("Enter start row here BEFORE \
 # clicking 'Analyze' button.")
-        gbSizer.Add(self.StartRow, pos=(0, 1), span=(1, 1),
+
+                    
+        self.ListRuns = wx.Button(self, id=wx.ID_ANY, label='List run IDs')
+        self.ListRuns.Bind(wx.EVT_BUTTON, self.OnListRuns)
+        gbSizer.Add(self.ListRuns, pos=(0, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
-        StopRowLbl = wx.StaticText(self, id=wx.ID_ANY,
-                                   label='Data Stop row:')
-        gbSizer.Add(StopRowLbl, pos=(0, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        self.StopRow = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.StopRow, pos=(0, 3), span=(1, 1),
+        self.RunID = wx.ComboBox(self, id=wx.ID_ANY,
+                                 style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.RunID.Bind(wx.EVT_COMBOBOX, self.OnRunChoice)
+        gbSizer.Add(self.RunID, pos=(0, 1), span=(1, 4),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
         self.Analyze = wx.Button(self, id=wx.ID_ANY, label='Analyze')
         self.Analyze.Bind(wx.EVT_BUTTON, self.OnAnalyze)
-        gbSizer.Add(self.Analyze, pos=(0, 4), span=(1, 2),
+        gbSizer.Add(self.Analyze, pos=(0, 5), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
-        self.h_sep1 = wx.StaticLine(self, id=wx.ID_ANY, style=wx.LI_HORIZONTAL)
-        gbSizer.Add(self.h_sep1, pos=(1, 0), span=(1, 6),
+        self.h_sep1 = wx.StaticLine(self, id=wx.ID_ANY, size=(400, 1),
+                                    style=wx.LI_HORIZONTAL)
+        gbSizer.Add(self.h_sep1, pos=(1, 0), span=(1, 3),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
+        self.h_sep2 = wx.StaticLine(self, id=wx.ID_ANY, size=(400, 1),
+                                    style=wx.LI_HORIZONTAL)
+        gbSizer.Add(self.h_sep2, pos=(1, 3), span=(1, 3),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+
+        # Run summary:
+        RunInfoLbl = wx.StaticText(self, id=wx.ID_ANY, label='Run Summary:')
+        gbSizer.Add(RunInfoLbl, pos=(2, 0), span=(1, 3),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+
+        self.RunInfo = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_MULTILINE |
+                                   wx.TE_READONLY | wx.HSCROLL)
+        gbSizer.Add(self.RunInfo, pos=(3, 0), span=(20, 3),
+                    flag=wx.ALL | wx.EXPAND, border=5)
         # Analysis results:
-        RangeLbl = wx.StaticText(self, id=wx.ID_ANY,
-                                 label='Range or Gain (V/A):')
-        gbSizer.Add(RangeLbl, pos=(2, 0), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        self.Range = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.Range, pos=(3, 0), span=(1, 1),
+        ResultsLbl = wx.StaticText(self, id=wx.ID_ANY, label='Results Summary:')
+        gbSizer.Add(ResultsLbl, pos=(2, 3), span=(1, 3),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
-        DeltaVLbl = wx.StaticText(self, id=wx.ID_ANY, label='O/P Delta-V:')
-        gbSizer.Add(DeltaVLbl, pos=(2, 1), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        self.DeltaV_01 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.DeltaV_01, pos=(3, 1), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        self.DeltaV_1 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.DeltaV_1, pos=(4, 1), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        self.DeltaV_10 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.DeltaV_10, pos=(5, 1), span=(1, 1),
+        self.Results = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_MULTILINE |
+                                   wx.TE_READONLY | wx.HSCROLL)
+        gbSizer.Add(self.Results, pos=(3, 3), span=(20, 3),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
-        PosILbl = wx.StaticText(self, id=wx.ID_ANY, label='+I in (A):')
-        gbSizer.Add(PosILbl, pos=(2, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        self.PosI_01 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.PosI_01, pos=(3, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        self.PosI_1 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.PosI_1, pos=(4, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        self.PosI_10 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.PosI_10, pos=(5, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-
-        NegILbl = wx.StaticText(self, id=wx.ID_ANY, label='-I in (A):')
-        gbSizer.Add(NegILbl, pos=(2, 3), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        self.NegI_01 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.NegI_01, pos=(3, 3), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        self.NegI_1 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.NegI_1, pos=(4, 3), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        self.NegI_10 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.NegI_10, pos=(5, 3), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-
-        ExpULbl = wx.StaticText(self, id=wx.ID_ANY, label='Exp. U (A):')
-        gbSizer.Add(ExpULbl, pos=(2, 4), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        self.ExpU_01 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.ExpU_01, pos=(3, 4), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        self.ExpU_1 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.ExpU_1, pos=(4, 4), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        self.ExpU_10 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.ExpU_10, pos=(5, 4), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-
-        CovFactLbl = wx.StaticText(self, id=wx.ID_ANY, label='k:')
-        gbSizer.Add(CovFactLbl, pos=(2, 5), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        self.CovFact_01 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.CovFact_01, pos=(3, 5), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        self.CovFact_1 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.CovFact_1, pos=(4, 5), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        self.CovFact_10 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.CovFact_10, pos=(5, 5), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+#        RangeLbl = wx.StaticText(self, id=wx.ID_ANY,
+#                                 label='Range or Gain (V/A):')
+#        gbSizer.Add(RangeLbl, pos=(2, 0), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#        self.Range = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+#        gbSizer.Add(self.Range, pos=(3, 0), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#
+#        DeltaVLbl = wx.StaticText(self, id=wx.ID_ANY, label='O/P Delta-V:')
+#        gbSizer.Add(DeltaVLbl, pos=(2, 1), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#        self.DeltaV_01 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+#        gbSizer.Add(self.DeltaV_01, pos=(3, 1), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#        self.DeltaV_1 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+#        gbSizer.Add(self.DeltaV_1, pos=(4, 1), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#        self.DeltaV_10 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+#        gbSizer.Add(self.DeltaV_10, pos=(5, 1), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#
+#        PosILbl = wx.StaticText(self, id=wx.ID_ANY, label='+I in (A):')
+#        gbSizer.Add(PosILbl, pos=(2, 2), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#        self.PosI_01 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+#        gbSizer.Add(self.PosI_01, pos=(3, 2), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#        self.PosI_1 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+#        gbSizer.Add(self.PosI_1, pos=(4, 2), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#        self.PosI_10 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+#        gbSizer.Add(self.PosI_10, pos=(5, 2), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#
+#        NegILbl = wx.StaticText(self, id=wx.ID_ANY, label='-I in (A):')
+#        gbSizer.Add(NegILbl, pos=(2, 3), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#        self.NegI_01 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+#        gbSizer.Add(self.NegI_01, pos=(3, 3), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#        self.NegI_1 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+#        gbSizer.Add(self.NegI_1, pos=(4, 3), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#        self.NegI_10 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+#        gbSizer.Add(self.NegI_10, pos=(5, 3), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#
+#        ExpULbl = wx.StaticText(self, id=wx.ID_ANY, label='Exp. U (A):')
+#        gbSizer.Add(ExpULbl, pos=(2, 4), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#        self.ExpU_01 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+#        gbSizer.Add(self.ExpU_01, pos=(3, 4), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#        self.ExpU_1 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+#        gbSizer.Add(self.ExpU_1, pos=(4, 4), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#        self.ExpU_10 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+#        gbSizer.Add(self.ExpU_10, pos=(5, 4), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#
+#        CovFactLbl = wx.StaticText(self, id=wx.ID_ANY, label='k:')
+#        gbSizer.Add(CovFactLbl, pos=(2, 5), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#        self.CovFact_01 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+#        gbSizer.Add(self.CovFact_01, pos=(3, 5), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#        self.CovFact_1 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+#        gbSizer.Add(self.CovFact_1, pos=(4, 5), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#        self.CovFact_10 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+#        gbSizer.Add(self.CovFact_10, pos=(5, 5), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
 
         self.SetSizerAndFit(gbSizer)
-        self.V01_widgets = [self.DeltaV_01, self.PosI_01, self.NegI_01,
-                            self.ExpU_01, self.CovFact_01]
-        self.V1_widgets = [self.DeltaV_1, self.PosI_1, self.NegI_1,
-                           self.ExpU_1, self.CovFact_1]
-        self.V10_widgets = [self.DeltaV_10, self.PosI_10, self.NegI_10,
-                            self.ExpU_10, self.CovFact_10]
-        self.Vout_widgets = {0.1: self.V01_widgets,
-                             1: self.V1_widgets,
-                             10: self.V10_widgets}
+#        self.V01_widgets = [self.DeltaV_01, self.PosI_01, self.NegI_01,
+#                            self.ExpU_01, self.CovFact_01]
+#        self.V1_widgets = [self.DeltaV_1, self.PosI_1, self.NegI_1,
+#                           self.ExpU_1, self.CovFact_1]
+#        self.V10_widgets = [self.DeltaV_10, self.PosI_10, self.NegI_10,
+#                            self.ExpU_10, self.CovFact_10]
+#        self.Vout_widgets = {0.1: self.V01_widgets,
+#                             1: self.V1_widgets,
+#                             10: self.V10_widgets}
 
+    def OnListRuns(self, e):
+        '''
+        Open the .json data file and de-serialize into the dictionary
+        self.run_data for later access. Update the choices in the 'Run ID'
+        widget to the run ids (used as primary keys in self.run_data).
+        '''
+        with open(self.data_file, 'r') as in_file:
+            self.run_data = json.load(in_file)
+            self.run_IDs = self.run_data.keys()
+        
+        self.RunID.AppendItems(self.run_IDs)
+
+    def OnRunChoice(self, e):
+        ID = e.GetString()
+        self.runstr = json.dumps(self.run_data[ID], indent=4)
+        self.RunInfo.write(self.runstr)
+    
     def OnAnalyze(self, e):
-        self.GetXL()
-
-        self.Data_start_row = self.ws_Data['B1'].value
-        print'Start row =', self.Data_start_row
-        logger.info('Start row = %d', self.Data_start_row)
-        self.StartRow.SetValue(str(self.Data_start_row))
-
-        self.Data_stop_row = self.GetStopRow()
-        print'Stop row =', self.Data_stop_row
-        logger.info('Stop row = %d', self.Data_stop_row)
-        self.StopRow.SetValue(str(self.Data_stop_row))
-
-        # Set start row for next acquisition run:
-        self.ws_Data['B1'].value = self.Data_stop_row + 4
-
-        self.Results_start_row = self.ws_Results['B1'].value
+#        self.GetXL()
+#
+#        self.Data_start_row = self.ws_Data['B1'].value
+#        print'Start row =', self.Data_start_row
+#        logger.info('Start row = %d', self.Data_start_row)
+#        self.StartRow.SetValue(str(self.Data_start_row))
+#
+#        self.Data_stop_row = self.GetStopRow()
+#        print'Stop row =', self.Data_stop_row
+#        logger.info('Stop row = %d', self.Data_stop_row)
+#        self.StopRow.SetValue(str(self.Data_stop_row))
+#
+#        # Set start row for next acquisition run:
+#        self.ws_Data['B1'].value = self.Data_stop_row + 4
+#
+#        self.Results_start_row = self.ws_Results['B1'].value
 
         for V in [0.1, 1, 10]:
-            for i in range(5):
-                self.Vout_widgets[V][i].SetValue('')
+#            for i in range(5):
+#                self.Vout_widgets[V][i].SetValue('')
 
-        self.GetInstrAssignments()  # Result: self.role_descr
+#        self.GetInstrAssignments()  # Result: self.role_descr
         self.GetParams()  # Result: self.I_INFO, self.R_INFO
 
         # Correction for Pt-100 sensor DVM:
