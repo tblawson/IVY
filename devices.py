@@ -25,6 +25,7 @@ import logging
 
 
 logger = logging.getLogger(__name__)
+
 '''
 INSTR_DATA:Dictionary of instrument parameter dictionaries,
 keyed by description.

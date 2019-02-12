@@ -48,6 +48,7 @@ class AqnThread(Thread):
         self.RunPage = parent
         self.SetupPage = self.RunPage.GetParent().GetPage(0)
         self.PlotPage = self.RunPage.GetParent().GetPage(2)
+        self.CalcPage = self.RunPage.GetParent().GetPage(3)
         self.TopLevel = self.RunPage.GetTopLevelParent()
         self.Comment = self.RunPage.Comment.GetValue()
 
@@ -620,8 +621,11 @@ class AqnThread(Thread):
 #        self.wb_io.save(self.xlfilename)
 
         RunID = str(self.RunPage.run_id)
+        self.CalcPage.RunID_choices.append(RunID)
+        data_file = str(self.RunPage.data_file)
+
         self.RunPage.master_run_dict.update({RunID: self.run_dict})
-        with open('IVY_RunData.json', 'w') as IVY_out:
+        with open(data_file, 'w') as IVY_out:
             json.dump(self.RunPage.master_run_dict, IVY_out)
 
         self.Standby()  # Set sources to 0V and leave system safe
