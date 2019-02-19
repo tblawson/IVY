@@ -22,107 +22,48 @@ import os
 import ctypes as ct
 import visa
 import logging
+import json
 
 
 logger = logging.getLogger(__name__)
 
+Res_file = 'IVY_Resistors.json'
+Instr_file = 'IVY_Instruments.json'
+
+
+def StripChars(oldstr, charlist=''):
+    '''
+    Strip characters from oldstr and return newstr that does not contain any of
+    the characters in charlist.
+    '''
+    for ch in charlist:
+        newstr = ''.join(oldstr.split(ch))
+        oldstr = newstr
+    return newstr
+
+#  Load resistor and instrument info:
+with open(Res_file, 'r') as Res_fp:
+    R_str = StripChars(Res_fp.read(), '\t\n')
+RES_DATA = json.loads(R_str)
+
+with open(Instr_file, 'r') as Instr_fp:
+    I_str = StripChars(Instr_fp.read(), '\t\n')
+INSTR_DATA = json.loads(I_str)
+
+ROLES_WIDGETS = {}
+ROLES_INSTR = {}
+
 '''
-INSTR_DATA:Dictionary of instrument parameter dictionaries,
+RES_DATA: Dictionary of known resistance standards.
+INSTR_DATA: Dictionary of instrument parameter dictionaries,
 keyed by description.
 ROLES_WIDGETS: Dictionary of GUI widgets keyed by role.
 ROLES_INSTR: Dictionary of GMH_sensor or Instrument objects,
 keyed by role.
 '''
-INSTR_DATA = {
-    'none': {'addr': 0, 'str_addr': 'NOADDRESS',
-             'test': None,
-             'demo': True,
-             'role': None},
-    'GMH:s/n628': {'addr': 5, 'str_addr': 'COM5',
-                   'test': 'T',
-                   'demo': True,
-                   'role': None},
-    'GMH:s/n367': {'addr': 8, 'str_addr': 'COM8',
-                   'test': 'RH',
-                   'demo': True,
-                   'role': None},
-    'GMH:s/n627': {'addr': 9, 'str_addr': 'COM9',
-                   'test': 'T',
-                   'demo': True,
-                   'role': None},
-    'DVM_34420A:s/n130': {'addr': 7, 'str_addr': 'GPIB0::7::INSTR',
-                          'test': '*IDN?',
-                          'init_str': 'FUNC OHMF;OCOMP ON',
-                          'demo': True,
-                          'role': None},
-    'DVM_34401A:s/n976': {'addr': 17, 'str_addr': 'GPIB0::17::INSTR',
-                          'test': '*IDN?',
-                          'init_str': 'FUNC OHMF;OCOMP ON',
-                          'demo': True,
-                          'role': None},
-    'DVM_3458A:s/n066': {'addr': 20, 'str_addr': 'GPIB0::20::INSTR',  # Was 0
-                         'test': 'ID?',
-                         'init_str': 'DCV',
-                         'demo': True,
-                         'role': None},
-    'DVM_3458A:s/n129': {'addr': 25, 'str_addr': 'GPIB0::25::INSTR',
-                         'test': 'ID?',
-                         'init_str': 'DCV',
-                         'demo': True,
-                         'role': None},
-    'DVM_3458A:s/n230': {'addr': 21, 'str_addr': 'GPIB0::21::INSTR',  # Was 22
-                         'test': 'ID?',
-                         'init_str': 'DCV',
-                         'demo': True,
-                         'role': None},
-    'DVM_3458A:s/n382': {'addr': 22, 'str_addr': 'GPIB0::22::INSTR',
-                         'test': 'ID?',
-                         'init_str': 'DCV',
-                         'demo': True,
-                         'role': None},
-    'DVM_3458A:s/n452': {'addr': 23, 'str_addr': 'GPIB0::23::INSTR',
-                         'test': 'ID?',
-                         'init_str': 'DCV',
-                         'demo': True,
-                         'role': None},
-    'DVM_3458A:s/n518': {'addr': 24, 'str_addr': 'GPIB0::24::INSTR',
-                         'test': 'ID?',
-                         'init_str': 'DCV',
-                         'demo': True,
-                         'role': None},
-    'DVM_3458A:s/n452': {'addr': 23, 'str_addr': 'GPIB0::23::INSTR',
-                         'test': 'ID?',
-                         'init_str': 'DCV',
-                         'demo': True,
-                         'role': None},
-    'SRC_D4808': {'addr': 2, 'str_addr': 'GPIB0::2::INSTR',
-                  'test': 'X8=',
-                  'init_str': ['F0G0D0S0=', 'M+0O1=', 'R0='],
-                  'setV_str': ['M', '='],
-                  'oper_str': 'O1=',
-                  'stby_str': 'O0=',
-                  'demo': True,
-                  'role': None},
-    'SRC_F5520A': {'addr': 4, 'str_addr': 'GPIB0::4::INSTR',
-                   'test': '*IDN?',
-                   'init_str': None,
-                   'SetV_str': ['OUT', 'V,0Hz'],
-                   'oper_str': 'OPER',
-                   'stby_str': 'STBY',
-                   'chk_err_str': ['ERR?', '*CLS'],
-                   'demo': True,
-                   'role': None},
-    'IV_box': {'addr': 4, 'str_addr': 'COM4',
-               'test': None,  # Depends on icb setting
-               'demo': True,
-               'role': 'IVbox'}
-}
 
 RED = (255, 0, 0)
 GREEN = (0, 127, 0)
-
-ROLES_WIDGETS = {}
-ROLES_INSTR = {}
 
 """
 VISA-specific stuff:

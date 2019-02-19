@@ -993,11 +993,13 @@ class CalcPage(wx.Panel):
         self.version = self.GetTopLevelParent().version
 #        self.Run_id = self.GetTopLevelParent().page2.run_id
         self.data_file = self.GetTopLevelParent().page2.data_file
+        self.results_file = 'IVY_Results.json'
+        self.Results = {}
 
         self.Rs_VALUES = self.GetTopLevelParent().page2.Rs_VALUES
-        self.Rs_NAMES = ['I-V 1k', 'I-V 10k',
-                         'I-V 100k', 'I-V 1M', 'I-V 10M',
-                         'I-V 100M', 'I-V 1G']
+        self.Rs_NAMES = ['IV1k 1k', 'IV10k 10k',
+                         'IV100k 100k', 'IV1M 1M', 'IV10M 10M',
+                         'IV100M 100M', 'IV1G 1G']
         self.Rs_VAL_NAME = dict(zip(self.Rs_VALUES, self.Rs_NAMES))
 
 #        self.RunID_choices = []
@@ -1014,7 +1016,6 @@ class CalcPage(wx.Panel):
 #        self.StartRow.SetToolTipString("Enter start row here BEFORE \
 # clicking 'Analyze' button.")
 
-                    
         self.ListRuns = wx.Button(self, id=wx.ID_ANY, label='List run IDs')
         self.ListRuns.Bind(wx.EVT_BUTTON, self.OnListRuns)
         gbSizer.Add(self.ListRuns, pos=(0, 0), span=(1, 1),
@@ -1051,13 +1052,15 @@ class CalcPage(wx.Panel):
         gbSizer.Add(self.RunInfo, pos=(3, 0), span=(20, 3),
                     flag=wx.ALL | wx.EXPAND, border=5)
         # Analysis results:
-        ResultsLbl = wx.StaticText(self, id=wx.ID_ANY, label='Results Summary:')
+        ResultsLbl = wx.StaticText(self, id=wx.ID_ANY,
+                                   label='Results Summary:')
         gbSizer.Add(ResultsLbl, pos=(2, 3), span=(1, 3),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
-        self.Results = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_MULTILINE |
-                                   wx.TE_READONLY | wx.HSCROLL)
-        gbSizer.Add(self.Results, pos=(3, 3), span=(20, 3),
+        self.ResultSummary = wx.TextCtrl(self, style=wx.TE_MULTILINE |
+                                         wx.TE_READONLY | wx.HSCROLL,
+                                         id=wx.ID_ANY,)
+        gbSizer.Add(self.ResultSummary, pos=(3, 3), span=(20, 3),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
 #        RangeLbl = wx.StaticText(self, id=wx.ID_ANY,
@@ -1153,15 +1156,19 @@ class CalcPage(wx.Panel):
         with open(self.data_file, 'r') as in_file:
             self.run_data = json.load(in_file)
             self.run_IDs = self.run_data.keys()
-        
+
+        self.RunID.Clear()
+        self.RunID.SetValue(self.run_IDs[0])
         self.RunID.AppendItems(self.run_IDs)
 
     def OnRunChoice(self, e):
         ID = e.GetString()
         self.runstr = json.dumps(self.run_data[ID], indent=4)
         self.RunInfo.write(self.runstr)
-    
+
     def OnAnalyze(self, e):
+        self.run_ID = self.RunID.GetValue()
+        self.this_run = self.run_data[self.run_ID]
 #        self.GetXL()
 #
 #        self.Data_start_row = self.ws_Data['B1'].value
@@ -1179,15 +1186,18 @@ class CalcPage(wx.Panel):
 #
 #        self.Results_start_row = self.ws_Results['B1'].value
 
-        for V in [0.1, 1, 10]:
+#        for V in [0.1, 1, 10]:
 #            for i in range(5):
 #                self.Vout_widgets[V][i].SetValue('')
 
 #        self.GetInstrAssignments()  # Result: self.role_descr
-        self.GetParams()  # Result: self.I_INFO, self.R_INFO
+#        self.GetParams()  # Result: self.I_INFO, self.R_INFO
 
         # Correction for Pt-100 sensor DVM:
-        DVMT_cor = self.I_INFO[self.role_descr['DVMT']]['correction_100r']
+
+
+        DVMT = self.this_run['Instruments']['DVMT']
+        DVMT_cor = self.BuildUreal(devices.INSTR_DATA[DVMT]['correction_100r'])
 
         '''
         Pt sensor is a few cm away from input resistors, so assume a
@@ -1195,10 +1205,11 @@ class CalcPage(wx.Panel):
         '''
         Pt_T_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](0.1),
                              3, label='Pt_T_def')
-        Pt_alpha = self.R_INFO['Pt 100r']['alpha']
-        Pt_beta = self.R_INFO['Pt 100r']['beta']
-        Pt_R0 = self.R_INFO['Pt 100r']['R0_LV']
-        Pt_TRef = self.R_INFO['Pt 100r']['TRef_LV']
+
+        Pt_alpha = self.BuildUreal(devices.RES_DATA['Pt 100r']['alpha'])
+        Pt_beta = self.BuildUreal(devices.RES_DATA['Pt 100r']['beta'])
+        Pt_R0 = self.BuildUreal(devices.RES_DATA['Pt 100r']['R0_LV'])
+        Pt_TRef = self.BuildUreal(devices.RES_DATA['Pt 100r']['TRef_LV'])
 
         '''
         GMH sensor is a few cm away from DUC which, itself, has a size of
@@ -1207,115 +1218,156 @@ class CalcPage(wx.Panel):
         GMH_T_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](0.1),
                               3, label='GMH_T_def')
 
-        Comment = self.ws_Data['A'+str(self.Data_start_row)].value
-        Run_Id = self.ws_Data['B'+str(self.Data_start_row-2)].value
+        Comment = self.this_run['Comment']
         DUC_name = self.GetNamefromComment(Comment)
-        DUC_gain = self.ws_Data['B'+str(self.Data_start_row)].value
-        self.Range.SetValue(str('{0:.2e}'.format(DUC_gain)))
+        DUC_gain = self.this_run['DUC_G']
+#        self.Range.SetValue(str('{0:.2e}'.format(DUC_gain)))
         Mean_date = self.GetMeanDate()
+        Proc_date = dt.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
 
         print'Comment:', Comment
-        print'Run_Id:', Run_Id
+        print'Run_Id:', self.run_ID
         print'gain =', DUC_gain
         print 'Mean_date:', Mean_date
-        logger.info('Comment: %s\nRun_Id: s\ngain = %d\nMean_date: %s',
-                     Comment, Run_Id, DUC_gain, Mean_date)
+        logger.info('Comment: %s\nRun_ID: %s\ngain = %s\nMean_date: %s',
+                    Comment, self.run_ID, DUC_gain, Mean_date)
 
         # Determine mean env. conditions
-        GMH_Ts = []
-        GMHroom_RHs = []
-        GMHroom_Ps = []
-        row = self.Data_start_row
-        del GMH_Ts[:]
-        del GMHroom_RHs[:]
-        del GMHroom_Ps[:]
-        while row <= self.Data_stop_row:
-            GMH_Ts.append(self.ws_Data['L'+str(row)].value)
-            GMHroom_RHs.append(self.ws_Data['R'+str(row)].value)
-            GMHroom_Ps.append(self.ws_Data['Q'+str(row)].value)
-            row += 1
+#        GMH_Ts = []
+#        GMHroom_RHs = []
+#        GMHroom_Ps = []
+        GMH_Ts = self.this_run['T_GMH']
+        GMHroom_RHs = self.this_run['Room_conds']['RH']
+        GMHroom_Ps = self.this_run['Room_conds']['P']
+#        row = self.Data_start_row
+        
+#        while row <= self.Data_stop_row:
+#            GMH_Ts.append(self.ws_Data['L'+str(row)].value)
+#            GMHroom_RHs.append(self.ws_Data['R'+str(row)].value)
+#            GMHroom_Ps.append(self.ws_Data['Q'+str(row)].value)
+#            row += 1
 
-        d = self.role_descr['GMH']
-        print'role:GMH ->', d
-        logger.info('role:GMH -> %s', d)
-        T_GMH_cor = self.I_INFO[d]['T_correction']  # deg C, additive, ureal
+#        d = self.role_descr['GMH']
+        d = self.this_run['Instruments']['GMH']
+        T_GMH_cor = self.BuildUreal(devices.INSTR_DATA[d]['T_correction'])
         T_GMH_raw = GTC.ta.estimate_digitized(GMH_Ts, 0.01)
         T_GMH = T_GMH_raw + T_GMH_cor + GMH_T_def
+        T_GMH_k = GTC.rp.k_factor(T_GMH.df)
+        T_GMH_EU = T_GMH.u*T_GMH_k
 
-        d = self.role_descr['GMHroom']
-        RH_cor = self.I_INFO[d]['RH_correction']
+        d = self.this_run['Instruments']['GMHroom']
+        RH_cor = self.BuildUreal(devices.INSTR_DATA[d]['RH_correction'])
         RH_raw = GTC.ta.estimate_digitized(GMHroom_RHs, 0.1)
         RH = RH_raw*(1 + RH_cor)
+        RH_k = GTC.rp.k_factor(RH.df)
+        RH_EU = RH.u*RH_k
 
         # Re-use d (same instrument description)
-        if 'P_correction' in self.I_INFO[d].keys():
-            P_cor = self.I_INFO[d]['P_correction']
-        else:
-            P_cor = GTC.ureal(0, 0)
-
+        P_cor = self.BuildUreal(devices.INSTR_DATA[d]['P_correction'])
         P_raw = GTC.ta.estimate_digitized(GMHroom_Ps, 0.1)
         P = P_raw*(1 + P_cor)
+        P_k = GTC.rp.k_factor(P.df)
+        P_EU = P.u*P_k
 
-        self.result_row = self.Write_Summary(Comment, Run_Id, DUC_name,
-                                             DUC_gain, Mean_date, T_GMH, RH, P)
+#        self.result_row = self.Write_Summary(Comment, Run_Id, DUC_name,
+#                                             DUC_gain, Mean_date, T_GMH, RH, P)
+        self.Results.update({self.run_ID: {}})
+        self.ThisResult = self.Results[self.run_ID]
+        self.ThisResult.update({'Comment': Comment,
+                                'Date': Mean_date,
+                                'Processed date': Proc_date,
+                                'DUC name': DUC_name,
+                                'DUC gain': DUC_gain,
+                                'T_GMH': {},
+                                'RH': {},
+                                'P': {},
+                                'Nom_dV': {0.1: {}, -0.1: {},
+                                           1.0: {}, -1.0: {},
+                                           10: {}, -10: {}
+                                           }})
+
+        self.ThisResult['T_GMH'].update({'value': T_GMH.x,
+                                         'uncert': T_GMH.u,
+                                         'dof': T_GMH.df,
+                                         'k': T_GMH_k,
+                                         'ExpU': T_GMH_EU})
+
+        self.ThisResult['RH'].update({'value': RH.x,
+                                      'uncert': RH.u,
+                                      'dof': RH.df,
+                                      'k': RH_k,
+                                      'ExpU': RH_EU})
+
+        self.ThisResult['P'].update({'value': P.x,
+                                     'uncert': P.u,
+                                     'dof': P.df,
+                                     'k': P_k,
+                                     'ExpU': P_EU})
 
         influencies = []
         V1s = []
         V2s = []
         V3s = []
-        row = self.Data_start_row
-        while row < self.Data_stop_row:
+#        row = self.Data_start_row
+#        while row < self.Data_stop_row:
+        num_rows = len(self.this_run['Nom_Vout'])
+        for row in range(0, num_rows, 8):
             gains = set()
             # 'neg' and 'pos' refer to polarity of OUTPUT VOLTAGE, not
             # input current!
-            neg_nom_Vout = self.ws_Data['G'+str(row+1)].value
-            pos_nom_Vout = self.ws_Data['G'+str(row+2)].value
-            abs_nom_Vout = pos_nom_Vout
+#            neg_nom_Vout = self.ws_Data['G'+str(row+1)].value
+            self.neg_nom_Vout = self.this_run['Nom_Vout'][row+1]
+#            pos_nom_Vout = self.ws_Data['G'+str(row+2)].value
+            self.pos_nom_Vout = self.this_run['Nom_Vout'][row+2]
+            abs_nom_Vout = self.pos_nom_Vout
 
             # Construct ureals from raw voltage data, including gain correction
             for n in range(4):
-                label_suffix_1 = self.ws_Data['D'+str(row+n)].value+'_'+str(n)
-                label_suffix_2 = self.ws_Data['D'+str(row+4+n)].value+'_'+str(n)
+                label_suffix_1 = self.this_run['Node'][row+n]+'_'+str(n)
+                label_suffix_2 = self.this_run['Node'][row+4+n]+'_'+str(n)
                 label_suffix_3 = 'V3' + '_' + str(n)
 
-                V1_v = self.ws_Data['J'+str(row+n)].value
-                V1_u = self.ws_Data['K'+str(row+n)].value
-                V1_d = self.ws_Data['F'+str(row+n)].value - 1
+                V1_v = self.this_run['IP_V']['val'][row+n]
+                V1_u = self.this_run['IP_V']['sd'][row+n]
+                V1_d = self.this_run['Nreads'] - 1
                 V1_l = 'OP'+str(abs_nom_Vout)+'_'+label_suffix_1
-                d1 = self.role_descr['DVM12']
+
+                d1 = self.this_run['Instruments']['DVM12']
                 gain_param = self.get_gain_err_param(V1_v)
-                gain = self.I_INFO[d1][gain_param]
+                gain = self.BuildUreal(devices.INSTR_DATA[d1][gain_param])
                 gains.add(gain)
                 V1_raw = GTC.ureal(V1_v, V1_u, V1_d, label=V1_l)
                 V1s.append(GTC.result(V1_raw/gain))
 
-                V2_v = self.ws_Data['J'+str(row+4+n)].value
-                V2_u = self.ws_Data['K'+str(row+4+n)].value
-                V2_d = self.ws_Data['F'+str(row+4+n)].value - 1
+                V2_v = self.this_run['IP_V']['val'][row+4+n]
+                V2_u = self.this_run['IP_V']['sd'][row+4+n]
+                V2_d = self.this_run['Nreads'] - 1
                 V2_l = 'OP'+str(abs_nom_Vout)+'_'+label_suffix_2
-                d2 = self.role_descr['DVM12']
+
+                d2 = d1  # Same DVM
                 gain_param = self.get_gain_err_param(V2_v)
-                gain = self.I_INFO[d2][gain_param]
+                gain = self.BuildUreal(devices.INSTR_DATA[d2][gain_param])
                 gains.add(gain)
                 V2_raw = GTC.ureal(V2_v, V2_u, V2_d, label=V2_l)
                 V2s.append(GTC.result(V2_raw/gain))
 
-                V3_v = self.ws_Data['H'+str(row+n)].value
-                V3_u = self.ws_Data['I'+str(row+n)].value
-                V3_d = self.ws_Data['F'+str(row+n)].value - 1
+                V3_v = self.this_run['OP_V']['val'][row+n]
+                V3_u = self.this_run['OP_V']['sd'][row+n]
+                V3_d = self.this_run['Nreads'] - 1
                 V3_l = 'OP'+str(abs_nom_Vout)+'_'+label_suffix_3
-                d3 = self.role_descr['DVM3']
+
+                d3 = self.this_run['Instruments']['DVM3']
                 gain_param = self.get_gain_err_param(V3_v)
-                gain = self.I_INFO[d3][gain_param]
+                gain = self.BuildUreal(devices.INSTR_DATA[d3][gain_param])
                 gains.add(gain)
                 V3_raw = GTC.ureal(V3_v, V3_u, V3_d, label=V3_l)
                 V3s.append(GTC.result(V3_raw/gain))
 
-                GMH_Ts.append(self.ws_Data['L'+str(row)].value)
-                GMH_Ts.append(self.ws_Data['L'+str(row+4)].value)
+#                GMH_Ts.append(self.ws_Data['L'+str(row)].value)
+#                GMH_Ts.append(self.ws_Data['L'+str(row+4)].value)
                 influencies.extend([V1_raw, V2_raw, V3_raw])
 
-            influencies.extend(list(gains))  # A list of unique gain corrections - no copies.
+            influencies.extend(list(gains))  # List of unique gain corrections.
             print 'list of gains:'
             for g in list(gains):
                 print g.s
@@ -1335,12 +1387,11 @@ class CalcPage(wx.Panel):
             # Rs Temperature
             T_Rs = []
             Pt_R_cor = []
-            for r in range(8):
-                Pt_R_raw = self.ws_Data['M'+str(row+r)].value
-                Pt_R_cor.append(GTC.result(Pt_R_raw * (1 + DVMT_cor),
-                                           label='Pt_Rcor'+str(r)))
+            for n, R_raw in enumerate(self.this_run['Pt_DVM'][row:row+8]):
+                Pt_R_cor.append(GTC.result(R_raw * (1 + DVMT_cor),
+                                           label='Pt_Rcor'+str(n)))
                 T_Rs.append(GTC.result(self.R_to_T(Pt_alpha, Pt_beta,
-                                                   Pt_R_cor[r],
+                                                   Pt_R_cor[n],
                                                    Pt_R0, Pt_TRef)))
 
             av_T_Rs = GTC.result(GTC.fn.mean(T_Rs),
@@ -1348,24 +1399,25 @@ class CalcPage(wx.Panel):
             influencies.extend(Pt_R_cor)
             influencies.extend([Pt_alpha, Pt_beta, Pt_R0, Pt_TRef,
                                 DVMT_cor, Pt_T_def])  # av_T_Rs
-            assert Pt_alpha in influencies, 'Pt_alpha missing from influencies!'
-            assert Pt_beta in influencies, 'Pt_beta missing from influencies!'
-            assert Pt_R0 in influencies, 'Pt_R0 missing from influencies!'
-            assert Pt_TRef in influencies, 'Pt_TRef missing from influencies!'
-            assert DVMT_cor in influencies, 'DVMT_cor missing from influencies!'
-            assert Pt_T_def in influencies, 'Pt_T_def missing from influencies!'
+            assert Pt_alpha in influencies, 'Influencies missing Pt_alpha!'
+            assert Pt_beta in influencies, 'Influencies missing Pt_beta!'
+            assert Pt_R0 in influencies, 'Influencies missing Pt_R0!'
+            assert Pt_TRef in influencies, 'Influencies missing Pt_TRef!'
+            assert DVMT_cor in influencies, 'Influencies missing DVMT_cor!'
+            assert Pt_T_def in influencies, 'Influencies missing Pt_T_def!'
 
             # Value of Rs
-            nom_Rs = self.ws_Data['C'+str(row)].value
+            nom_Rs = self.this_run['Rs']
             print '\nNominal Rs value:', nom_Rs, 'Abs. Nom. Vout:\
 ', abs_nom_Vout, '\n'
             logger.info('Nominal Rs value: %d\nAbs. Nom. Vout: %d',
-                         nom_Rs, abs_nom_Vout)
+                        nom_Rs, abs_nom_Vout)
             Rs_name = self.Rs_VAL_NAME[nom_Rs]
-            Rs_0 = self.R_INFO[Rs_name]['R0_LV']  # a ureal
-            Rs_TRef = self.R_INFO[Rs_name]['TRef_LV']  # a ureal
-            Rs_alpha = self.R_INFO[Rs_name]['alpha']
-            Rs_beta = self.R_INFO[Rs_name]['beta']
+#            Rs_0 = self.R_INFO[Rs_name]['R0_LV']  # a ureal
+            Rs_0 = self.BuildUreal(devices.RES_DATA[Rs_name]['R0_LV'])
+            Rs_TRef = self.BuildUreal(devices.RES_DATA[Rs_name]['TRef_LV'])
+            Rs_alpha = self.BuildUreal(devices.RES_DATA[Rs_name]['alpha'])
+            Rs_beta = self.BuildUreal(devices.RES_DATA[Rs_name]['beta'])
 
             # Correct Rs value for temperature
             dT = GTC.result(av_T_Rs - Rs_TRef + Pt_T_def)
@@ -1380,21 +1432,21 @@ class CalcPage(wx.Panel):
             Iin_pos = GTC.result(V_Rs_pos/Rs)
             Iin_neg = GTC.result(V_Rs_neg/Rs)
 
+            I_pos = GTC.result(Iin_pos*self.pos_nom_Vout/V3_pos)
+#            I_pos_k = GTC.rp.k_factor(I_pos.df)  # P = 95% by default
+#            I_pos_EU = I_pos_k*I_pos.u
+            I_neg = GTC.result(Iin_neg*self.neg_nom_Vout/V3_neg)
+#            I_neg_k = GTC.rp.k_factor(I_neg.df)  # P = 95% by default
+#            I_neg_EU = I_neg_k*I_neg.u
 
-            I_pos = GTC.result(Iin_pos*pos_nom_Vout / V3_pos)
-            I_pos_k = GTC.rp.k_factor(I_pos.df)  # P = 95% by default
-            I_pos_EU = I_pos_k * I_pos.u
-            I_neg = GTC.result(Iin_neg*neg_nom_Vout/V3_neg)
+#            self.Vout_widgets[abs_nom_Vout][0].SetValue(str(abs_nom_Vout))
+#            self.Vout_widgets[abs_nom_Vout][1].SetValue('{0:.8g}'.format(I_pos.x))
+#            self.Vout_widgets[abs_nom_Vout][2].SetValue('{0:.8g}'.format(I_neg.x))
+#            # Just display positive value for now:
+#            self.Vout_widgets[abs_nom_Vout][3].SetValue('{0:.3g}'.format(I_pos_EU))
+#            self.Vout_widgets[abs_nom_Vout][4].SetValue(str(round(I_pos_k)))
 
-            self.Vout_widgets[abs_nom_Vout][0].SetValue(str(abs_nom_Vout))
-            self.Vout_widgets[abs_nom_Vout][1].SetValue('{0:.8g}'.format(I_pos.x))
-            self.Vout_widgets[abs_nom_Vout][2].SetValue('{0:.8g}'.format(I_neg.x))
-            # Just display positive value for now:
-            self.Vout_widgets[abs_nom_Vout][3].SetValue('{0:.3g}'.format(I_pos_EU))
-            self.Vout_widgets[abs_nom_Vout][4].SetValue(str(round(I_pos_k)))
-
-            this_result = {'Vout': abs_nom_Vout, 'I_pos': I_pos,
-                           'I_neg': I_neg}
+            this_result = {'I_pos': I_pos, 'I_neg': I_neg}
 
             # build uncertainty budget table
             budget_table_pos = []
@@ -1407,17 +1459,19 @@ class CalcPage(wx.Panel):
                 else:
                     sensitivity_pos = GTC.component(I_pos, i)/i.u
                     sensitivity_neg = GTC.component(I_neg, i)/i.u
+
                 # Only include non-zero influencies:
                 if abs(GTC.component(I_pos, i)) > 0:
-                    print 'Included component of I+:',GTC.component(I_pos, i)
+                    print 'Included component of I+:', GTC.component(I_pos, i)
                     logger.info('Included component of I+: %d',
-                                 GTC.component(I_pos, i))
+                                GTC.component(I_pos, i))
                     budget_table_pos.append([i.label, i.x, i.u, i.df,
                                              sensitivity_pos,
                                              GTC.component(I_pos, i)])
                 else:
                     print'ZERO COMPONENT of I+'
                     logger.info('ZERO COMPONENT of I+')
+
                 if abs(GTC.component(I_neg, i)) > 0:
                     print 'Included component of I-:',GTC.component(I_neg, i)
                     logger.info('Included component of I-: %d',
@@ -1444,274 +1498,155 @@ class CalcPage(wx.Panel):
             del V2s[:]
             del V3s[:]
 
-    def GetXL(self):
-        '''
-        NOTE: Details of the Excel file are not available
-        until the user has opened it!
-        '''
-        self.XLPath = self.GetTopLevelParent().ExcelPath
-        print '\n', self.XLPath
-        logger.info('%s', self.XLPath)
-        assert self.XLPath is not "", 'No data file open yet!'
+        # <- End of analysis loop for this run
 
-        self.ws_Data = self.GetTopLevelParent().wb.get_sheet_by_name('Data')
-        self.ws_Params = self.GetTopLevelParent().wb.get_sheet_by_name('Parameters')
-        self.ws_Results = self.GetTopLevelParent().wb.get_sheet_by_name('Results')
+        # Display analysis result and update results dict
+        SummaryStr = json.dumps(self.ThisResult, indent=4)
+        self.ResultSummary.SetValue(SummaryStr)
 
-    def OnStartRow(self, e):
-        self.GetXL()
-        self.ws_Data['B1'].value = int(e.GetString())
+        print self.Results
 
-    def GetStopRow(self):
-        row = self.Data_start_row
-        self.Test_Vs = []
-        '''
-        Don't search forever and
-        ignore final row:
-        '''
-        while row < self.Data_start_row + SEARCH_LIMIT - 1:
-            NomVOP = self.ws_Data['G'+str(row)].value
-            if NomVOP in (None, 'Nom. Vout '):  # Ran out of data
-                print'Break row =', row
-                break
-            elif NomVOP in (0.1, 1, 10):
-                self.Test_Vs.append(NomVOP)
-                row += 1
-                continue
-            else:  # in (0,-0.1, -1, -10)
-                row += 1
-                continue
-        Test_V_set = set(self.Test_Vs)
-        if len(Test_V_set) < 1:
-            print'GetStopRow(): Incomplete data! - ', self.Test_Vs
-            return self.Data_start_row
-        else:
-            print 'GetStopRow(): Test Vs:', Test_V_set
-            return self.Data_start_row + 4 * len(self.Test_Vs) - 1
+#    def GetXL(self):
+#        '''
+#        NOTE: Details of the Excel file are not available
+#        until the user has opened it!
+#        '''
+#        self.XLPath = self.GetTopLevelParent().ExcelPath
+#        print '\n', self.XLPath
+#        logger.info('%s', self.XLPath)
+#        assert self.XLPath is not "", 'No data file open yet!'
+#
+#        self.ws_Data = self.GetTopLevelParent().wb.get_sheet_by_name('Data')
+#        self.ws_Params = self.GetTopLevelParent().wb.get_sheet_by_name('Parameters')
+#        self.ws_Results = self.GetTopLevelParent().wb.get_sheet_by_name('Results')
+
+#    def OnStartRow(self, e):
+#        self.GetXL()
+#        self.ws_Data['B1'].value = int(e.GetString())
+
+#    def GetStopRow(self):
+#        row = self.Data_start_row
+#        self.Test_Vs = []
+#        '''
+#        Don't search forever and
+#        ignore final row:
+#        '''
+#        while row < self.Data_start_row + SEARCH_LIMIT - 1:
+#            NomVOP = self.ws_Data['G'+str(row)].value
+#            if NomVOP in (None, 'Nom. Vout '):  # Ran out of data
+#                print'Break row =', row
+#                break
+#            elif NomVOP in (0.1, 1, 10):
+#                self.Test_Vs.append(NomVOP)
+#                row += 1
+#                continue
+#            else:  # in (0,-0.1, -1, -10)
+#                row += 1
+#                continue
+#        Test_V_set = set(self.Test_Vs)
+#        if len(Test_V_set) < 1:
+#            print'GetStopRow(): Incomplete data! - ', self.Test_Vs
+#            return self.Data_start_row
+#        else:
+#            print 'GetStopRow(): Test Vs:', Test_V_set
+#            return self.Data_start_row + 4 * len(self.Test_Vs) - 1
 
     def GetNamefromComment(self, c):
         return c[c.find('DUC: ') + 5: c.find(' monitored by GMH')]
 
     def GetMeanDate(self):
-        r = self.Data_start_row
-        n = 0
+        '''
+        Accept a list of times (as strings).
+        Return a mean time (as a string).
+        '''
         t_av = 0.0
-        while r <= self.Data_stop_row:
-            s = self.ws_Data['E'+str(r)].value  # A unicode str
-            # Convert s to a Python datetime object:
-            t_dt = dt.datetime.strptime(s, '%d/%m/%Y %H:%M:%S')
+        t_lst = self.run_data[self.run_ID]['Date_time']
+
+        for t_str in t_lst:
+            t_dt = dt.datetime.strptime(t_str, '%d/%m/%Y %H:%M:%S')
             t_tup = dt.datetime.timetuple(t_dt)  # A Python time tuple object
             t_av += time.mktime(t_tup)  # time as float (seconds from epoch)
-            r += 1
-            n += 1
-        t_av /= n
+
+        t_av /= len(t_lst)
         t_av_dt = dt.datetime.fromtimestamp(t_av)
         return t_av_dt.strftime('%d/%m/%Y %H:%M:%S')  # av. time as string
 
-    def Write_Summary(self, Comment, Run_Id, DUC_name,
-                      DUC_gain, date, T, RH, P):
+#    def Write_Summary(self, Comment, Run_Id, DUC_name,
+#                      DUC_gain, date, T, RH, P):
+#        '''
+#        Write Run summary and result column-headings.
+#        Return next row
+#        '''
+#        DELTA = u'\N{GREEK CAPITAL LETTER DELTA}'
+#        row = self.Results_start_row
+#        proc_date = dt.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+#        proc_string = 'Processesed by IVY v{} on {}'.format(self.version, proc_date)
+#        self.ws_Results['H'+str(row)].value = proc_string
+#        self.ws_Results['A'+str(row)].value = 'Comment:'
+#        self.ws_Results['B'+str(row)].value = Comment
+#        self.ws_Results['A'+str(row+1)].value = 'Run Id:'
+#        self.ws_Results['B'+str(row+1)].value = Run_Id
+#        self.ws_Results['A'+str(row+2)].value = 'Date:'
+#        self.ws_Results['B'+str(row+2)].value = date
+#        self.ws_Results['A'+str(row+3)].value = 'DUC Name:'
+#        self.ws_Results['B'+str(row+3)].value = DUC_name
+#        self.ws_Results['A'+str(row+4)].value = 'Gain (V/A):'
+#        self.ws_Results['B'+str(row+4)].value = DUC_gain
+#
+#        self.ws_Results['C'+str(row+2)].value = 'Condition:'
+#        self.ws_Results['C'+str(row+3)].value = 'Value:'
+#        self.ws_Results['C'+str(row+4)].value = 'Exp Uncert.:'
+#        self.ws_Results['C'+str(row+5)].value = 'Cov. factor:'
+#
+#        T_k = GTC.rp.k_factor(T.df)
+#        self.ws_Results['D'+str(row+2)].value = 'T (GMH)'
+#        self.ws_Results['D'+str(row+3)].value = T.x
+#        self.ws_Results['D'+str(row+4)].value = T_k*T.u
+#        self.ws_Results['D'+str(row+5)].value = T_k
+#
+#        RH_k = GTC.rp.k_factor(RH.df)
+#        self.ws_Results['E'+str(row+2)].value = 'RH (%)'
+#        self.ws_Results['E'+str(row+3)].value = RH.x
+#        self.ws_Results['E'+str(row+4)].value = RH_k*RH.u
+#        self.ws_Results['E'+str(row+5)].value = RH_k
+#
+#        P_k = GTC.rp.k_factor(P.df)
+#        self.ws_Results['F'+str(row+2)].value = 'P (mBar)'
+#        self.ws_Results['F'+str(row+3)].value = P.x
+#        self.ws_Results['F'+str(row+4)].value = P_k * P.u
+#        self.ws_Results['F'+str(row+5)].value = P_k
+#        # Add blank line below summary
+#        self.ws_Results['H'+str(row+6)].value = 'Uncertainty Budget:'
+#        self.ws_Results['A'+str(row+7)].value = 'Nom. ' + DELTA + 'V'
+#        self.ws_Results['B'+str(row+7)].value = DELTA + 'I in'
+#        self.ws_Results['C'+str(row+7)].value = 'Std. u'
+#        self.ws_Results['D'+str(row+7)].value = 'dof'
+#        self.ws_Results['E'+str(row+7)].value = 'Exp. U'
+#        self.ws_Results['F'+str(row+7)].value = 'k'
+#        self.ws_Results['H'+str(row+7)].value = 'Quantity (label)'
+#        self.ws_Results['I'+str(row+7)].value = 'Value'
+#        self.ws_Results['J'+str(row+7)].value = 'Std. u'
+#        self.ws_Results['K'+str(row+7)].value = 'dof'
+#        self.ws_Results['L'+str(row+7)].value = 'Sens. Co.'
+#        self.ws_Results['M'+str(row+7)].value = 'Uncert. Cont.'
+#
+#        return row+8
+
+    def BuildUreal(self, d):
         '''
-        Write Run summary and result column-headings.
-        Return next row
+        Accept a dictionary contaning keys of 'value', 'uncert', 'dof' and
+        'label' and use corresponding values as input to GTC.ureal().
+        Return resulting ureal.
         '''
-        DELTA = u'\N{GREEK CAPITAL LETTER DELTA}'
-        row = self.Results_start_row
-        proc_date = dt.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
-        proc_string = 'Processesed by IVY v{} on {}'.format(self.version, proc_date)
-        self.ws_Results['H'+str(row)].value = proc_string
-        self.ws_Results['A'+str(row)].value = 'Comment:'
-        self.ws_Results['B'+str(row)].value = Comment
-        self.ws_Results['A'+str(row+1)].value = 'Run Id:'
-        self.ws_Results['B'+str(row+1)].value = Run_Id
-        self.ws_Results['A'+str(row+2)].value = 'Date:'
-        self.ws_Results['B'+str(row+2)].value = date
-        self.ws_Results['A'+str(row+3)].value = 'DUC Name:'
-        self.ws_Results['B'+str(row+3)].value = DUC_name
-        self.ws_Results['A'+str(row+4)].value = 'Gain (V/A):'
-        self.ws_Results['B'+str(row+4)].value = DUC_gain
-
-        self.ws_Results['C'+str(row+2)].value = 'Condition:'
-        self.ws_Results['C'+str(row+3)].value = 'Value:'
-        self.ws_Results['C'+str(row+4)].value = 'Exp Uncert.:'
-        self.ws_Results['C'+str(row+5)].value = 'Cov. factor:'
-
-        T_k = GTC.rp.k_factor(T.df)
-        self.ws_Results['D'+str(row+2)].value = 'T (GMH)'
-        self.ws_Results['D'+str(row+3)].value = T.x
-        self.ws_Results['D'+str(row+4)].value = T_k*T.u
-        self.ws_Results['D'+str(row+5)].value = T_k
-
-        RH_k = GTC.rp.k_factor(RH.df)
-        self.ws_Results['E'+str(row+2)].value = 'RH (%)'
-        self.ws_Results['E'+str(row+3)].value = RH.x
-        self.ws_Results['E'+str(row+4)].value = RH_k*RH.u
-        self.ws_Results['E'+str(row+5)].value = RH_k
-
-        P_k = GTC.rp.k_factor(P.df)
-        self.ws_Results['F'+str(row+2)].value = 'P (mBar)'
-        self.ws_Results['F'+str(row+3)].value = P.x
-        self.ws_Results['F'+str(row+4)].value = P_k * P.u
-        self.ws_Results['F'+str(row+5)].value = P_k
-        # Add blank line below summary
-        self.ws_Results['H'+str(row+6)].value = 'Uncertainty Budget:'
-        self.ws_Results['A'+str(row+7)].value = 'Nom. ' + DELTA + 'V'
-        self.ws_Results['B'+str(row+7)].value = DELTA + 'I in'
-        self.ws_Results['C'+str(row+7)].value = 'Std. u'
-        self.ws_Results['D'+str(row+7)].value = 'dof'
-        self.ws_Results['E'+str(row+7)].value = 'Exp. U'
-        self.ws_Results['F'+str(row+7)].value = 'k'
-        self.ws_Results['H'+str(row+7)].value = 'Quantity (label)'
-        self.ws_Results['I'+str(row+7)].value = 'Value'
-        self.ws_Results['J'+str(row+7)].value = 'Std. u'
-        self.ws_Results['K'+str(row+7)].value = 'dof'
-        self.ws_Results['L'+str(row+7)].value = 'Sens. Co.'
-        self.ws_Results['M'+str(row+7)].value = 'Uncert. Cont.'
-
-        return row+8
-
-    def GetInstrAssignments(self):
-        N_ROLES = 7  # 7 roles in total
-        self.role_descr = {}
-        for row in range(self.Data_start_row, self.Data_start_row + N_ROLES):
-            # Read {role:description}
-            role = self.ws_Data['S' + str(row)].value
-            descrip = self.ws_Data['T' + str(row)].value
-            temp_dict = {role: descrip}
-            print temp_dict
-            assert temp_dict.keys()[-1] is not None, 'Instrument assignment: Missing role!'
-            assert temp_dict.values()[-1] is not None, 'Instrument assignment: Missing description!'
-            self.role_descr.update(temp_dict)
-
-    def Uncertainize(self, items):
-        '''
-        Convert a list of data to a ureal, where possible.
-        Expects items to be a list: [value, uncert, dof, label].
-        If uncert is missing or value is non-numeric return value.
-        Otherwise, return a ureal (with or without default dof)
-        '''
-        v = items[0]
-        if len(items) < 4:
-            return v
-        u = items[1]
-        d = items[2]
-        l = items[3]
-        if (u is not None) and isinstance(v, Number):
-            if d == u'inf':
-                un_num = GTC.ureal(v, u, label=l)  # default dof = inf
-            else:
-                un_num = GTC.ureal(v, u, d, l)
-            return un_num
-        else:  # non-numeric value or not enough info to make a ureal
-            return v
-
-    def GetParams(self):
-        '''
-        Extract resistor and instrument parameters
-        '''
-        print '\nReading parameters...'
-        logger.info('Reading parameters...')
-        headings = (u'Resistor Info:', u'Instrument Info:',
-                    u'description', u'parameter', u'value',
-                    u'uncert', u'dof', u'label', u'Comment / Reference')
-
-        # Determine colummn indices from column letters:
-        col_A = cell.cell.column_index_from_string('A') - 1
-        col_B = cell.cell.column_index_from_string('B') - 1
-        col_C = cell.cell.column_index_from_string('C') - 1
-        col_D = cell.cell.column_index_from_string('D') - 1
-        col_E = cell.cell.column_index_from_string('E') - 1
-        col_F = cell.cell.column_index_from_string('F') - 1
-        col_G = cell.cell.column_index_from_string('G') - 1
-
-        col_I = cell.cell.column_index_from_string('I') - 1
-        col_J = cell.cell.column_index_from_string('J') - 1
-        col_K = cell.cell.column_index_from_string('K') - 1
-        col_L = cell.cell.column_index_from_string('L') - 1
-        col_M = cell.cell.column_index_from_string('M') - 1
-        col_N = cell.cell.column_index_from_string('N') - 1
-        col_O = cell.cell.column_index_from_string('O') - 1
-
-        R_params = []
-        R_row_items = []
-        I_params = []
-        I_row_items = []
-        R_values = []
-        I_values = []
-        R_DESCR = []
-        I_DESCR = []
-        R_sublist = []
-        I_sublist = []
-
-        for r in self.ws_Params.rows:  # a tuple of row objects
-            R_end = 0
-
-            # description, parameter, value, uncert, dof, label:
-            R_row_items = [r[col_A].value, r[col_B].value, r[col_C].value,
-                           r[col_D].value, r[col_E].value, r[col_F].value,
-                           r[col_G].value]
-
-            I_row_items = [r[col_I].value, r[col_J].value, r[col_K].value,
-                           r[col_L].value, r[col_M].value, r[col_N].value,
-                           r[col_O].value]
-
-            if R_row_items[0] == None:  # end of R_list
-                R_end = 1
-
-            # check this row for heading text
-            if any(i in I_row_items for i in headings):
-                continue  # Skip headings
-
-            else:  # not header - main data
-                # Get instrument parameters first...
-                '''
-                Need to know last row if we write more data, post-analysis:
-                '''
-                last_I_row = r[col_I].row
-                I_params.append(I_row_items[1])
-                I_values.append(self.Uncertainize(I_row_items[2:6]))
-                '''
-                'test' is always the last parameter for each
-                instrument description:
-                '''
-                if I_row_items[1] == u'test':
-                    I_DESCR.append(I_row_items[0])  # build description list
-                    # Add parameter dictionary to sublist:
-                    I_sublist.append(dict(zip(I_params, I_values)))
-                    del I_params[:]
-                    del I_values[:]
-
-                # Now attend to resistor parameters...
-                if R_end == 0:  # If not at end of resistor data-block
-                    '''
-                    Need to know last row if we write more data, post-analysis:
-                    '''
-                    last_R_row = r[col_A].row
-                    R_params.append(R_row_items[1])
-                    R_values.append(self.Uncertainize(R_row_items[2:6]))
-                    '''
-                    'T_sensor' is always the last parameter for each
-                    resistor description:
-                    '''
-                    if R_row_items[1] == u'T_sensor':
-                        R_DESCR.append(R_row_items[0])  # build descr list
-                        # Add parameter dictionary to sublist:
-                        R_sublist.append(dict(zip(R_params, R_values)))
-                        del R_params[:]
-                        del R_values[:]
-
-        """
-        Compile into dictionaries:
-        There are two dictionaries; one for instruments (I_INFO) and one for
-        resistors (R_INFO). Each dictionary item is keyed by the description
-        (name) of the instrument (resistor). Each dictionary value is itself
-        a dictionary, keyed by parameter, such as 'address' (for an instrument)
-        or 'R_LV' (for a resistor value, measured at 'low voltage').
-        """
-        self.I_INFO = dict(zip(I_DESCR, I_sublist))
-        print len(self.I_INFO), 'instruments (%d rows)' % last_I_row
-
-        self.R_INFO = dict(zip(R_DESCR, R_sublist))
-        print len(self.R_INFO), 'resistors.(%d rows)\n' % last_R_row
+        assert isinstance(d, dict), 'Not a dictionary!'
+        try:
+            return GTC.ureal(float(d['value']),
+                             float(d['uncert']),
+                             float(d['dof']),
+                             str(d['label']))
+        except:
+            raise TypeError('Non-ureal input')
+            return 0
 
     def get_gain_err_param(self, V):
         if abs(V) < 0.001:
@@ -1737,7 +1672,10 @@ class CalcPage(wx.Panel):
         return gain_param
 
     def R_to_T(self, alpha, beta, R, R0, T0):
-        # Convert a resistive T-sensor reading from resistance to temperature
+        '''
+        Convert a resistive T-sensor reading from resistance to temperature.
+        All arguments and return value are ureals.
+        '''
         if (beta.x == 0 and beta.u == 0):  # No 2nd-order T-Co
             T = GTC.result((R/R0 - 1)/alpha + T0)
         else:
@@ -1756,58 +1694,91 @@ class CalcPage(wx.Panel):
 
     def WriteThisResult(self, result):
         '''
-        Write results and uncert. budget for nom.Vout (BOTH polarities)
+        Write results and uncert. budget for THIS NOM. VOUT (BOTH polarities)
         '''
-        r = self.result_row
-        print'WriteThisResult(): Starting result_row =', r
-        logger.info('Starting result_row = %d', r)
-        sh = self.ws_Results
 
-        # Positive results 1st..
-        sh['A'+str(r)].value = result['Vout']
-        sh['B'+str(r)].value = result['I_pos'].x
-        sh['C'+str(r)].value = result['I_pos'].u
-        sh['D'+str(r)].value = result['I_pos'].df
-        k = GTC.rp.k_factor(result['I_pos'].df)
-        sh['E'+str(r)].value = k*result['I_pos'].u
-        sh['F'+str(r)].value = k
+        # Positive results...
+        #    Summary of Delta_I_in :
+        pos_result_dict = {'Delta_Iin': {}, 'U_Budget': {}}
 
+        value = result['I_pos'].x
+        uncert = result['I_pos'].u
+        dof = result['I_pos'].df
+        k = GTC.rp.k_factor(dof)
+        EU = k*uncert
+        pos_result_dict['Delta_Iin'].update({'value': value,
+                                             'uncert': uncert,
+                                             'dof': dof,
+                                             'k': k, 'EU': EU})
+
+        #    Uncert Budget (for pos Vout):
+        Q = []
+        v = []
+        u = []
+        df = []
+        sens = []
+        cont = []
         for line in self.budget_table_pos_sorted:
-            sh['H'+str(r)] = line[0]  # Quantity (label)
-            sh['I'+str(r)] = line[1]  # Value
-            sh['J'+str(r)] = line[2]  # Uncert.
-            if math.isinf(line[3]):
-                sh['K'+str(r)] = str(line[3])  # dof
-            else:
-                sh['K'+str(r)] = round(line[3])  # dof
-            sh['L'+str(r)] = line[4]  # Sens. coef.
-            sh['M'+str(r)] = line[5]  # Uncert. contrib.
-            r += 1
+            Q.append(line[0])
+            v.append(line[1])
+            u.append(line[2])
+            df.append(line[3])
+            sens.append(line[4])
+            cont.append(line[5])
+        pos_result_dict['U_Budget'].update({'quantity(label)': Q,
+                                            'value': v,
+                                            'std. uncert': u,
+                                            'dof': df,
+                                            'sens. co.': sens,
+                                            'uncert. cont.': cont})
 
-        r += 1  # Blank line between polarities
+#            if math.isinf(line[3]):
+#                sh['K'+str(r)] = str(line[3])  # dof
+#            else:
+#                sh['K'+str(r)] = round(line[3])  # dof
 
-        # ...then negative results...
-        sh['A'+str(r)].value = -1*result['Vout']
-        sh['B'+str(r)].value = result['I_neg'].x
-        sh['C'+str(r)].value = result['I_neg'].u
-        sh['D'+str(r)].value = result['I_neg'].df
-        k = GTC.rp.k_factor(result['I_neg'].df)
-        sh['E'+str(r)].value = k*result['I_neg'].u
-        sh['F'+str(r)].value = k
+        self.ThisResult['Nom_dV'][self.pos_nom_Vout].update(pos_result_dict)
 
+        # Negative results...
+        #    Summary of Delta_I_in :
+        neg_result_dict = {'Delta_Iin': {}, 'U_budget': {}}
+
+        value = result['I_neg'].x
+        uncert = result['I_neg'].u
+        dof = result['I_neg'].df
+        k = GTC.rp.k_factor(dof)
+        EU = k*uncert
+
+        neg_result_dict['Delta_Iin'].update({'value': value,
+                                             'uncert': uncert,
+                                             'dof': dof,
+                                             'k': k, 'EU': EU})
+
+        #    Uncert Budget (for neg Vout):
+        Q = []
+        v = []
+        u = []
+        df = []
+        sens = []
+        cont = []
         for line in self.budget_table_neg_sorted:
-            sh['H'+str(r)] = line[0]  # Quantity (label)
-            sh['I'+str(r)] = line[1]  # Value
-            sh['J'+str(r)] = line[2]  # Uncert.
-            if math.isinf(line[3]):
-                sh['K'+str(r)] = str(line[3])  # dof
-            else:
-                sh['K'+str(r)] = round(line[3])  # dof
-            sh['L'+str(r)] = line[4]  # Sens. coef.
-            sh['M'+str(r)] = line[5]  # Uncert. contrib.
-            r += 1
+            Q.append(line[0])
+            v.append(line[1])
+            u.append(line[2])
+            df.append(line[3])
+            sens.append(line[4])
+            cont.append(line[5])
+        neg_result_dict['U_budget'].update({'quantity(label)': Q,
+                                            'value': v,
+                                            'std. uncert': u,
+                                            'dof': df,
+                                            'sens. co.': sens,
+                                            'uncert. cont.': cont})
 
-        print'WriteThisResult(): Final result_row =', r
-        logger.info('Final result_row = %d', r)
-        self.ws_Results['B1'].value = r+1
-        return r+1  # Blank line between results
+        self.ThisResult['Nom_dV'][self.neg_nom_Vout].update(neg_result_dict)
+
+
+#        print'WriteThisResult(): Final result_row =', r
+#        logger.info('Final result_row = %d', r)
+
+        return 1  # Blank line between results
