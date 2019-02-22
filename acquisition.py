@@ -96,10 +96,10 @@ class AqnThread(Thread):
 #                print'Role data corrected to:', r, '->', d
 #                logger.info('Role data corrected to: %s -> %s', r, d)
 
-        # Get filename of Excel file
-        self.xlfilename = self.SetupPage.XLFile.GetValue()  # Full path
-        self.path_components = self.xlfilename.split('\\')
-        self.directory = '\\'.join(self.path_components[0:-1])
+#        # Get filename of Excel file
+#        self.xlfilename = self.SetupPage.XLFile.GetValue()  # Full path
+#        self.path_components = self.xlfilename.split('\\')
+#        self.directory = '\\'.join(self.path_components[0:-1])
 
 #        # Find existing workbook
 #        self.wb_io = self.SetupPage.wb
@@ -426,25 +426,25 @@ class AqnThread(Thread):
                                  V3=self.V3Data, clear=clear_plot, node=node)
         wx.PostEvent(self.PlotPage, plot_ev)
 
-    def WriteHeadings(self):
-        Id_row = self.start_row-2  # Headings
-        self.ws['A'+str(Id_row)].font = Font(b=True)
-        self.ws['A'+str(Id_row)] = 'Run ID:'
-        self.ws['B'+str(Id_row)].font = Font(b=True)
-        self.ws['B'+str(Id_row)] = self.RunPage.run_id
-
-        Head_row = self.start_row-1  # Headings
-
-        col_headings = {'A': 'Comment', 'B': 'DUC gain (V/A)', 'C': 'Rs (Ohm)',
-                        'D': 'I/P node (V1,V2?)', 'E': 'Date, time',
-                        'F': 'N meas.', 'G': 'Nom. Vout ', 'H': 'O/P V (V3)',
-                        'I': 'Stdev', 'J': 'I/P V (V1 or V2)', 'K': 'Stdev',
-                        'L': 'T(GMH)', 'M': 'Pt (DVM)', 'N': 'IP DVM range',
-                        'O': 'OP DVM range', 'P': 'T (room)', 'Q': 'P (room)',
-                        'R': 'RH (room)', 'S': 'Role',
-                        'T': 'Instrument description'}
-        for k in col_headings.keys():
-            self.ws[k+str(Head_row)] = col_headings[k]
+#    def WriteHeadings(self):
+#        Id_row = self.start_row-2  # Headings
+#        self.ws['A'+str(Id_row)].font = Font(b=True)
+#        self.ws['A'+str(Id_row)] = 'Run ID:'
+#        self.ws['B'+str(Id_row)].font = Font(b=True)
+#        self.ws['B'+str(Id_row)] = self.RunPage.run_id
+#
+#        Head_row = self.start_row-1  # Headings
+#
+#        col_headings = {'A': 'Comment', 'B': 'DUC gain (V/A)', 'C': 'Rs (Ohm)',
+#                        'D': 'I/P node (V1,V2?)', 'E': 'Date, time',
+#                        'F': 'N meas.', 'G': 'Nom. Vout ', 'H': 'O/P V (V3)',
+#                        'I': 'Stdev', 'J': 'I/P V (V1 or V2)', 'K': 'Stdev',
+#                        'L': 'T(GMH)', 'M': 'Pt (DVM)', 'N': 'IP DVM range',
+#                        'O': 'OP DVM range', 'P': 'T (room)', 'Q': 'P (room)',
+#                        'R': 'RH (room)', 'S': 'Role',
+#                        'T': 'Instrument description'}
+#        for k in col_headings.keys():
+#            self.ws[k+str(Head_row)] = col_headings[k]
 
     def WriteInstrAssignments(self):
         '''
@@ -621,11 +621,11 @@ class AqnThread(Thread):
 #        self.wb_io.save(self.xlfilename)
 
         RunID = str(self.RunPage.run_id)
-        self.CalcPage.RunID_choices.append(RunID)
         data_file = str(self.RunPage.data_file)
 
         self.RunPage.master_run_dict.update({RunID: self.run_dict})
         with open(data_file, 'w') as IVY_out:
+            logger.info('SAVING ALL RUN DATA...')
             json.dump(self.RunPage.master_run_dict, IVY_out)
 
         self.Standby()  # Set sources to 0V and leave system safe

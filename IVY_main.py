@@ -180,7 +180,7 @@ I-to-V converter program for Light Standards."
     def OnQuit(self, event=None):
         self.CloseInstrSessions()
         self.OnSave()
-        self.page1.log.close()
+#        self.page1.log.close()
         time.sleep(0.1)
         print 'Closing IVY...'
         self.Close()

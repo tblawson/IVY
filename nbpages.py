@@ -621,7 +621,7 @@ class RunPage(wx.Panel):
         # Event bindings
         self.Bind(evts.EVT_UPDATE_COM_STR, self.UpdateComment)
         self.Bind(evts.EVT_DATA, self.UpdateData)
-        self.Bind(evts.EVT_START_ROW, self.UpdateStartRow)
+#        self.Bind(evts.EVT_START_ROW, self.UpdateStartRow)
 
         self.RunThread = None
 
@@ -629,17 +629,17 @@ class RunPage(wx.Panel):
         CommentLbl = wx.StaticText(self, id=wx.ID_ANY, label='Comment:')
         self.Comment = wx.TextCtrl(self, id=wx.ID_ANY, size=(600, 20))
         self.Comment.Bind(wx.EVT_TEXT, self.OnComment)
-        comtip = 'This string is auto-generated from data on the Setup page.\
+        comtip = 'This string is auto-generated from data on the Setup page. \
 Other notes may be added manually at the end.'
         self.Comment.SetToolTipString(comtip)
 
         self.NewRunIDBtn = wx.Button(self, id=wx.ID_ANY,
                                      label='Create new run id')
-        idcomtip = 'Create new id to uniquely identify this set of\
+        idcomtip = 'Create new id to uniquely identify this set of \
 measurement data.'
         self.NewRunIDBtn.SetToolTipString(idcomtip)
         self.NewRunIDBtn.Bind(wx.EVT_BUTTON, self.OnNewRunID)
-        self.RunID = wx.TextCtrl(self, id=wx.ID_ANY)  # size=(500,20)
+        self.RunID = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
 
         # Run Setup widgets
         DUCgainLbl = wx.StaticText(self, id=wx.ID_ANY,
@@ -664,8 +664,8 @@ measurement data.'
         ZeroVoltsBtn = wx.Button(self, id=wx.ID_ANY, label='Set zero volts',
                                  size=(200, 20))
         ZeroVoltsBtn.Bind(wx.EVT_BUTTON, self.OnZeroVolts)
-        StartRowLbl = wx.StaticText(self, id=wx.ID_ANY, label='Start row:')
-        self.StartRow = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+#        StartRowLbl = wx.StaticText(self, id=wx.ID_ANY, label='Start row:')
+#        self.StartRow = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
 
         self.h_sep1 = wx.StaticLine(self, id=wx.ID_ANY, style=wx.LI_HORIZONTAL)
 
@@ -726,10 +726,10 @@ measurement data.'
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(ZeroVoltsBtn, pos=(3, 4), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(StartRowLbl, pos=(2, 5), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.StartRow, pos=(3, 5), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+#        gbSizer.Add(StartRowLbl, pos=(2, 5), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#        gbSizer.Add(self.StartRow, pos=(3, 5), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
 
         gbSizer.Add(self.h_sep1, pos=(4, 0), span=(1, 6),
                     flag=wx.ALL | wx.EXPAND, border=5)
@@ -769,7 +769,7 @@ measurement data.'
         self.autocomstr = ''
         self.manstr = ''
 
-        self.master_run_dict = {}  # Dict to hold all runs for this app session
+        self.master_run_dict = {}  # Dict to hold ALL runs for this app session
 
     def OnNewRunID(self, e):
         start = self.fullstr.find('DUC: ')
@@ -815,9 +815,9 @@ measurement data.'
             self.RunThread = None
             self.StartBtn.Enable(True)
 
-    def UpdateStartRow(self, e):
-        # Triggered by an 'update startrow' event
-        self.StartRow.SetValue(str(e.row))
+#    def UpdateStartRow(self, e):
+#        # Triggered by an 'update startrow' event
+#        self.StartRow.SetValue(str(e.row))
 
     def OnRs(self, e):
         self.Rs_val = self.Rs_choice_to_val[e.GetString()]  # an INT
@@ -909,16 +909,23 @@ class PlotPage(wx.Panel):
 
         self.figure.subplots_adjust(hspace=0.3)  # 0.3" v-space b/tw subplots
 
-        self.V3ax = self.figure.add_subplot(3, 1, 3)  # 3high x 1wide, 3rd plot down
+        # 3high x 1wide, 3rd plot down:
+        self.V3ax = self.figure.add_subplot(3, 1, 3)
+        # Auto offset to centre on data:
         self.V3ax.ticklabel_format(style='sci', useOffset=False, axis='y',
-                                   scilimits=(2, -2))  # Auto o/set to centre on data
-        self.V3ax.yaxis.set_major_formatter(mtick.ScalarFormatter(useMathText=True, useOffset=False))  # Scientific notation.
+                                   scilimits=(2, -2))
+
+        # Scientific notation:
+        fmt = mtick.ScalarFormatter(useMathText=True, useOffset=False)
+        self.V3ax.yaxis.set_major_formatter(fmt)
+        # Autoscale with 'buffer' around data extents:
         self.V3ax.autoscale(enable=True, axis='y',
-                            tight=False)  # Autoscale with 'buffer' around data extents
+                            tight=False)
         self.V3ax.set_xlabel('time')
         self.V3ax.set_ylabel('V3')
 
-        self.V1ax = self.figure.add_subplot(3, 1, 1, sharex=self.V3ax)  # 3high x 1wide, 1st plot down
+        # 3high x 1wide, 1st plot down:
+        self.V1ax = self.figure.add_subplot(3, 1, 1, sharex=self.V3ax)
         self.V1ax.ticklabel_format(useOffset=False,
                                    axis='y')  # Auto o/set to centre on data
         self.V1ax.autoscale(enable=True,
@@ -931,10 +938,13 @@ class PlotPage(wx.Panel):
         V1_y_ost = self.V1ax.get_xaxis().get_offset_text()
         V1_y_ost.set_visible(False)
 
-        self.V2ax = self.figure.add_subplot(3, 1, 2, sharex=self.V3ax)  # 3high x 1wide, 2nd plot down                            
+        # 3high x 1wide, 2nd plot down:
+        self.V2ax = self.figure.add_subplot(3, 1, 2, sharex=self.V3ax)
         self.V2ax.ticklabel_format(useOffset=False,
                                    axis='y')  # Auto offset to centre on data
-        self.V2ax.autoscale(enable=True, axis='y', tight=False)  # Autoscale with 'buffer' around data extents
+
+        # Autoscale with 'buffer' around data extents
+        self.V2ax.autoscale(enable=True, axis='y', tight=False)
         plt.setp(self.V2ax.get_xticklabels(),
                  visible=False)  # Hide x-axis labels
         self.V2ax.set_ylabel('V2')
@@ -983,18 +993,16 @@ __________________________________________
 # Analysis Page definition:
 ---------------------------
 '''
-SEARCH_LIMIT = 24
-
+DELTA = u'\N{GREEK CAPITAL LETTER DELTA}'
 
 class CalcPage(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
 
         self.version = self.GetTopLevelParent().version
-#        self.Run_id = self.GetTopLevelParent().page2.run_id
         self.data_file = self.GetTopLevelParent().page2.data_file
         self.results_file = 'IVY_Results.json'
-        self.Results = {}
+        self.Results = {}  # Accumulate run-analyses here
 
         self.Rs_VALUES = self.GetTopLevelParent().page2.Rs_VALUES
         self.Rs_NAMES = ['IV1k 1k', 'IV10k 10k',
@@ -1007,15 +1015,6 @@ class CalcPage(wx.Panel):
         gbSizer = wx.GridBagSizer()
 
         # Analysis set-up:
-#        RunIDLbl = wx.StaticText(self, id=wx.ID_ANY, label='Run ID:')
-#        StartRowLbl = wx.StaticText(self,
-#                                    id=wx.ID_ANY, label='Data Start row:')
-#        gbSizer.Add(RunIDLbl, pos=(0, 0), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#        self.StartRow.Bind(wx.EVT_TEXT_ENTER, self.OnStartRow)
-#        self.StartRow.SetToolTipString("Enter start row here BEFORE \
-# clicking 'Analyze' button.")
-
         self.ListRuns = wx.Button(self, id=wx.ID_ANY, label='List run IDs')
         self.ListRuns.Bind(wx.EVT_BUTTON, self.OnListRuns)
         gbSizer.Add(self.ListRuns, pos=(0, 0), span=(1, 1),
@@ -1024,128 +1023,129 @@ class CalcPage(wx.Panel):
         self.RunID = wx.ComboBox(self, id=wx.ID_ANY,
                                  style=wx.CB_DROPDOWN | wx.CB_READONLY)
         self.RunID.Bind(wx.EVT_COMBOBOX, self.OnRunChoice)
-        gbSizer.Add(self.RunID, pos=(0, 1), span=(1, 4),
+        self.RunID.Bind(wx.EVT_TEXT, self.OnRunChoice)
+        gbSizer.Add(self.RunID, pos=(0, 1), span=(1, 5),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
         self.Analyze = wx.Button(self, id=wx.ID_ANY, label='Analyze')
         self.Analyze.Bind(wx.EVT_BUTTON, self.OnAnalyze)
-        gbSizer.Add(self.Analyze, pos=(0, 5), span=(1, 1),
+        gbSizer.Add(self.Analyze, pos=(0, 6), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
-        self.h_sep1 = wx.StaticLine(self, id=wx.ID_ANY, size=(400, 1),
+        # -----------------------------------------------------------------
+        self.h_sep1 = wx.StaticLine(self, id=wx.ID_ANY, size=(200, 1),
                                     style=wx.LI_HORIZONTAL)
-        gbSizer.Add(self.h_sep1, pos=(1, 0), span=(1, 3),
+        gbSizer.Add(self.h_sep1, pos=(1, 0), span=(1, 2),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
-        self.h_sep2 = wx.StaticLine(self, id=wx.ID_ANY, size=(400, 1),
+        self.h_sep2 = wx.StaticLine(self, id=wx.ID_ANY, size=(600, 1),
                                     style=wx.LI_HORIZONTAL)
-        gbSizer.Add(self.h_sep2, pos=(1, 3), span=(1, 3),
+        gbSizer.Add(self.h_sep2, pos=(1, 2), span=(1, 5),
                     flag=wx.ALL | wx.EXPAND, border=5)
+        # -----------------------------------------------------------------
 
         # Run summary:
         RunInfoLbl = wx.StaticText(self, id=wx.ID_ANY, label='Run Summary:')
-        gbSizer.Add(RunInfoLbl, pos=(2, 0), span=(1, 3),
+        gbSizer.Add(RunInfoLbl, pos=(2, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
         self.RunInfo = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_MULTILINE |
                                    wx.TE_READONLY | wx.HSCROLL)
-        gbSizer.Add(self.RunInfo, pos=(3, 0), span=(20, 3),
+        gbSizer.Add(self.RunInfo, pos=(3, 0), span=(20, 2),
                     flag=wx.ALL | wx.EXPAND, border=5)
+
         # Analysis results:
-        ResultsLbl = wx.StaticText(self, id=wx.ID_ANY,
-                                   label='Results Summary:')
-        gbSizer.Add(ResultsLbl, pos=(2, 3), span=(1, 3),
+        # Headings & environment readings
+        QuantityLbl = wx.StaticText(self, id=wx.ID_ANY, label='Quantity')
+        gbSizer.Add(QuantityLbl, pos=(2, 2), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
-        self.ResultSummary = wx.TextCtrl(self, style=wx.TE_MULTILINE |
-                                         wx.TE_READONLY | wx.HSCROLL,
-                                         id=wx.ID_ANY,)
-        gbSizer.Add(self.ResultSummary, pos=(3, 3), span=(20, 3),
+        UrealSummaryLbl = wx.StaticText(self, id=wx.ID_ANY, size=(200, 1),
+                                        label='Val, Unc, DoF')
+        gbSizer.Add(UrealSummaryLbl, pos=(2, 3), span=(1, 2),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        KLbl = wx.StaticText(self, id=wx.ID_ANY, label='k')
+        gbSizer.Add(KLbl, pos=(2, 5), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        ExpULbl = wx.StaticText(self, id=wx.ID_ANY, label='Exp Uncert')
+        gbSizer.Add(ExpULbl, pos=(2, 6), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
-#        RangeLbl = wx.StaticText(self, id=wx.ID_ANY,
-#                                 label='Range or Gain (V/A):')
-#        gbSizer.Add(RangeLbl, pos=(2, 0), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#        self.Range = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-#        gbSizer.Add(self.Range, pos=(3, 0), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#
-#        DeltaVLbl = wx.StaticText(self, id=wx.ID_ANY, label='O/P Delta-V:')
-#        gbSizer.Add(DeltaVLbl, pos=(2, 1), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#        self.DeltaV_01 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-#        gbSizer.Add(self.DeltaV_01, pos=(3, 1), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#        self.DeltaV_1 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-#        gbSizer.Add(self.DeltaV_1, pos=(4, 1), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#        self.DeltaV_10 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-#        gbSizer.Add(self.DeltaV_10, pos=(5, 1), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#
-#        PosILbl = wx.StaticText(self, id=wx.ID_ANY, label='+I in (A):')
-#        gbSizer.Add(PosILbl, pos=(2, 2), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#        self.PosI_01 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-#        gbSizer.Add(self.PosI_01, pos=(3, 2), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#        self.PosI_1 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-#        gbSizer.Add(self.PosI_1, pos=(4, 2), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#        self.PosI_10 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-#        gbSizer.Add(self.PosI_10, pos=(5, 2), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#
-#        NegILbl = wx.StaticText(self, id=wx.ID_ANY, label='-I in (A):')
-#        gbSizer.Add(NegILbl, pos=(2, 3), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#        self.NegI_01 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-#        gbSizer.Add(self.NegI_01, pos=(3, 3), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#        self.NegI_1 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-#        gbSizer.Add(self.NegI_1, pos=(4, 3), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#        self.NegI_10 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-#        gbSizer.Add(self.NegI_10, pos=(5, 3), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#
-#        ExpULbl = wx.StaticText(self, id=wx.ID_ANY, label='Exp. U (A):')
-#        gbSizer.Add(ExpULbl, pos=(2, 4), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#        self.ExpU_01 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-#        gbSizer.Add(self.ExpU_01, pos=(3, 4), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#        self.ExpU_1 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-#        gbSizer.Add(self.ExpU_1, pos=(4, 4), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#        self.ExpU_10 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-#        gbSizer.Add(self.ExpU_10, pos=(5, 4), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#
-#        CovFactLbl = wx.StaticText(self, id=wx.ID_ANY, label='k:')
-#        gbSizer.Add(CovFactLbl, pos=(2, 5), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#        self.CovFact_01 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-#        gbSizer.Add(self.CovFact_01, pos=(3, 5), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#        self.CovFact_1 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-#        gbSizer.Add(self.CovFact_1, pos=(4, 5), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#        self.CovFact_10 = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-#        gbSizer.Add(self.CovFact_10, pos=(5, 5), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
+        PLbl = wx.StaticText(self, id=wx.ID_ANY, label='Pressure:')
+        gbSizer.Add(PLbl, pos=(3, 2), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        self.PSummary = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        gbSizer.Add(self.PSummary, pos=(3, 3), span=(1, 2),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        self.Pk = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        gbSizer.Add(self.Pk, pos=(3, 5), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        self.PExpU = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        gbSizer.Add(self.PExpU, pos=(3, 6), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+
+        RHLbl = wx.StaticText(self, id=wx.ID_ANY, label='%RH:')
+        gbSizer.Add(RHLbl, pos=(4, 2), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        self.RHSummary = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        gbSizer.Add(self.RHSummary, pos=(4, 3), span=(1, 2),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        self.RHk = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        gbSizer.Add(self.RHk, pos=(4, 5), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        self.RHExpU = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        gbSizer.Add(self.RHExpU, pos=(4, 6), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+
+        TGMHLbl = wx.StaticText(self, id=wx.ID_ANY, label='T (GMH):')
+        gbSizer.Add(TGMHLbl, pos=(5, 2), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        self.TGMHSummary = wx.TextCtrl(self, id=wx.ID_ANY,
+                                       style=wx.TE_READONLY)
+        gbSizer.Add(self.TGMHSummary, pos=(5, 3), span=(1, 2),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        self.TGMHk = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        gbSizer.Add(self.TGMHk, pos=(5, 5), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        self.TGMHExpU = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        gbSizer.Add(self.TGMHExpU, pos=(5, 6), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        # -----------------------------------------------------------------
+        self.h_sep3 = wx.StaticLine(self, id=wx.ID_ANY, size=(600, 1),
+                                    style=wx.LI_HORIZONTAL)
+        gbSizer.Add(self.h_sep3, pos=(6, 2), span=(1, 5),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        # -----------------------------------------------------------------
+        VoutLbl = wx.StaticText(self, id=wx.ID_ANY,
+                                label='Nom. ' + DELTA + 'Vout:')
+        gbSizer.Add(VoutLbl, pos=(7, 2), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        self.NomVout = wx.ComboBox(self, id=wx.ID_ANY,
+                                   style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.NomVout.Bind(wx.EVT_COMBOBOX, self.OnNomVoutChoice)
+        gbSizer.Add(self.NomVout, pos=(7, 3), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        IinLbl = wx.StaticText(self, id=wx.ID_ANY, label=DELTA+'I_in:')
+        gbSizer.Add(IinLbl, pos=(8, 2), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        self.IinSummary = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        gbSizer.Add(self.IinSummary, pos=(8, 3), span=(1, 2),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        self.Iink = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        gbSizer.Add(self.Iink, pos=(8, 5), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        self.IinExpU = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        gbSizer.Add(self.IinExpU, pos=(8, 6), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+
+        self.Budget = wx.TextCtrl(self, style=wx.TE_MULTILINE |
+                                  wx.TE_READONLY | wx.HSCROLL, id=wx.ID_ANY,)
+        budget_font = wx.Font(8, wx.MODERN, wx.NORMAL, wx.NORMAL)
+        self.Budget.SetFont(budget_font)
+        gbSizer.Add(self.Budget, pos=(9, 2), span=(14, 5),
+                    flag=wx.ALL | wx.EXPAND, border=5)
 
         self.SetSizerAndFit(gbSizer)
-#        self.V01_widgets = [self.DeltaV_01, self.PosI_01, self.NegI_01,
-#                            self.ExpU_01, self.CovFact_01]
-#        self.V1_widgets = [self.DeltaV_1, self.PosI_1, self.NegI_1,
-#                           self.ExpU_1, self.CovFact_1]
-#        self.V10_widgets = [self.DeltaV_10, self.PosI_10, self.NegI_10,
-#                            self.ExpU_10, self.CovFact_10]
-#        self.Vout_widgets = {0.1: self.V01_widgets,
-#                             1: self.V1_widgets,
-#                             10: self.V10_widgets}
 
     def OnListRuns(self, e):
         '''
@@ -1158,44 +1158,52 @@ class CalcPage(wx.Panel):
             self.run_IDs = self.run_data.keys()
 
         self.RunID.Clear()
-        self.RunID.SetValue(self.run_IDs[0])
         self.RunID.AppendItems(self.run_IDs)
+        self.RunID.SetSelection(0)
 
     def OnRunChoice(self, e):
         ID = e.GetString()
         self.runstr = json.dumps(self.run_data[ID], indent=4)
-        self.RunInfo.write(self.runstr)
+        self.RunInfo.SetValue(self.runstr)
+
+    def OnNomVoutChoice(self, e):
+        '''
+        Select which analysed data sub-set (by Vout) to display
+        - Delta_Iin and
+        - Uncert budget
+        '''
+        Vout = float(e.GetString())
+        Iin = self.BuildUreal(self.ThisResult['Nom_dV'][Vout]['Delta_Iin'])
+        IinStr = '{0:.5e}, u={1:.1e}, df={2:.1f}'.format(Iin.x, Iin.u, Iin.df)
+        Iin_k = GTC.rp.k_factor(Iin.df)
+        Iin_EU = Iin.u*Iin_k
+        self.IinSummary.SetValue(IinStr)
+        self.Iink.SetValue('{0:.1f}'.format(Iin_k))
+        self.IinExpU.SetValue('{0:.2e}'.format(Iin_EU))
+
+        budget_str = '{:28}{:<12}{:<8}{:<6}{:<10}{:<13}\n'\
+            .format('Quantity', 'Value', 'Std u.', 'dof',
+                    'Sens. Co.', 'Uncert. Cont.')
+        print self.ThisResult['Nom_dV'][Vout].keys()
+        u_budget_dict = self.ThisResult['Nom_dV'][Vout]['U_Budget']
+        for n, q in enumerate(u_budget_dict['quantity(label)']):
+            v = u_budget_dict['value'][n]
+            u = u_budget_dict['std. uncert'][n]
+            d = float(u_budget_dict['dof'][n])
+            s = u_budget_dict['sens. co.'][n]
+            c = u_budget_dict['uncert. cont.'][n]
+            line = '{:<28}{:<12.5}{:<8.1}{:<6.1f}{:<10.2}{:<13.1}\n'\
+                .format(q, v, u, d, s, c)
+            budget_str += line
+        self.Budget.SetValue(budget_str)
 
     def OnAnalyze(self, e):
         self.run_ID = self.RunID.GetValue()
         self.this_run = self.run_data[self.run_ID]
-#        self.GetXL()
-#
-#        self.Data_start_row = self.ws_Data['B1'].value
-#        print'Start row =', self.Data_start_row
-#        logger.info('Start row = %d', self.Data_start_row)
-#        self.StartRow.SetValue(str(self.Data_start_row))
-#
-#        self.Data_stop_row = self.GetStopRow()
-#        print'Stop row =', self.Data_stop_row
-#        logger.info('Stop row = %d', self.Data_stop_row)
-#        self.StopRow.SetValue(str(self.Data_stop_row))
-#
-#        # Set start row for next acquisition run:
-#        self.ws_Data['B1'].value = self.Data_stop_row + 4
-#
-#        self.Results_start_row = self.ws_Results['B1'].value
 
-#        for V in [0.1, 1, 10]:
-#            for i in range(5):
-#                self.Vout_widgets[V][i].SetValue('')
-
-#        self.GetInstrAssignments()  # Result: self.role_descr
-#        self.GetParams()  # Result: self.I_INFO, self.R_INFO
+        logger.info('STARTING ANALYSIS...')
 
         # Correction for Pt-100 sensor DVM:
-
-
         DVMT = self.this_run['Instruments']['DVMT']
         DVMT_cor = self.BuildUreal(devices.INSTR_DATA[DVMT]['correction_100r'])
 
@@ -1233,21 +1241,10 @@ class CalcPage(wx.Panel):
                     Comment, self.run_ID, DUC_gain, Mean_date)
 
         # Determine mean env. conditions
-#        GMH_Ts = []
-#        GMHroom_RHs = []
-#        GMHroom_Ps = []
         GMH_Ts = self.this_run['T_GMH']
         GMHroom_RHs = self.this_run['Room_conds']['RH']
         GMHroom_Ps = self.this_run['Room_conds']['P']
-#        row = self.Data_start_row
-        
-#        while row <= self.Data_stop_row:
-#            GMH_Ts.append(self.ws_Data['L'+str(row)].value)
-#            GMHroom_RHs.append(self.ws_Data['R'+str(row)].value)
-#            GMHroom_Ps.append(self.ws_Data['Q'+str(row)].value)
-#            row += 1
 
-#        d = self.role_descr['GMH']
         d = self.this_run['Instruments']['GMH']
         T_GMH_cor = self.BuildUreal(devices.INSTR_DATA[d]['T_correction'])
         T_GMH_raw = GTC.ta.estimate_digitized(GMH_Ts, 0.01)
@@ -1269,8 +1266,6 @@ class CalcPage(wx.Panel):
         P_k = GTC.rp.k_factor(P.df)
         P_EU = P.u*P_k
 
-#        self.result_row = self.Write_Summary(Comment, Run_Id, DUC_name,
-#                                             DUC_gain, Mean_date, T_GMH, RH, P)
         self.Results.update({self.run_ID: {}})
         self.ThisResult = self.Results[self.run_ID]
         self.ThisResult.update({'Comment': Comment,
@@ -1289,20 +1284,33 @@ class CalcPage(wx.Panel):
         self.ThisResult['T_GMH'].update({'value': T_GMH.x,
                                          'uncert': T_GMH.u,
                                          'dof': T_GMH.df,
+                                         'label': T_GMH.label,
                                          'k': T_GMH_k,
                                          'ExpU': T_GMH_EU})
 
         self.ThisResult['RH'].update({'value': RH.x,
                                       'uncert': RH.u,
                                       'dof': RH.df,
+                                      'label': RH.label,
                                       'k': RH_k,
                                       'ExpU': RH_EU})
 
         self.ThisResult['P'].update({'value': P.x,
                                      'uncert': P.u,
                                      'dof': P.df,
+                                     'label': P.label,
                                      'k': P_k,
                                      'ExpU': P_EU})
+
+        self.PSummary.SetValue(str(P.s))
+        self.Pk.SetValue('{0:.1f}'.format(P_k))
+        self.PExpU.SetValue('{0:.2f}'.format(P_EU))
+        self.RHSummary.SetValue(str(RH.s))
+        self.RHk.SetValue('{0:.1f}'.format(RH_k))
+        self.RHExpU.SetValue('{0:.2f}'.format(RH_EU))
+        self.TGMHSummary.SetValue(str(T_GMH.s))
+        self.TGMHk.SetValue('{0:.1f}'.format(T_GMH_k))
+        self.TGMHExpU.SetValue('{0:.2f}'.format(T_GMH_EU))
 
         influencies = []
         V1s = []
@@ -1473,9 +1481,9 @@ class CalcPage(wx.Panel):
                     logger.info('ZERO COMPONENT of I+')
 
                 if abs(GTC.component(I_neg, i)) > 0:
-                    print 'Included component of I-:',GTC.component(I_neg, i)
+                    print 'Included component of I-:', GTC.component(I_neg, i)
                     logger.info('Included component of I-: %d',
-                                 GTC.component(I_neg, i))
+                                GTC.component(I_neg, i))
                     budget_table_neg.append([i.label, i.x, i.u, i.df,
                                              sensitivity_neg,
                                              GTC.component(I_neg, i)])
@@ -1501,55 +1509,17 @@ class CalcPage(wx.Panel):
         # <- End of analysis loop for this run
 
         # Display analysis result and update results dict
-        SummaryStr = json.dumps(self.ThisResult, indent=4)
-        self.ResultSummary.SetValue(SummaryStr)
+#        SummaryStr_all = json.dumps(self.ThisResult, indent=4)
 
-        print self.Results
+#        self.ResultSummary.SetValue(SummaryStr_all)
 
-#    def GetXL(self):
-#        '''
-#        NOTE: Details of the Excel file are not available
-#        until the user has opened it!
-#        '''
-#        self.XLPath = self.GetTopLevelParent().ExcelPath
-#        print '\n', self.XLPath
-#        logger.info('%s', self.XLPath)
-#        assert self.XLPath is not "", 'No data file open yet!'
-#
-#        self.ws_Data = self.GetTopLevelParent().wb.get_sheet_by_name('Data')
-#        self.ws_Params = self.GetTopLevelParent().wb.get_sheet_by_name('Parameters')
-#        self.ws_Results = self.GetTopLevelParent().wb.get_sheet_by_name('Results')
+        with open(self.results_file, 'w') as results_fp:
+            json.dump(self.Results, results_fp, indent=4)
 
-#    def OnStartRow(self, e):
-#        self.GetXL()
-#        self.ws_Data['B1'].value = int(e.GetString())
-
-#    def GetStopRow(self):
-#        row = self.Data_start_row
-#        self.Test_Vs = []
-#        '''
-#        Don't search forever and
-#        ignore final row:
-#        '''
-#        while row < self.Data_start_row + SEARCH_LIMIT - 1:
-#            NomVOP = self.ws_Data['G'+str(row)].value
-#            if NomVOP in (None, 'Nom. Vout '):  # Ran out of data
-#                print'Break row =', row
-#                break
-#            elif NomVOP in (0.1, 1, 10):
-#                self.Test_Vs.append(NomVOP)
-#                row += 1
-#                continue
-#            else:  # in (0,-0.1, -1, -10)
-#                row += 1
-#                continue
-#        Test_V_set = set(self.Test_Vs)
-#        if len(Test_V_set) < 1:
-#            print'GetStopRow(): Incomplete data! - ', self.Test_Vs
-#            return self.Data_start_row
-#        else:
-#            print 'GetStopRow(): Test Vs:', Test_V_set
-#            return self.Data_start_row + 4 * len(self.Test_Vs) - 1
+        # Choices should be: 0.1, -0.1, 1, -1, 10 or -10:
+        self.NomVout.Clear()
+        for V in self.Results[self.run_ID]['Nom_dV'].keys():
+            self.NomVout.Append(str(V))
 
     def GetNamefromComment(self, c):
         return c[c.find('DUC: ') + 5: c.find(' monitored by GMH')]
@@ -1571,72 +1541,11 @@ class CalcPage(wx.Panel):
         t_av_dt = dt.datetime.fromtimestamp(t_av)
         return t_av_dt.strftime('%d/%m/%Y %H:%M:%S')  # av. time as string
 
-#    def Write_Summary(self, Comment, Run_Id, DUC_name,
-#                      DUC_gain, date, T, RH, P):
-#        '''
-#        Write Run summary and result column-headings.
-#        Return next row
-#        '''
-#        DELTA = u'\N{GREEK CAPITAL LETTER DELTA}'
-#        row = self.Results_start_row
-#        proc_date = dt.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
-#        proc_string = 'Processesed by IVY v{} on {}'.format(self.version, proc_date)
-#        self.ws_Results['H'+str(row)].value = proc_string
-#        self.ws_Results['A'+str(row)].value = 'Comment:'
-#        self.ws_Results['B'+str(row)].value = Comment
-#        self.ws_Results['A'+str(row+1)].value = 'Run Id:'
-#        self.ws_Results['B'+str(row+1)].value = Run_Id
-#        self.ws_Results['A'+str(row+2)].value = 'Date:'
-#        self.ws_Results['B'+str(row+2)].value = date
-#        self.ws_Results['A'+str(row+3)].value = 'DUC Name:'
-#        self.ws_Results['B'+str(row+3)].value = DUC_name
-#        self.ws_Results['A'+str(row+4)].value = 'Gain (V/A):'
-#        self.ws_Results['B'+str(row+4)].value = DUC_gain
-#
-#        self.ws_Results['C'+str(row+2)].value = 'Condition:'
-#        self.ws_Results['C'+str(row+3)].value = 'Value:'
-#        self.ws_Results['C'+str(row+4)].value = 'Exp Uncert.:'
-#        self.ws_Results['C'+str(row+5)].value = 'Cov. factor:'
-#
-#        T_k = GTC.rp.k_factor(T.df)
-#        self.ws_Results['D'+str(row+2)].value = 'T (GMH)'
-#        self.ws_Results['D'+str(row+3)].value = T.x
-#        self.ws_Results['D'+str(row+4)].value = T_k*T.u
-#        self.ws_Results['D'+str(row+5)].value = T_k
-#
-#        RH_k = GTC.rp.k_factor(RH.df)
-#        self.ws_Results['E'+str(row+2)].value = 'RH (%)'
-#        self.ws_Results['E'+str(row+3)].value = RH.x
-#        self.ws_Results['E'+str(row+4)].value = RH_k*RH.u
-#        self.ws_Results['E'+str(row+5)].value = RH_k
-#
-#        P_k = GTC.rp.k_factor(P.df)
-#        self.ws_Results['F'+str(row+2)].value = 'P (mBar)'
-#        self.ws_Results['F'+str(row+3)].value = P.x
-#        self.ws_Results['F'+str(row+4)].value = P_k * P.u
-#        self.ws_Results['F'+str(row+5)].value = P_k
-#        # Add blank line below summary
-#        self.ws_Results['H'+str(row+6)].value = 'Uncertainty Budget:'
-#        self.ws_Results['A'+str(row+7)].value = 'Nom. ' + DELTA + 'V'
-#        self.ws_Results['B'+str(row+7)].value = DELTA + 'I in'
-#        self.ws_Results['C'+str(row+7)].value = 'Std. u'
-#        self.ws_Results['D'+str(row+7)].value = 'dof'
-#        self.ws_Results['E'+str(row+7)].value = 'Exp. U'
-#        self.ws_Results['F'+str(row+7)].value = 'k'
-#        self.ws_Results['H'+str(row+7)].value = 'Quantity (label)'
-#        self.ws_Results['I'+str(row+7)].value = 'Value'
-#        self.ws_Results['J'+str(row+7)].value = 'Std. u'
-#        self.ws_Results['K'+str(row+7)].value = 'dof'
-#        self.ws_Results['L'+str(row+7)].value = 'Sens. Co.'
-#        self.ws_Results['M'+str(row+7)].value = 'Uncert. Cont.'
-#
-#        return row+8
-
     def BuildUreal(self, d):
         '''
         Accept a dictionary contaning keys of 'value', 'uncert', 'dof' and
         'label' and use corresponding values as input to GTC.ureal().
-        Return resulting ureal.
+        Return resulting ureal. Ignore any other keys.
         '''
         assert isinstance(d, dict), 'Not a dictionary!'
         try:
@@ -1704,11 +1613,13 @@ class CalcPage(wx.Panel):
         value = result['I_pos'].x
         uncert = result['I_pos'].u
         dof = result['I_pos'].df
+        lbl = result['I_pos'].label
         k = GTC.rp.k_factor(dof)
         EU = k*uncert
         pos_result_dict['Delta_Iin'].update({'value': value,
                                              'uncert': uncert,
                                              'dof': dof,
+                                             'label': lbl,
                                              'k': k, 'EU': EU})
 
         #    Uncert Budget (for pos Vout):
@@ -1741,17 +1652,19 @@ class CalcPage(wx.Panel):
 
         # Negative results...
         #    Summary of Delta_I_in :
-        neg_result_dict = {'Delta_Iin': {}, 'U_budget': {}}
+        neg_result_dict = {'Delta_Iin': {}, 'U_Budget': {}}
 
         value = result['I_neg'].x
         uncert = result['I_neg'].u
         dof = result['I_neg'].df
+        lbl = result['I_neg'].label
         k = GTC.rp.k_factor(dof)
         EU = k*uncert
 
         neg_result_dict['Delta_Iin'].update({'value': value,
                                              'uncert': uncert,
                                              'dof': dof,
+                                             'label': lbl,
                                              'k': k, 'EU': EU})
 
         #    Uncert Budget (for neg Vout):
@@ -1768,7 +1681,7 @@ class CalcPage(wx.Panel):
             df.append(line[3])
             sens.append(line[4])
             cont.append(line[5])
-        neg_result_dict['U_budget'].update({'quantity(label)': Q,
+        neg_result_dict['U_Budget'].update({'quantity(label)': Q,
                                             'value': v,
                                             'std. uncert': u,
                                             'dof': df,
@@ -1777,8 +1690,7 @@ class CalcPage(wx.Panel):
 
         self.ThisResult['Nom_dV'][self.neg_nom_Vout].update(neg_result_dict)
 
-
 #        print'WriteThisResult(): Final result_row =', r
 #        logger.info('Final result_row = %d', r)
 
-        return 1  # Blank line between results
+        return 1
