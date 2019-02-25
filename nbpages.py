@@ -1024,24 +1024,19 @@ class CalcPage(wx.Panel):
                                  style=wx.CB_DROPDOWN | wx.CB_READONLY)
         self.RunID.Bind(wx.EVT_COMBOBOX, self.OnRunChoice)
         self.RunID.Bind(wx.EVT_TEXT, self.OnRunChoice)
-        gbSizer.Add(self.RunID, pos=(0, 1), span=(1, 5),
+        gbSizer.Add(self.RunID, pos=(0, 1), span=(1, 6),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
         self.Analyze = wx.Button(self, id=wx.ID_ANY, label='Analyze')
         self.Analyze.Bind(wx.EVT_BUTTON, self.OnAnalyze)
-        gbSizer.Add(self.Analyze, pos=(0, 6), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(self.Analyze, pos=(0, 7), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)  #
 
         # -----------------------------------------------------------------
-        self.h_sep1 = wx.StaticLine(self, id=wx.ID_ANY, size=(200, 1),
+        self.h_sep1 = wx.StaticLine(self, id=wx.ID_ANY, size=(720, 1),
                                     style=wx.LI_HORIZONTAL)
-        gbSizer.Add(self.h_sep1, pos=(1, 0), span=(1, 2),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-
-        self.h_sep2 = wx.StaticLine(self, id=wx.ID_ANY, size=(600, 1),
-                                    style=wx.LI_HORIZONTAL)
-        gbSizer.Add(self.h_sep2, pos=(1, 2), span=(1, 5),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(self.h_sep1, pos=(1, 0), span=(1, 8),
+                    flag=wx.ALL | wx.EXPAND, border=5)  #
         # -----------------------------------------------------------------
 
         # Run summary:
@@ -1050,7 +1045,8 @@ class CalcPage(wx.Panel):
                     flag=wx.ALL | wx.EXPAND, border=5)
 
         self.RunInfo = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_MULTILINE |
-                                   wx.TE_READONLY | wx.HSCROLL)
+                                   wx.TE_READONLY | wx.HSCROLL,
+                                   size=(250, 1))
         gbSizer.Add(self.RunInfo, pos=(3, 0), span=(20, 2),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
@@ -1069,7 +1065,7 @@ class CalcPage(wx.Panel):
                     flag=wx.ALL | wx.EXPAND, border=5)
         ExpULbl = wx.StaticText(self, id=wx.ID_ANY, label='Exp Uncert')
         gbSizer.Add(ExpULbl, pos=(2, 6), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                    flag=wx.ALL, border=5)  # | wx.EXPAND
 
         PLbl = wx.StaticText(self, id=wx.ID_ANY, label='Pressure:')
         gbSizer.Add(PLbl, pos=(3, 2), span=(1, 1),
@@ -1082,7 +1078,7 @@ class CalcPage(wx.Panel):
                     flag=wx.ALL | wx.EXPAND, border=5)
         self.PExpU = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
         gbSizer.Add(self.PExpU, pos=(3, 6), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                    flag=wx.ALL, border=5)  # | wx.EXPAND
 
         RHLbl = wx.StaticText(self, id=wx.ID_ANY, label='%RH:')
         gbSizer.Add(RHLbl, pos=(4, 2), span=(1, 1),
@@ -1095,7 +1091,7 @@ class CalcPage(wx.Panel):
                     flag=wx.ALL | wx.EXPAND, border=5)
         self.RHExpU = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
         gbSizer.Add(self.RHExpU, pos=(4, 6), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                    flag=wx.ALL, border=5)  # | wx.EXPAND
 
         TGMHLbl = wx.StaticText(self, id=wx.ID_ANY, label='T (GMH):')
         gbSizer.Add(TGMHLbl, pos=(5, 2), span=(1, 1),
@@ -1109,12 +1105,12 @@ class CalcPage(wx.Panel):
                     flag=wx.ALL | wx.EXPAND, border=5)
         self.TGMHExpU = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
         gbSizer.Add(self.TGMHExpU, pos=(5, 6), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                    flag=wx.ALL, border=5)  # | wx.EXPAND
         # -----------------------------------------------------------------
-        self.h_sep3 = wx.StaticLine(self, id=wx.ID_ANY, size=(600, 1),
+        self.h_sep3 = wx.StaticLine(self, id=wx.ID_ANY, size=(480, 1),
                                     style=wx.LI_HORIZONTAL)
         gbSizer.Add(self.h_sep3, pos=(6, 2), span=(1, 5),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                    flag=wx.ALL | wx.EXPAND, border=5)  #
         # -----------------------------------------------------------------
         VoutLbl = wx.StaticText(self, id=wx.ID_ANY,
                                 label='Nom. ' + DELTA + 'Vout:')
@@ -1125,6 +1121,7 @@ class CalcPage(wx.Panel):
         self.NomVout.Bind(wx.EVT_COMBOBOX, self.OnNomVoutChoice)
         gbSizer.Add(self.NomVout, pos=(7, 3), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
+
         IinLbl = wx.StaticText(self, id=wx.ID_ANY, label=DELTA+'I_in:')
         gbSizer.Add(IinLbl, pos=(8, 2), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
@@ -1136,14 +1133,14 @@ class CalcPage(wx.Panel):
                     flag=wx.ALL | wx.EXPAND, border=5)
         self.IinExpU = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
         gbSizer.Add(self.IinExpU, pos=(8, 6), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                    flag=wx.ALL, border=5)  # | wx.EXPAND
 
         self.Budget = wx.TextCtrl(self, style=wx.TE_MULTILINE |
                                   wx.TE_READONLY | wx.HSCROLL, id=wx.ID_ANY,)
         budget_font = wx.Font(8, wx.MODERN, wx.NORMAL, wx.NORMAL)
         self.Budget.SetFont(budget_font)
-        gbSizer.Add(self.Budget, pos=(9, 2), span=(14, 5),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(self.Budget, pos=(9, 2), span=(14, 6),
+                    flag=wx.ALL | wx.EXPAND, border=5)  #
 
         self.SetSizerAndFit(gbSizer)
 
