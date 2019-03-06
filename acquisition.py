@@ -13,7 +13,7 @@ Contains definitions for usual __init__() and run() methods
 
 @author: t.lawson
 """
-
+import os
 import wx
 from threading import Thread
 import datetime as dt
@@ -21,8 +21,6 @@ import time
 import numpy as np
 import logging
 import json
-
-from openpyxl.styles import Font, Border, Side
 
 import IVY_events as evts
 import devices
@@ -91,25 +89,6 @@ class AqnThread(Thread):
             self.run_dict['Instruments'].update(sub_dict)
             print'%s \t-> %s' % (devices.INSTR_DATA[d]['role'], d)
             logger.info('%s \t-> %s', devices.INSTR_DATA[d]['role'], d)
-#            if r != devices.INSTR_DATA[d]['role']:
-#                devices.INSTR_DATA[d]['role'] = r
-#                print'Role data corrected to:', r, '->', d
-#                logger.info('Role data corrected to: %s -> %s', r, d)
-
-#        # Get filename of Excel file
-#        self.xlfilename = self.SetupPage.XLFile.GetValue()  # Full path
-#        self.path_components = self.xlfilename.split('\\')
-#        self.directory = '\\'.join(self.path_components[0:-1])
-
-#        # Find existing workbook
-#        self.wb_io = self.SetupPage.wb
-#        self.ws = self.wb_io.get_sheet_by_name('Data')
-#
-#        # read start row number from Excel file
-#        self.start_row = self.ws['B1'].value
-
-#        strt_ev = evts.StartRowEvent(row=self.start_row)
-#        wx.PostEvent(self.RunPage, strt_ev)
 
         self.settle_time = self.RunPage.SettleDel.GetValue()
 
@@ -159,11 +138,7 @@ class AqnThread(Thread):
             return
         stat_ev = evts.StatusEvent(msg=' Post-initialise delay (3s)', field=1)
         wx.PostEvent(self.TopLevel, stat_ev)
-#        time.sleep(3)
 
-#        self.WriteInstrAssignments()
-
-#        row = self.start_row  # Start of data
         row = 1
         pbar = 0
 
@@ -279,11 +254,6 @@ class AqnThread(Thread):
                     if not devices.ROLES_INSTR['SRC'].demo:
                         time.sleep(30)  # wait after applying V and OPER mode.
 
-#                    if self._want_abort:
-#                        self.AbortRun()
-#                        return
-#                    time.sleep(5)  # wait 5s after setting voltage
-
                     # Prepare DVMs...
                     stat_ev = evts.StatusEvent(msg='Preparing DVMs...',
                                                field=1)
@@ -303,14 +273,15 @@ class AqnThread(Thread):
                     if self._want_abort:
                         self.AbortRun()
                         return
-                    if not (devices.ROLES_INSTR['DVM12'].demo and devices.ROLES_INSTR['DVM3'].demo):
+                    if not (devices.ROLES_INSTR['DVM12'].demo and
+                            devices.ROLES_INSTR['DVM3'].demo):
                         time.sleep(30)  # 30
 
-                    status_msg = 'Making {0:d} measurements each of {1:s} and\
- V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
-                    print status_msg
-                    logger.info(status_msg)
-                    stat_ev = evts.StatusEvent(msg=status_msg, field=1)
+                    stat_msg = 'Making {0:d} measurements each of {1:s} and'
+                    'V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.V1_nom)
+                    print stat_msg
+                    logger.info(stat_msg)
+                    stat_ev = evts.StatusEvent(msg=stat_msg, field=1)
                     wx.PostEvent(self.TopLevel, stat_ev)
 
                     for n in range(NREADS):  # Acquire all V and t readings
@@ -329,14 +300,22 @@ class AqnThread(Thread):
                     print'\n'
                     time.sleep(1)
 
-                    assert len(self.V12Data[node]) == NREADS, 'Number of {0:s} readings != {1:d}!'.format(node, NREADS)
-                    assert len(self.Times) == NREADS, 'Number of timestamps != {1:d}!'.format(NREADS)
-                    self.tm = dt.datetime.fromtimestamp(np.mean(self.Times)).strftime("%d/%m/%Y %H:%M:%S")
+                    msg = 'Number of {0:s} readings != {1:d}!'.format(node,
+                                                                      NREADS)
+                    assert len(self.V12Data[node]) == NREADS, msg
+
+                    msg = 'Number of timestamps != {0:d}!'.format(NREADS)
+                    assert len(self.Times) == NREADS, msg
+
+                    tm_raw = dt.datetime.fromtimestamp(np.mean(self.Times))
+                    self.tm = tm_raw.strftime("%d/%m/%Y %H:%M:%S")
                     self.V12m[node] = np.mean(self.V12Data[node])
                     self.V12sd[node] = np.std(self.V12Data[node], ddof=1)
-                    meas_status = 'V12m[{0:s}] = {1:.6f}'.format(node, self.V12m[node])
-                    print meas_status
-                    logger.info(meas_status)
+
+                    msg = 'V12m[{0:s}] = {1:.6f}'.format(node,
+                                                         self.V12m[node])
+                    print msg
+                    logger.info(msg)
                     self.SetNode(node)
                     Update = {'node': node, 'Vm': self.V12m[node],
                               'Vsd': self.V12sd[node], 'time': self.tm,
@@ -352,7 +331,8 @@ class AqnThread(Thread):
 
                     time.sleep(2)  # Give user time to read vals before update
 
-                    assert len(self.V3Data) == NREADS, 'Number of V3 readings != {1:d}!'.format(NREADS)
+                    msg = 'Number of V3 readings != {0:d}!'.format(NREADS)
+                    assert len(self.V3Data) == NREADS, msg
                     self.V3m = np.mean(self.V3Data)
                     self.V3sd = np.std(self.V3Data, ddof=1)
                     self.T = devices.ROLES_INSTR['GMH'].Measure('T')
@@ -373,7 +353,6 @@ class AqnThread(Thread):
                     stat_ev = evts.StatusEvent(msg="Post-acqisn. delay (5s)",
                                                field=1)
                     wx.PostEvent(self.TopLevel, stat_ev)
-#                    time.sleep(5)
 
                     # Record room conditions
                     self.Troom = devices.ROLES_INSTR['GMHroom'].Measure('T')
@@ -386,7 +365,6 @@ class AqnThread(Thread):
                     row += 1
 
                     # Reset start row for next measurement
-#                    self.ws['B1'].value = row+3
                 # (end of V3_mask loop)
             # (end of node loop)
         # (end of abs_V3 loop)
@@ -403,12 +381,14 @@ class AqnThread(Thread):
         self.RunPage.Node.SetValue(node)  # Update widget value
         s = node[1]
         if s in ('1', '2'):
-            print'AqnThread.SetNode():Sending IVbox "', s, '"'
-            logger.info('Sending IVbox "%s"', s)
+            msg = 'Sending IVbox "{:s}"'.format(s)
+            print'AqnThread.SetNode():', msg
+            logger.info(msg)
             devices.ROLES_INSTR['IVbox'].SendCmd(s)
         else:  # '3'
-            print'AqnThread.SetNode():IGNORING IVbox cmd "', s, '"'
-            logger.info('IGNORING IVbox cmd "%s"', s)
+            msg = 'IGNORING IVbox cmd "{:s}"'.format(s)
+            print'AqnThread.SetNode():', msg
+            logger.info(msg)
         if not devices.ROLES_INSTR['IVbox'].demo:
             time.sleep(1)
 
@@ -418,59 +398,13 @@ class AqnThread(Thread):
         for d in self.Times:
             Dates.append(dt.datetime.fromtimestamp(d))
         clear_plot = 0
-#        if row == self.start_row:
+
         if row == 1:
             clear_plot = 1  # start each run with a clear plot
 
         plot_ev = evts.PlotEvent(t=Dates, V12=self.V12Data[node],
                                  V3=self.V3Data, clear=clear_plot, node=node)
         wx.PostEvent(self.PlotPage, plot_ev)
-
-#    def WriteHeadings(self):
-#        Id_row = self.start_row-2  # Headings
-#        self.ws['A'+str(Id_row)].font = Font(b=True)
-#        self.ws['A'+str(Id_row)] = 'Run ID:'
-#        self.ws['B'+str(Id_row)].font = Font(b=True)
-#        self.ws['B'+str(Id_row)] = self.RunPage.run_id
-#
-#        Head_row = self.start_row-1  # Headings
-#
-#        col_headings = {'A': 'Comment', 'B': 'DUC gain (V/A)', 'C': 'Rs (Ohm)',
-#                        'D': 'I/P node (V1,V2?)', 'E': 'Date, time',
-#                        'F': 'N meas.', 'G': 'Nom. Vout ', 'H': 'O/P V (V3)',
-#                        'I': 'Stdev', 'J': 'I/P V (V1 or V2)', 'K': 'Stdev',
-#                        'L': 'T(GMH)', 'M': 'Pt (DVM)', 'N': 'IP DVM range',
-#                        'O': 'OP DVM range', 'P': 'T (room)', 'Q': 'P (room)',
-#                        'R': 'RH (room)', 'S': 'Role',
-#                        'T': 'Instrument description'}
-#        for k in col_headings.keys():
-#            self.ws[k+str(Head_row)] = col_headings[k]
-
-    def WriteInstrAssignments(self):
-        '''
-        Record all roles and corresponding instrument descriptions in XL sheet
-        '''
-        role_row = self.start_row
-        bord_tl = Border(top=Side(style='thin'), left=Side(style='thin'))
-        bord_tr = Border(top=Side(style='thin'), right=Side(style='thin'))
-        bord_l = Border(left=Side(style='thin'))
-        bord_r = Border(right=Side(style='thin'))
-        bord_bl = Border(bottom=Side(style='thin'), left=Side(style='thin'))
-        bord_br = Border(bottom=Side(style='thin'), right=Side(style='thin'))
-        for r in devices.ROLES_WIDGETS.keys():
-            if role_row == self.start_row:  # 1st row
-                self.ws['S'+str(role_row)].border = bord_tl
-                self.ws['T'+str(role_row)].border = bord_tr
-            elif role_row == self.start_row + 6:  # last row
-                self.ws['S'+str(role_row)].border = bord_bl
-                self.ws['T'+str(role_row)].border = bord_br
-            else:  # in-between rows
-                self.ws['S'+str(role_row)].border = bord_l
-                self.ws['T'+str(role_row)].border = bord_r
-            self.ws['S'+str(role_row)] = r
-            d = devices.ROLES_WIDGETS[r]['icb'].GetValue()  # descr
-            self.ws['T'+str(role_row)] = d
-            role_row += 1
 
     def initialise(self):
         stat_ev = evts.StatusEvent(msg='Initialising instruments...', field=0)
@@ -483,12 +417,14 @@ class AqnThread(Thread):
                 d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
             # Open non-GMH devices:
             if 'GMH' not in devices.ROLES_INSTR[r].Descr:
-                print'AqnThread.initialise(): Opening', d
-                logger.info('Opening %s', d)
+                msg = 'Opening {:s}'.format(d)
+                print'AqnThread.initialise():', msg
+                logger.info(msg)
                 devices.ROLES_INSTR[r].Open()
             else:
-                print'AqnThread.initialise(): %s already open' % d
-                logger.info('%s already open', d)
+                msg = '{:s} already open'.format(d)
+                print'AqnThread.initialise():', msg
+                logger.info(msg)
 
             stat_ev = evts.StatusEvent(msg=d, field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
@@ -502,8 +438,9 @@ class AqnThread(Thread):
         d = devices.ROLES_INSTR['SRC'].Descr
         if 'F5520A' in d:
             err = devices.ROLES_INSTR['SRC'].CheckErr()  # 'ERR?','*CLS'
-            print'Cleared F5520A error:', err
-            logger.info('Cleared F5520A error: %s', err)
+            msg = 'Cleared F5520A error: "{}"'.format(err)
+            print msg
+            logger.info(msg)
 
         del self.V12Data[node][:]
         del self.V3Data[:]
@@ -559,33 +496,12 @@ class AqnThread(Thread):
         stat_ev = evts.StatusEvent(msg='Row '+str(row), field=1)
         wx.PostEvent(self.TopLevel, stat_ev)
 
-#        self.ws['A'+str(row)] = self.Comment
-#        self.ws['B'+str(row)] = self.DUC_G
-#        self.ws['C'+str(row)] = self.Rs
-#        self.ws['D'+str(row)] = node
-#        self.ws['E'+str(row)] = str(dt.datetime.fromtimestamp(np.mean(self.Times)).strftime("%d/%m/%Y %H:%M:%S"))
-#        self.ws['F'+str(row)] = NREADS
-#        self.ws['G'+str(row)] = self.Vout  # Nominal output
-#        self.ws['H'+str(row)] = self.V3m  # Measured output
-#        self.ws['I'+str(row)] = self.V3sd
-#        self.ws['J'+str(row)] = self.V12m[node]
-#        self.ws['K'+str(row)] = self.V12sd[node]
-#        self.ws['L'+str(row)] = self.T
         if devices.ROLES_INSTR['DVMT'].demo is True:
             TdvmOP = np.random.normal(108.0, 1.0e-2)
             self.TdvmOP = TdvmOP
         else:
             TdvmOP = devices.ROLES_INSTR['DVMT'].Read()  # .SendCmd('READ?')
             self.TdvmOP = float(filter(self.filt, TdvmOP))
-#        self.ws['M'+str(row)] = self.TdvmOP
-#        self.ws['N'+str(row)] = self.IPrange
-#        self.ws['O'+str(row)] = self.OPrange
-#        self.ws['P'+str(row)] = self.Troom
-#        self.ws['Q'+str(row)] = self.Proom
-#        self.ws['R'+str(row)] = self.RHroom
-#
-#        # Save after every row
-#        self.wb_io.save(self.xlfilename)
 
         # Update run_dict:
         self.run_dict['Node'].append(node)
@@ -617,15 +533,20 @@ class AqnThread(Thread):
         logger.info('Run aborted.')
 
     def FinishRun(self):
-        # Run complete - leave system safe and final xl save
-#        self.wb_io.save(self.xlfilename)
+        # Run complete - leave system safe and final data-save
 
         RunID = str(self.RunPage.run_id)
-        data_file = str(self.RunPage.data_file)
-
         self.RunPage.master_run_dict.update({RunID: self.run_dict})
+
+        data_file = self.TopLevel.data_file
+        correct_dir = self.TopLevel.directory
+        displayed_dir = self.SetupPage.WorkingDir.GetValue()
+        working_dir = os.path.dirname(data_file)
+        assert displayed_dir == correct_dir, 'Working Directory display error!'
+        assert working_dir == correct_dir, 'Working Directory error!'
         with open(data_file, 'w') as IVY_out:
-            logger.info('SAVING ALL RUN DATA...')
+            msg = 'SAVING ALL RUN DATA to {:s}'.format(data_file)
+            logger.info(msg)
             json.dump(self.RunPage.master_run_dict, IVY_out)
 
         self.Standby()  # Set sources to 0V and leave system safe
@@ -644,8 +565,8 @@ class AqnThread(Thread):
 
     def Standby(self):
         # Set sources to 0V and disable outputs
-        devices.ROLES_INSTR['SRC'].Stby  # .SendCmd('R0=')
         self.RunPage.V1Setting.SetValue(str(0))
+        devices.ROLES_INSTR['SRC'].Stby  # .SendCmd('R0=')
 
     def abort(self):
         """abort worker thread."""

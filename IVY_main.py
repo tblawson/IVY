@@ -61,9 +61,10 @@ class MainFrame(wx.Frame):
     '''
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, size=(900, 600), *args, **kwargs)
-        self.version = VERSION
-        self.ExcelPath = ""
+        self.data_file = ""
+        self.directory = os.getcwd()  # default value
         self.Center()
+        self.version = VERSION
 
         # Event bindings
         self.Bind(evts.EVT_STAT, self.UpdateStatus)
@@ -78,14 +79,10 @@ class MainFrame(wx.Frame):
                                 help='About HighResBridgeControl (HRBC)')
         self.Bind(wx.EVT_MENU, self.OnAbout, About)
 
-        Open = FileMenu.Append(wx.ID_OPEN, text='&Open',
-                               help='Open an Excel file')
-        self.Bind(wx.EVT_MENU, self.OnOpen, Open)
-
-        Save = FileMenu.Append(wx.ID_SAVE, text='&Save',
-                               help='Save data to an Excel file - this \
-                               usually happens automatically during a run.')
-        self.Bind(wx.EVT_MENU, self.OnSave, Save)
+        SetDir = FileMenu.Append(wx.ID_OPEN, text='Set &Directory',
+                                 help='Set working directory for raw data and'
+                                 ' analysis results')
+        self.Bind(wx.EVT_MENU, self.OnSetDir, SetDir)  # OnOpen
 
         FileMenu.AppendSeparator()
 
@@ -119,18 +116,6 @@ class MainFrame(wx.Frame):
         sizer.Add(self.NoteBook, 1, wx.EXPAND)
         self.MainPanel.SetSizer(sizer)
 
-#        # Start logging
-#        logname = 'IVYv'+str(self.version)+'_'+str(dt.date.today())+'.log'
-#        logfile = os.path.join(os.getcwd(), logname)
-#
-#        logging.basicConfig(filename=logfile,
-#                            format='%(levelname)s:%(name)s:%(funcName)s:\
-#  %(asctime)s:$(message)s', level=logging.INFO)
-#        logger = logging.getLogger('IVY.main')
-#        logger.info('### IVY_main.py: logfile: %s', logfile)
-#        print '\n### IVY_main.py: logfile:', logfile
-#        self.log = open(logfile, 'a')
-
     def UpdateStatus(self, e):
         if e.field == 'b':
             self.sb.SetStatusText(e.msg, 0)
@@ -142,31 +127,21 @@ class MainFrame(wx.Frame):
         # A message dialog with 'OK' button. wx.OK is a standard wxWidgets ID.
         dlg_description = "IVY v"+VERSION+": A Python'd version of the TestPoint \
 I-to-V converter program for Light Standards."
-        dlg_title = "About HighResBridge"
+        dlg_title = "About IVY"
         dlg = wx.MessageDialog(self, dlg_description, dlg_title, wx.OK)
         dlg.ShowModal()  # Show dialog.
         dlg.Destroy()  # Destroy when done.
 
-    def OnSave(self, event=None):
-        if self.ExcelPath is not "":
-            print 'Main.OnSave(): Saving', self.page1.XLFile.GetValue(), '...'
-            self.page1.wb.save(self.page1.XLFile.GetValue())
-        else:
-            print 'Main.OnSave(): Nothing to Save.'
-        print 'DONE.'
-
-    def OnOpen(self, event=None):
-        dlg = wx.FileDialog(self, message="Select data file",
-                            defaultDir=os.getcwd(),
-                            defaultFile="", wildcard="*",
-                            style=wx.OPEN | wx.CHANGE_DIR)
+    def OnSetDir(self, event=None):
+        dlg = wx.DirDialog(self, message='Select working directory',
+                           style=wx.DD_DEFAULT_STYLE | wx.DD_CHANGE_DIR)
+        dlg.SetPath(os.getcwd())
         if dlg.ShowModal() == wx.ID_OK:
-            self.ExcelPath = dlg.GetPath()
-            self.directory = dlg.GetDirectory()
+            self.directory = dlg.GetPath()
+            self.data_file = os.path.join(self.directory, 'IVY_RunData.json')
             print self.directory
-            print self.ExcelPath
-            file_evt = evts.FilePathEvent(XLpath=self.ExcelPath,
-                                          d=self.directory, v=VERSION)
+            # Ensure working directory is displayed on SetupPage:
+            file_evt = evts.FilePathEvent(Dir=self.directory)
             wx.PostEvent(self.page1, file_evt)
         dlg.Destroy()
 
@@ -179,8 +154,6 @@ I-to-V converter program for Light Standards."
 
     def OnQuit(self, event=None):
         self.CloseInstrSessions()
-        self.OnSave()
-#        self.page1.log.close()
         time.sleep(0.1)
         print 'Closing IVY...'
         self.Close()
@@ -213,5 +186,4 @@ class MainApp(wx.App):
 
 if __name__ == '__main__':
     app = MainApp(0)
-#    wx.lib.inspection.InspectionTool().Show()
     app.MainLoop()

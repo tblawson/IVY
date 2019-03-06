@@ -33,7 +33,6 @@ import acquisition as acq
 import devices
 
 import GTC
-from numbers import Number
 
 matplotlib.rc('lines', linewidth=1, color='blue')
 
@@ -51,7 +50,7 @@ class SetupPage(wx.Panel):
         wx.Panel.__init__(self, parent)
 
         # Event bindings
-        self.Bind(evts.EVT_FILEPATH, self.UpdateFilepath)
+        self.Bind(evts.EVT_FILEPATH, self.UpdateDir)
 
         self.status = self.GetTopLevelParent().sb
         self.version = self.GetTopLevelParent().version
@@ -65,7 +64,7 @@ class SetupPage(wx.Panel):
                                    'Rs=10^4': '4',
                                    'Rs=10^5': '5',
                                    'Rs=10^6': '6',
-                                   '': None}
+                                   }  # '': None
         self.T_SENSOR_CHOICE = devices.T_Sensors
         self.cbox_addr_COM = []
         self.cbox_addr_GPIB = []
@@ -182,11 +181,11 @@ class SetupPage(wx.Panel):
         self.IVboxAddr.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
 
         # Filename
-        FileLbl = wx.StaticText(self, label='Excel file full path:',
-                                id=wx.ID_ANY)
-        self.XLFile = wx.TextCtrl(self, id=wx.ID_ANY,
-                                  value=self.GetTopLevelParent().ExcelPath,
-                                  style=wx.TE_READONLY)
+        DirLbl = wx.StaticText(self, label='Working directory:',
+                               id=wx.ID_ANY)
+        self.WorkingDir = wx.TextCtrl(self, id=wx.ID_ANY,
+                                      value=self.GetTopLevelParent().directory,
+                                      style=wx.TE_READONLY)
 
         # DUC
         self.DUCName = wx.TextCtrl(self, id=wx.ID_ANY, value='DUC Name')
@@ -283,9 +282,9 @@ class SetupPage(wx.Panel):
                     flag=wx.ALL | wx.EXPAND, border=5)
 
         # Filename
-        gbSizer.Add(FileLbl, pos=(8, 0), span=(1, 1),
+        gbSizer.Add(DirLbl, pos=(8, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.XLFile, pos=(8, 1), span=(1, 5),
+        gbSizer.Add(self.WorkingDir, pos=(8, 1), span=(1, 5),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
         # Test buttons
@@ -349,7 +348,7 @@ class SetupPage(wx.Panel):
                                                 'acb': self.IVboxAddr,
                                                 'tbtn': self.IVboxTest}})
 
-        # Create IV-box 'instrument once:
+        # Create IV-box instrument once:
         d = 'IV_box'  # Description
         r = 'IVbox'  # Role
         self.CreateInstr(d, r)
@@ -388,20 +387,11 @@ class SetupPage(wx.Panel):
 
         # No choices for IV box - there's only one
 
-    def UpdateFilepath(self, e):
+    def UpdateDir(self, e):
         '''
-        Called when a new Excel file has been selected.
+        Display working directory once selected.
         '''
-        self.XLFile.SetValue(e.XLpath)
-
-#        # Open logfile
-#        logname = 'IVYv'+str(e.v)+'_'+str(dt.date.today())+'.log'
-#        logfile = os.path.join(e.d, logname)
-#        self.GetTopLevelParent().log = open(logfile, 'a')
-#        self.log = self.GetTopLevelParent().log
-
-#        self.BuildComboChoices()
-#        self.OnAutoPop(wx.EVT_BUTTON)  # Populate combo boxes immediately
+        self.WorkingDir.SetValue(e.Dir)
 
     def OnAutoPop(self, e):
         '''
@@ -445,15 +435,15 @@ class SetupPage(wx.Panel):
         logger.info('Instr = %s; role = %s)...', d, r)
         if 'GMH' in r:  # Changed from d to r
             # create and open a GMH instrument instance
-            print'\nnbpages.SetupPage.CreateInstr(): Creating GMH device \
- (%s -> %s).' % (d, r)
-            logger.info('Creating GMH device (%s -> %s).', d, r)
+            msg = 'Creating GMH device ({0:s} -> {1:s})'.format(d, r)
+            print'\nnbpages.SetupPage.CreateInstr():', msg
+            logger.info(msg)
             devices.ROLES_INSTR.update({r: devices.GMH_Sensor(d, r)})
         else:
             # create a visa instrument instance
-            print'\nnbpages.SetupPage.CreateInstr(): \
-Creating VISA device (%s -> %s).' % (d, r)
-            logger.info('Creating VISA device (%s -> %s).', d, r)
+            msg = 'Creating VISA device ({0:s} -> {1:s}).'.format(d, r)
+            print'\nnbpages.SetupPage.CreateInstr():', msg
+            logger.info(msg)
             devices.ROLES_INSTR.update({r: devices.instrument(d, r)})
             devices.ROLES_INSTR[r].Open()
         self.SetInstr(d, r)
@@ -471,8 +461,9 @@ Creating VISA device (%s -> %s).' % (d, r)
 
         # Set the address cb to correct value (refer to devices.INSTR_DATA)
         a_cb = devices.ROLES_WIDGETS[r]['acb']
-        print 'SetInstr(): Address =', devices.INSTR_DATA[d]['str_addr']
-        logger.info('Address = %s', devices.INSTR_DATA[d]['str_addr'])
+        msg = 'Address = {}'.format(devices.INSTR_DATA[d]['str_addr'])
+        print 'SetInstr():', msg
+        logger.info(msg)
         a_cb.SetValue((devices.INSTR_DATA[d]['str_addr']))
         if d == 'none':
             devices.ROLES_WIDGETS[r]['tbtn'].Enable(False)
@@ -501,8 +492,10 @@ Creating VISA device (%s -> %s).' % (d, r)
             addr = a.lstrip('COMGPIB0:')  # leave only numeric part
             devices.INSTR_DATA[d]['addr'] = int(addr)
             devices.ROLES_INSTR[r].addr = int(addr)
-        print'UpdateAddr():', r, 'using', d, 'set to addr', addr, '(', a, ')'
-        logger.info('%s using %s,  set to addr %d (%s)', r, d, addr, a)
+        msg = '{0:s} using {1:s} set to '\
+              'addr {2:s} ({3:s})'.format(r, d, addr, a)
+        print'UpdateAddr():', msg
+        logger.info(msg)
 
     def OnTest(self, e):
         # Called when a 'test' button is clicked
@@ -536,6 +529,7 @@ Creating VISA device (%s -> %s).' % (d, r)
 
     def BuildCommStr(self, e):
         # Called by a change in GMH probe selection, or DUC name
+        self.version = self.GetTopLevelParent().version
         d = e.GetString()
         if 'GMH' in d:  # A GMH probe selection changed
             # Find the role associated with the selected instrument description
@@ -552,8 +546,8 @@ Creating VISA device (%s -> %s).' % (d, r)
         RunPage = self.GetParent().GetPage(1)
         params = {'DUC': self.DUCName.GetValue(),
                   'GMH': self.GMHProbes.GetValue()}
-        joinstr = ' monitored by '
-        commstr = 'IVY v.' + self.version + '. DUC: ' + params['DUC'] + joinstr + params['GMH']
+        commstr = 'IVY v.{0:s}. DUC: {1:s} monitored by '\
+                  '{2:s}'.format(self.version, params['DUC'], params['GMH'])
         evt = evts.UpdateCommentEvent(str=commstr)
         wx.PostEvent(RunPage, evt)
 
@@ -606,9 +600,9 @@ class RunPage(wx.Panel):
         wx.Panel.__init__(self, parent)
 
         self.status = self.GetTopLevelParent().sb
+        self.directory = self.GetTopLevelParent().directory
         self.version = self.GetTopLevelParent().version
         self.run_id = 'none'
-        self.data_file = 'IVY_RunData.json'
 
         self.GAINS_CHOICE = ['1e3', '1e4', '1e5', '1e6',
                              '1e7', '1e8', '1e9', '1e10']
@@ -629,14 +623,14 @@ class RunPage(wx.Panel):
         CommentLbl = wx.StaticText(self, id=wx.ID_ANY, label='Comment:')
         self.Comment = wx.TextCtrl(self, id=wx.ID_ANY, size=(600, 20))
         self.Comment.Bind(wx.EVT_TEXT, self.OnComment)
-        comtip = 'This string is auto-generated from data on the Setup page. \
-Other notes may be added manually at the end.'
+        comtip = 'This string is auto-generated from data on the Setup page.'\
+                 'Other notes may be added manually at the end.'
         self.Comment.SetToolTipString(comtip)
 
         self.NewRunIDBtn = wx.Button(self, id=wx.ID_ANY,
                                      label='Create new run id')
-        idcomtip = 'Create new id to uniquely identify this set of \
-measurement data.'
+        idcomtip = 'Create new id to uniquely identify this set of '\
+                   'measurement data.'
         self.NewRunIDBtn.SetToolTipString(idcomtip)
         self.NewRunIDBtn.Bind(wx.EVT_BUTTON, self.OnNewRunID)
         self.RunID = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
@@ -664,8 +658,6 @@ measurement data.'
         ZeroVoltsBtn = wx.Button(self, id=wx.ID_ANY, label='Set zero volts',
                                  size=(200, 20))
         ZeroVoltsBtn.Bind(wx.EVT_BUTTON, self.OnZeroVolts)
-#        StartRowLbl = wx.StaticText(self, id=wx.ID_ANY, label='Start row:')
-#        self.StartRow = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
 
         self.h_sep1 = wx.StaticLine(self, id=wx.ID_ANY, style=wx.LI_HORIZONTAL)
 
@@ -688,7 +680,8 @@ measurement data.'
         TimeLbl = wx.StaticText(self, id=wx.ID_ANY, label='Timestamp:')
         self.Time = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY,
                                 size=(200, 20))
-        RowLbl = wx.StaticText(self, id=wx.ID_ANY, label='Current row:')
+        RowLbl = wx.StaticText(self, id=wx.ID_ANY,
+                               label='Current measurement:')
         self.Row = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
         ProgressLbl = wx.StaticText(self, id=wx.ID_ANY, style=wx.ALIGN_RIGHT,
                                     label='Run progress:')
@@ -726,11 +719,6 @@ measurement data.'
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(ZeroVoltsBtn, pos=(3, 4), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-#        gbSizer.Add(StartRowLbl, pos=(2, 5), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-#        gbSizer.Add(self.StartRow, pos=(3, 5), span=(1, 1),
-#                    flag=wx.ALL | wx.EXPAND, border=5)
-
         gbSizer.Add(self.h_sep1, pos=(4, 0), span=(1, 6),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
@@ -769,13 +757,17 @@ measurement data.'
         self.autocomstr = ''
         self.manstr = ''
 
-        self.master_run_dict = {}  # Dict to hold ALL runs for this app session
+        # Dictionary to hold ALL runs for this application session:
+        self.master_run_dict = {}
 
     def OnNewRunID(self, e):
+        self.version = self.GetTopLevelParent().version
         start = self.fullstr.find('DUC: ')
         end = self.fullstr.find(' monitored', start)
         DUCname = self.fullstr[start+4: end]
-        self.run_id = str('IVY.v' + self.version + ' ' + DUCname + ' ' +
+        self.run_id = str('IVY.v' + self.version + ' ' + DUCname + ' (' +
+                          'Gain=' + self.DUCgain.GetValue() + '; Rs=' +
+                          self.Rs.GetValue() + ') ' +
                           dt.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
         self.status.SetStatusText('Id for subsequent runs:', 0)
         self.status.SetStatusText(str(self.run_id), 1)
@@ -814,10 +806,6 @@ measurement data.'
         if 'end_flag' in e.ud:  # Aborted or Finished
             self.RunThread = None
             self.StartBtn.Enable(True)
-
-#    def UpdateStartRow(self, e):
-#        # Triggered by an 'update startrow' event
-#        self.StartRow.SetValue(str(e.row))
 
     def OnRs(self, e):
         self.Rs_val = self.Rs_choice_to_val[e.GetString()]  # an INT
@@ -995,13 +983,15 @@ __________________________________________
 '''
 DELTA = u'\N{GREEK CAPITAL LETTER DELTA}'
 
+
 class CalcPage(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
 
-        self.version = self.GetTopLevelParent().version
-        self.data_file = self.GetTopLevelParent().page2.data_file
-        self.results_file = 'IVY_Results.json'
+#        self.version = self.GetTopLevelParent().version
+        self.data_file = self.GetTopLevelParent().data_file
+        self.results_file = os.path.join(os.path.dirname(self.data_file),
+                                         'IVY_Results.json')
         self.Results = {}  # Accumulate run-analyses here
 
         self.Rs_VALUES = self.GetTopLevelParent().page2.Rs_VALUES
@@ -1060,7 +1050,7 @@ class CalcPage(wx.Panel):
                                         label='Val, Unc, DoF')
         gbSizer.Add(UrealSummaryLbl, pos=(2, 3), span=(1, 2),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        KLbl = wx.StaticText(self, id=wx.ID_ANY, label='k')
+        KLbl = wx.StaticText(self, id=wx.ID_ANY, label='k(95%)')
         gbSizer.Add(KLbl, pos=(2, 5), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
         ExpULbl = wx.StaticText(self, id=wx.ID_ANY, label='Exp Uncert')
@@ -1150,6 +1140,7 @@ class CalcPage(wx.Panel):
         self.run_data for later access. Update the choices in the 'Run ID'
         widget to the run ids (used as primary keys in self.run_data).
         '''
+        self.data_file = self.GetTopLevelParent().data_file
         with open(self.data_file, 'r') as in_file:
             self.run_data = json.load(in_file)
             self.run_IDs = self.run_data.keys()
@@ -1162,37 +1153,19 @@ class CalcPage(wx.Panel):
         ID = e.GetString()
         self.runstr = json.dumps(self.run_data[ID], indent=4)
         self.RunInfo.SetValue(self.runstr)
-
-    def OnNomVoutChoice(self, e):
-        '''
-        Select which analysed data sub-set (by Vout) to display
-        - Delta_Iin and
-        - Uncert budget
-        '''
-        Vout = float(e.GetString())
-        Iin = self.BuildUreal(self.ThisResult['Nom_dV'][Vout]['Delta_Iin'])
-        IinStr = '{0:.5e}, u={1:.1e}, df={2:.1f}'.format(Iin.x, Iin.u, Iin.df)
-        Iin_k = GTC.rp.k_factor(Iin.df)
-        Iin_EU = Iin.u*Iin_k
-        self.IinSummary.SetValue(IinStr)
-        self.Iink.SetValue('{0:.1f}'.format(Iin_k))
-        self.IinExpU.SetValue('{0:.2e}'.format(Iin_EU))
-
-        budget_str = '{:28}{:<12}{:<8}{:<6}{:<10}{:<13}\n'\
-            .format('Quantity', 'Value', 'Std u.', 'dof',
-                    'Sens. Co.', 'Uncert. Cont.')
-        print self.ThisResult['Nom_dV'][Vout].keys()
-        u_budget_dict = self.ThisResult['Nom_dV'][Vout]['U_Budget']
-        for n, q in enumerate(u_budget_dict['quantity(label)']):
-            v = u_budget_dict['value'][n]
-            u = u_budget_dict['std. uncert'][n]
-            d = float(u_budget_dict['dof'][n])
-            s = u_budget_dict['sens. co.'][n]
-            c = u_budget_dict['uncert. cont.'][n]
-            line = '{:<28}{:<12.5}{:<8.1}{:<6.1f}{:<10.2}{:<13.1}\n'\
-                .format(q, v, u, d, s, c)
-            budget_str += line
-        self.Budget.SetValue(budget_str)
+        self.PSummary.Clear()
+        self.Pk.Clear()
+        self.PExpU.Clear()
+        self.RHSummary.Clear()
+        self.RHk.Clear()
+        self.RHExpU.Clear()
+        self.TGMHSummary.Clear()
+        self.TGMHk.Clear()
+        self.TGMHExpU.Clear()
+        self.IinSummary.Clear()
+        self.Iink.Clear()
+        self.IinExpU.Clear()
+        self.Budget.Clear()
 
     def OnAnalyze(self, e):
         self.run_ID = self.RunID.GetValue()
@@ -1226,7 +1199,6 @@ class CalcPage(wx.Panel):
         Comment = self.this_run['Comment']
         DUC_name = self.GetNamefromComment(Comment)
         DUC_gain = self.this_run['DUC_G']
-#        self.Range.SetValue(str('{0:.2e}'.format(DUC_gain)))
         Mean_date = self.GetMeanDate()
         Proc_date = dt.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
 
@@ -1273,10 +1245,7 @@ class CalcPage(wx.Panel):
                                 'T_GMH': {},
                                 'RH': {},
                                 'P': {},
-                                'Nom_dV': {0.1: {}, -0.1: {},
-                                           1.0: {}, -1.0: {},
-                                           10: {}, -10: {}
-                                           }})
+                                'Nom_dV': {}})
 
         self.ThisResult['T_GMH'].update({'value': T_GMH.x,
                                          'uncert': T_GMH.u,
@@ -1313,18 +1282,15 @@ class CalcPage(wx.Panel):
         V1s = []
         V2s = []
         V3s = []
-#        row = self.Data_start_row
-#        while row < self.Data_stop_row:
+
         num_rows = len(self.this_run['Nom_Vout'])
-        for row in range(0, num_rows, 8):
+        for row in range(0, num_rows, 8):  # 0, [8, [16]]
             gains = set()
             # 'neg' and 'pos' refer to polarity of OUTPUT VOLTAGE, not
-            # input current!
-#            neg_nom_Vout = self.ws_Data['G'+str(row+1)].value
-            self.neg_nom_Vout = self.this_run['Nom_Vout'][row+1]
-#            pos_nom_Vout = self.ws_Data['G'+str(row+2)].value
-            self.pos_nom_Vout = self.this_run['Nom_Vout'][row+2]
-            abs_nom_Vout = self.pos_nom_Vout
+            # input current! nom_Vout = +/-( 0.1,[1,[10]] ):
+            self.nom_Vout = {'pos': self.this_run['Nom_Vout'][row+2],
+                             'neg': self.this_run['Nom_Vout'][row+1]}
+            abs_nom_Vout = self.nom_Vout['pos']
 
             # Construct ureals from raw voltage data, including gain correction
             for n in range(4):
@@ -1368,8 +1334,6 @@ class CalcPage(wx.Panel):
                 V3_raw = GTC.ureal(V3_v, V3_u, V3_d, label=V3_l)
                 V3s.append(GTC.result(V3_raw/gain))
 
-#                GMH_Ts.append(self.ws_Data['L'+str(row)].value)
-#                GMH_Ts.append(self.ws_Data['L'+str(row+4)].value)
                 influencies.extend([V1_raw, V2_raw, V3_raw])
 
             influencies.extend(list(gains))  # List of unique gain corrections.
@@ -1388,6 +1352,7 @@ class CalcPage(wx.Panel):
             # V-drop across Rs
             V_Rs_pos = GTC.result(V1_pos - V2_pos)
             V_Rs_neg = GTC.result(V1_neg - V2_neg)
+            assert V_Rs_pos.x * V_Rs_neg.x < 0, 'V_Rs polarity error!'
 
             # Rs Temperature
             T_Rs = []
@@ -1413,12 +1378,11 @@ class CalcPage(wx.Panel):
 
             # Value of Rs
             nom_Rs = self.this_run['Rs']
-            print '\nNominal Rs value:', nom_Rs, 'Abs. Nom. Vout:\
-', abs_nom_Vout, '\n'
-            logger.info('Nominal Rs value: %d\nAbs. Nom. Vout: %d',
-                        nom_Rs, abs_nom_Vout)
+            msg = 'Nominal Rs value: {0}, '\
+                  'Abs. Nom. Vout: {1:.1f}'.format(nom_Rs, abs_nom_Vout)
+            print '\n', msg, '\n'
+            logger.info(msg)
             Rs_name = self.Rs_VAL_NAME[nom_Rs]
-#            Rs_0 = self.R_INFO[Rs_name]['R0_LV']  # a ureal
             Rs_0 = self.BuildUreal(devices.RES_DATA[Rs_name]['R0_LV'])
             Rs_TRef = self.BuildUreal(devices.RES_DATA[Rs_name]['TRef_LV'])
             Rs_alpha = self.BuildUreal(devices.RES_DATA[Rs_name]['alpha'])
@@ -1433,46 +1397,39 @@ class CalcPage(wx.Panel):
             '''
             Finally, calculate current-change in,
             for nominal voltage-change out:
+            REMEMBER: POSITIVE 'Vout' is caused by 'I_pos'
+            (which may be NEGATIVE for inverting device)!
             '''
             Iin_pos = GTC.result(V_Rs_pos/Rs)
             Iin_neg = GTC.result(V_Rs_neg/Rs)
+            assert Iin_pos.x * Iin_neg.x < 0, 'Iin polarity error!'
 
-            I_pos = GTC.result(Iin_pos*self.pos_nom_Vout/V3_pos)
-#            I_pos_k = GTC.rp.k_factor(I_pos.df)  # P = 95% by default
-#            I_pos_EU = I_pos_k*I_pos.u
-            I_neg = GTC.result(Iin_neg*self.neg_nom_Vout/V3_neg)
-#            I_neg_k = GTC.rp.k_factor(I_neg.df)  # P = 95% by default
-#            I_neg_EU = I_neg_k*I_neg.u
+            # Calculate I_in that would produce nominal Vout:
+            I_pos = GTC.result(Iin_pos*self.nom_Vout['pos']/V3_pos)
+            I_neg = GTC.result(Iin_neg*self.nom_Vout['neg']/V3_neg)
+            assert I_pos.x * I_neg.x < 0, 'I polarity error!'
 
-#            self.Vout_widgets[abs_nom_Vout][0].SetValue(str(abs_nom_Vout))
-#            self.Vout_widgets[abs_nom_Vout][1].SetValue('{0:.8g}'.format(I_pos.x))
-#            self.Vout_widgets[abs_nom_Vout][2].SetValue('{0:.8g}'.format(I_neg.x))
-#            # Just display positive value for now:
-#            self.Vout_widgets[abs_nom_Vout][3].SetValue('{0:.3g}'.format(I_pos_EU))
-#            self.Vout_widgets[abs_nom_Vout][4].SetValue(str(round(I_pos_k)))
-
-            this_result = {'I_pos': I_pos, 'I_neg': I_neg}
+            this_result = {'pos': I_pos, 'neg': I_neg}
 
             # build uncertainty budget table
-            budget_table_pos = []
-            budget_table_neg = []
+            budget_table = {'pos': [], 'neg': []}
             for i in influencies:
                 print'Working through influence variables:', i.label
                 logger.info('Working through influence variables: %s', i.label)
                 if i.u == 0:
-                    sensitivity_pos = sensitivity_neg = 0
+                    sensitivity = {'pos': 0, 'neg': 0}
                 else:
-                    sensitivity_pos = GTC.component(I_pos, i)/i.u
-                    sensitivity_neg = GTC.component(I_neg, i)/i.u
+                    sensitivity = {'pos': GTC.component(I_pos, i)/i.u,
+                                   'neg': GTC.component(I_neg, i)/i.u}
 
                 # Only include non-zero influencies:
                 if abs(GTC.component(I_pos, i)) > 0:
                     print 'Included component of I+:', GTC.component(I_pos, i)
                     logger.info('Included component of I+: %d',
                                 GTC.component(I_pos, i))
-                    budget_table_pos.append([i.label, i.x, i.u, i.df,
-                                             sensitivity_pos,
-                                             GTC.component(I_pos, i)])
+                    budget_table['pos'].append([i.label, i.x, i.u, i.df,
+                                                sensitivity['pos'],
+                                                GTC.component(I_pos, i)])
                 else:
                     print'ZERO COMPONENT of I+'
                     logger.info('ZERO COMPONENT of I+')
@@ -1481,18 +1438,20 @@ class CalcPage(wx.Panel):
                     print 'Included component of I-:', GTC.component(I_neg, i)
                     logger.info('Included component of I-: %d',
                                 GTC.component(I_neg, i))
-                    budget_table_neg.append([i.label, i.x, i.u, i.df,
-                                             sensitivity_neg,
-                                             GTC.component(I_neg, i)])
+                    budget_table['neg'].append([i.label, i.x, i.u, i.df,
+                                                sensitivity['neg'],
+                                                GTC.component(I_neg, i)])
                 else:
                     print'ZERO COMPONENT of I-'
                     logger.info('ZERO COMPONENT of I-')
-            self.budget_table_pos_sorted = sorted(budget_table_pos,
-                                                  key=self.by_u_cont,
-                                                  reverse=True)
-            self.budget_table_neg_sorted = sorted(budget_table_neg,
-                                                  key=self.by_u_cont,
-                                                  reverse=True)
+
+            self.budget_table_sorted = {'pos': [], 'neg': []}
+            self.budget_table_sorted['pos'] = sorted(budget_table['pos'],
+                                                     key=self.by_u_cont,
+                                                     reverse=True)
+            self.budget_table_sorted['neg'] = sorted(budget_table['neg'],
+                                                     key=self.by_u_cont,
+                                                     reverse=True)
 
             # Write results (including budgets)
             self.result_row = self.WriteThisResult(this_result)
@@ -1502,21 +1461,49 @@ class CalcPage(wx.Panel):
             del V1s[:]
             del V2s[:]
             del V3s[:]
+        # <-- End of analysis loop for this run
 
-        # <- End of analysis loop for this run
-
-        # Display analysis result and update results dict
-#        SummaryStr_all = json.dumps(self.ThisResult, indent=4)
-
-#        self.ResultSummary.SetValue(SummaryStr_all)
-
+        # Save analysis result
         with open(self.results_file, 'w') as results_fp:
             json.dump(self.Results, results_fp, indent=4)
 
-        # Choices should be: 0.1, -0.1, 1, -1, 10 or -10:
+        # Ensure Vout c-box is cleared before updating choices.
+        # Vout choices should be chosen from: (0.1, -0.1, 1, -1, 10, -10):
         self.NomVout.Clear()
-        for V in self.Results[self.run_ID]['Nom_dV'].keys():
+        for V in self.ThisResult['Nom_dV'].keys():
             self.NomVout.Append(str(V))
+        # ______________END OF OnAnalyze()________________
+
+    def OnNomVoutChoice(self, e):
+        '''
+        Select which analysed data sub-set (by Vout) to display
+        - Delta_Iin and
+        - Uncert budget
+        '''
+        Vout = float(e.GetString())
+        Iin = self.BuildUreal(self.ThisResult['Nom_dV'][Vout]['Delta_Iin'])
+        IinStr = '{0:.5e}, u={1:.1e}, df={2:.1f}'.format(Iin.x, Iin.u, Iin.df)
+        Iin_k = GTC.rp.k_factor(Iin.df)
+        Iin_EU = Iin.u*Iin_k
+        self.IinSummary.SetValue(IinStr)
+        self.Iink.SetValue('{0:.1f}'.format(Iin_k))
+        self.IinExpU.SetValue('{0:.2e}'.format(Iin_EU))
+
+        # Build uncertainty budget table (as a string for display):
+        budget_str = '{:28}{:<14}{:<10}{:<6}{:<10}{:<13}\n'\
+            .format('Quantity', 'Value', 'Std u.', 'dof',
+                    'Sens. Co.', 'U. Cont.')
+        u_budget_dict = self.ThisResult['Nom_dV'][Vout]['U_Budget']
+        for n, q in enumerate(u_budget_dict['quantity(label)']):
+            v = u_budget_dict['value'][n]
+            u = u_budget_dict['std. uncert'][n]
+            d = float(u_budget_dict['dof'][n])
+            s = u_budget_dict['sens. co.'][n]
+            c = u_budget_dict['uncert. cont.'][n]
+            line = '{:<28}{:<14.5g}{:<10.1g}{:<6.1f}{:<10.1e}{:<13.1e}\n'\
+                .format(q, v, u, d, s, c)
+            budget_str += line
+        self.Budget.SetValue(budget_str)
 
     def GetNamefromComment(self, c):
         return c[c.find('DUC: ') + 5: c.find(' monitored by GMH')]
@@ -1526,17 +1513,18 @@ class CalcPage(wx.Panel):
         Accept a list of times (as strings).
         Return a mean time (as a string).
         '''
+        time_fmt = '%d/%m/%Y %H:%M:%S'
         t_av = 0.0
         t_lst = self.run_data[self.run_ID]['Date_time']
 
         for t_str in t_lst:
-            t_dt = dt.datetime.strptime(t_str, '%d/%m/%Y %H:%M:%S')
+            t_dt = dt.datetime.strptime(t_str, time_fmt)
             t_tup = dt.datetime.timetuple(t_dt)  # A Python time tuple object
             t_av += time.mktime(t_tup)  # time as float (seconds from epoch)
 
         t_av /= len(t_lst)
         t_av_dt = dt.datetime.fromtimestamp(t_av)
-        return t_av_dt.strftime('%d/%m/%Y %H:%M:%S')  # av. time as string
+        return t_av_dt.strftime(time_fmt)  # av. time as string
 
     def BuildUreal(self, d):
         '''
@@ -1555,6 +1543,10 @@ class CalcPage(wx.Panel):
             return 0
 
     def get_gain_err_param(self, V):
+        '''
+        Return the key (a string) identifying the correct gain parameter
+        for V (and appropriate range).
+        '''
         if abs(V) < 0.001:
             nomV = '0.0001'
             nomRange = '0.1'
@@ -1600,94 +1592,43 @@ class CalcPage(wx.Panel):
 
     def WriteThisResult(self, result):
         '''
-        Write results and uncert. budget for THIS NOM. VOUT (BOTH polarities)
+        Write results and uncert. budget for THIS NOM_VOUT (BOTH polarities)
         '''
+        result_dict = {'pos': {'Delta_Iin': {}, 'U_Budget': {}},
+                       'neg': {'Delta_Iin': {}, 'U_Budget': {}}}
 
-        # Positive results...
-        #    Summary of Delta_I_in :
-        pos_result_dict = {'Delta_Iin': {}, 'U_Budget': {}}
+        # Summary for each polarity:
+        for polarity in result.keys():  # 'pos' or 'neg'
+            value = result[polarity].x
+            uncert = result[polarity].u
+            dof = result[polarity].df
+            lbl = result[polarity].label
+            k = GTC.rp.k_factor(dof)
+            EU = k*uncert
 
-        value = result['I_pos'].x
-        uncert = result['I_pos'].u
-        dof = result['I_pos'].df
-        lbl = result['I_pos'].label
-        k = GTC.rp.k_factor(dof)
-        EU = k*uncert
-        pos_result_dict['Delta_Iin'].update({'value': value,
-                                             'uncert': uncert,
-                                             'dof': dof,
-                                             'label': lbl,
-                                             'k': k, 'EU': EU})
-
-        #    Uncert Budget (for pos Vout):
-        Q = []
-        v = []
-        u = []
-        df = []
-        sens = []
-        cont = []
-        for line in self.budget_table_pos_sorted:
-            Q.append(line[0])
-            v.append(line[1])
-            u.append(line[2])
-            df.append(line[3])
-            sens.append(line[4])
-            cont.append(line[5])
-        pos_result_dict['U_Budget'].update({'quantity(label)': Q,
-                                            'value': v,
-                                            'std. uncert': u,
-                                            'dof': df,
-                                            'sens. co.': sens,
-                                            'uncert. cont.': cont})
-
-#            if math.isinf(line[3]):
-#                sh['K'+str(r)] = str(line[3])  # dof
-#            else:
-#                sh['K'+str(r)] = round(line[3])  # dof
-
-        self.ThisResult['Nom_dV'][self.pos_nom_Vout].update(pos_result_dict)
-
-        # Negative results...
-        #    Summary of Delta_I_in :
-        neg_result_dict = {'Delta_Iin': {}, 'U_Budget': {}}
-
-        value = result['I_neg'].x
-        uncert = result['I_neg'].u
-        dof = result['I_neg'].df
-        lbl = result['I_neg'].label
-        k = GTC.rp.k_factor(dof)
-        EU = k*uncert
-
-        neg_result_dict['Delta_Iin'].update({'value': value,
-                                             'uncert': uncert,
-                                             'dof': dof,
-                                             'label': lbl,
-                                             'k': k, 'EU': EU})
-
-        #    Uncert Budget (for neg Vout):
-        Q = []
-        v = []
-        u = []
-        df = []
-        sens = []
-        cont = []
-        for line in self.budget_table_neg_sorted:
-            Q.append(line[0])
-            v.append(line[1])
-            u.append(line[2])
-            df.append(line[3])
-            sens.append(line[4])
-            cont.append(line[5])
-        neg_result_dict['U_Budget'].update({'quantity(label)': Q,
-                                            'value': v,
-                                            'std. uncert': u,
-                                            'dof': df,
-                                            'sens. co.': sens,
-                                            'uncert. cont.': cont})
-
-        self.ThisResult['Nom_dV'][self.neg_nom_Vout].update(neg_result_dict)
-
-#        print'WriteThisResult(): Final result_row =', r
-#        logger.info('Final result_row = %d', r)
+            # Delta_I_in:
+            result_dict[polarity]['Delta_Iin'].update({'value': value,
+                                                       'uncert': uncert,
+                                                       'dof': dof,
+                                                       'label': lbl,
+                                                       'k': k, 'EU': EU})
+            # Uncert Budget:
+            Q = []
+            v = []
+            u = []
+            df = []
+            sens = []
+            cont = []
+            for line in self.budget_table_sorted[polarity]:
+                for i, heading in enumerate((Q, v, u, df, sens, cont)):
+                    heading.append(line[i])
+            result_dict[polarity]['U_Budget'].update({'quantity(label)': Q,
+                                                      'value': v,
+                                                      'std. uncert': u,
+                                                      'dof': df,
+                                                      'sens. co.': sens,
+                                                      'uncert. cont.': cont})
+            d = {self.nom_Vout[polarity]: result_dict[polarity]}
+            self.ThisResult['Nom_dV'].update(d)
 
         return 1
