@@ -135,7 +135,6 @@ class SetupPage(wx.Panel):
         self.IVbox = wx.ComboBox(self, wx.ID_ANY,
                                  choices=self.IVBOX_COMBO_CHOICE.keys(),
                                  style=wx.CB_DROPDOWN)
-#        self.IVbox.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
 
         # Addresses
         self.SrcAddr = wx.ComboBox(self, wx.ID_ANY,
@@ -543,13 +542,13 @@ class SetupPage(wx.Panel):
                 self.DUCName.SetForegroundColour((255, 0, 0))
             else:
                 self.DUCName.SetForegroundColour((0, 127, 0))
-        RunPage = self.GetParent().GetPage(1)
-        params = {'DUC': self.DUCName.GetValue(),
-                  'GMH': self.GMHProbes.GetValue()}
-        commstr = 'IVY v.{0:s}. DUC: {1:s} monitored by '\
-                  '{2:s}'.format(self.version, params['DUC'], params['GMH'])
-        evt = evts.UpdateCommentEvent(str=commstr)
-        wx.PostEvent(RunPage, evt)
+#        RunPage = self.GetParent().GetPage(1)
+#        params = {'DUC': self.DUCName.GetValue(),
+#                  'GMH': self.GMHProbes.GetValue()}
+#        commstr = 'IVY v.{0:s}. DUC: {1:s} monitored by '\
+#                  '{2:s}'.format(self.version, params['DUC'], params['GMH'])
+#        evt = evts.UpdateCommentEvent(str=commstr)
+#        wx.PostEvent(RunPage, evt)
 
     def OnVisaList(self, e):
         res_list = devices.RM.list_resources()
@@ -602,6 +601,7 @@ class RunPage(wx.Panel):
         self.status = self.GetTopLevelParent().sb
         self.directory = self.GetTopLevelParent().directory
         self.version = self.GetTopLevelParent().version
+        self.SetupPage = self.GetTopLevelParent().page1
         self.run_id = 'none'
 
         self.GAINS_CHOICE = ['1e3', '1e4', '1e5', '1e6',
@@ -613,7 +613,7 @@ class RunPage(wx.Panel):
         self.VNODE_CHOICE = ['V1', 'V2', 'V3']
 
         # Event bindings
-        self.Bind(evts.EVT_UPDATE_COM_STR, self.UpdateComment)
+#        self.Bind(evts.EVT_UPDATE_COM_STR, self.UpdateComment)
         self.Bind(evts.EVT_DATA, self.UpdateData)
 #        self.Bind(evts.EVT_START_ROW, self.UpdateStartRow)
 
@@ -622,9 +622,9 @@ class RunPage(wx.Panel):
         # Comment widgets
         CommentLbl = wx.StaticText(self, id=wx.ID_ANY, label='Comment:')
         self.Comment = wx.TextCtrl(self, id=wx.ID_ANY, size=(600, 20))
-        self.Comment.Bind(wx.EVT_TEXT, self.OnComment)
-        comtip = 'This string is auto-generated from data on the Setup page.'\
-                 'Other notes may be added manually at the end.'
+#        self.Comment.Bind(wx.EVT_TEXT, self.OnComment)
+        comtip = 'Use this field to add remarks and observations that may not'\
+                 ' be recorded automatically.'
         self.Comment.SetToolTipString(comtip)
 
         self.NewRunIDBtn = wx.Button(self, id=wx.ID_ANY,
@@ -762,30 +762,14 @@ class RunPage(wx.Panel):
 
     def OnNewRunID(self, e):
         self.version = self.GetTopLevelParent().version
-        start = self.fullstr.find('DUC: ')
-        end = self.fullstr.find(' monitored', start)
-        DUCname = self.fullstr[start+4: end]
-        self.run_id = str('IVY.v' + self.version + ' ' + DUCname + ' (' +
-                          'Gain=' + self.DUCgain.GetValue() + '; Rs=' +
+        DUCname = self.SetupPage.DUCName.GetValue()
+        self.run_id = str('IVY.v' + self.version + ' ' + DUCname + ' (Gain=' +
+                          self.DUCgain.GetValue() + '; Rs=' +
                           self.Rs.GetValue() + ') ' +
                           dt.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
         self.status.SetStatusText('Id for subsequent runs:', 0)
         self.status.SetStatusText(str(self.run_id), 1)
         self.RunID.SetValue(str(self.run_id))
-
-    def UpdateComment(self, e):
-        # writes combined auto-comment and manual comment when
-        # auto-generated comment is re-built
-        self.autocomstr = e.str  # store copy of auto-generated comment
-        self.Comment.SetValue(e.str+self.manstr)
-
-    def OnComment(self, e):
-        # Called when comment emits EVT_TEXT (i.e. whenever it's changed)
-        # Prevent overwriting comment field (plus manually-entered notes)
-        self.fullstr = self.Comment.GetValue()  # store a copy of full comment
-        # Extract last part of comment (the manually-inserted bit)
-        # - assume we manually added extra notes to END
-        self.manstr = self.fullstr[len(self.autocomstr):]
 
     def UpdateData(self, e):
         # Triggered by an 'update data' event
@@ -988,7 +972,7 @@ class CalcPage(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
 
-#        self.version = self.GetTopLevelParent().version
+        self.version = self.GetTopLevelParent().version
         self.data_file = self.GetTopLevelParent().data_file
         self.results_file = os.path.join(os.path.dirname(self.data_file),
                                          'IVY_Results.json')
@@ -1197,7 +1181,7 @@ class CalcPage(wx.Panel):
                               3, label='GMH_T_def')
 
         Comment = self.this_run['Comment']
-        DUC_name = self.GetNamefromComment(Comment)
+        DUC_name = self.GetDUCNamefromRunID(self.run_ID)
         DUC_gain = self.this_run['DUC_G']
         Mean_date = self.GetMeanDate()
         Proc_date = dt.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
@@ -1505,8 +1489,12 @@ class CalcPage(wx.Panel):
             budget_str += line
         self.Budget.SetValue(budget_str)
 
-    def GetNamefromComment(self, c):
-        return c[c.find('DUC: ') + 5: c.find(' monitored by GMH')]
+#    def GetNamefromComment(self, c):
+#        return c[c.find('DUC: ') + 5: c.find(' monitored by GMH')]
+    def GetDUCNamefromRunID(self, runid):
+        start = 'IVY.v' + self.version + ' '
+        end = ' (Gain='
+        return runid[len(start)-1: runid.find(end)]
 
     def GetMeanDate(self):
         '''
