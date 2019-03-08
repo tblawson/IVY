@@ -47,7 +47,8 @@ print 'IVY', VERSION
 logname = 'IVYv'+VERSION+'_'+str(dt.date.today())+'.log'
 logfile = os.path.join(os.getcwd(), logname)
 
-fmt = '%(asctime)s %(levelname)s %(name)s:%(funcName)s(L%(lineno)d): %(message)s'
+fmt = '%(asctime)s %(levelname)s %(name)s:%(funcName)s(L%(lineno)d): '\
+      '%(message)s'
 datefmt = '%Y-%m-%d %H:%M:%S'
 logging.basicConfig(filename=logfile, format=fmt, datefmt=datefmt,
                     level=logging.INFO)
@@ -140,6 +141,8 @@ I-to-V converter program for Light Standards."
             self.directory = dlg.GetPath()
             self.data_file = os.path.join(self.directory, 'IVY_RunData.json')
             print self.directory
+            # Get resistor and instrument data:
+            devices.RES_DATA, devices.INSTR_DATA = devices.RefreshParams(self.directory)
             # Ensure working directory is displayed on SetupPage:
             file_evt = evts.FilePathEvent(Dir=self.directory)
             wx.PostEvent(self.page1, file_evt)

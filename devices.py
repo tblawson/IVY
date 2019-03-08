@@ -41,7 +41,7 @@ def StripChars(oldstr, charlist=''):
         oldstr = newstr
     return newstr
 
-#  Load resistor and instrument info:
+#  Load default resistor and instrument info:
 with open(Res_file, 'r') as Res_fp:
     R_str = StripChars(Res_fp.read(), '\t\n')
 RES_DATA = json.loads(R_str)
@@ -49,6 +49,19 @@ RES_DATA = json.loads(R_str)
 with open(Instr_file, 'r') as Instr_fp:
     I_str = StripChars(Instr_fp.read(), '\t\n')
 INSTR_DATA = json.loads(I_str)
+
+
+def RefreshParams(Dir):
+    with open(os.path.join(Dir, Res_file), 'r') as Res_fp:
+        R_str = StripChars(Res_fp.read(), '\t\n')
+    RES_DATA = json.loads(R_str)
+
+    with open(os.path.join(Dir, Instr_file), 'r') as Instr_fp:
+        I_str = StripChars(Instr_fp.read(), '\t\n')
+    INSTR_DATA = json.loads(I_str)
+
+    return RES_DATA, INSTR_DATA
+
 
 ROLES_WIDGETS = {}
 ROLES_INSTR = {}

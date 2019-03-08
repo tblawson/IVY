@@ -817,8 +817,9 @@ class RunPage(wx.Panel):
     def OnV1Set(self, e):
         # Called by change in value (manually OR by software!)
         V1 = e.GetValue()
-        print'RunPage.OnV1Set(): V1 =', V1, '(', type(V1), ')'
-        logger.info('V1 = %s', V1)
+        msg = 'V1 = {}'.format(V1)
+        print'RunPage.OnV1Set(): ', msg
+        logger.info(msg)
         src = devices.ROLES_INSTR['SRC']
         src.SetV(V1)
         time.sleep(0.5)
@@ -973,9 +974,9 @@ class CalcPage(wx.Panel):
         wx.Panel.__init__(self, parent)
 
         self.version = self.GetTopLevelParent().version
-        self.data_file = self.GetTopLevelParent().data_file
-        self.results_file = os.path.join(os.path.dirname(self.data_file),
-                                         'IVY_Results.json')
+#        self.data_file = self.GetTopLevelParent().data_file
+#        self.results_file = os.path.join(os.path.dirname(self.data_file),
+#                                         'IVY_Results.json')
         self.Results = {}  # Accumulate run-analyses here
 
         self.Rs_VALUES = self.GetTopLevelParent().page2.Rs_VALUES
@@ -983,8 +984,6 @@ class CalcPage(wx.Panel):
                          'IV100k 100k', 'IV1M 1M', 'IV10M 10M',
                          'IV100M 100M', 'IV1G 1G']
         self.Rs_VAL_NAME = dict(zip(self.Rs_VALUES, self.Rs_NAMES))
-
-#        self.RunID_choices = []
 
         gbSizer = wx.GridBagSizer()
 
@@ -1289,6 +1288,7 @@ class CalcPage(wx.Panel):
 
                 d1 = self.this_run['Instruments']['DVM12']
                 gain_param = self.get_gain_err_param(V1_v)
+                print devices.INSTR_DATA[d1].keys()
                 gain = self.BuildUreal(devices.INSTR_DATA[d1][gain_param])
                 gains.add(gain)
                 V1_raw = GTC.ureal(V1_v, V1_u, V1_d, label=V1_l)
@@ -1448,6 +1448,8 @@ class CalcPage(wx.Panel):
         # <-- End of analysis loop for this run
 
         # Save analysis result
+        self.results_file = os.path.join(os.path.dirname(self.data_file),
+                                         'IVY_Results.json')
         with open(self.results_file, 'w') as results_fp:
             json.dump(self.Results, results_fp, indent=4)
 
@@ -1484,17 +1486,29 @@ class CalcPage(wx.Panel):
             d = float(u_budget_dict['dof'][n])
             s = u_budget_dict['sens. co.'][n]
             c = u_budget_dict['uncert. cont.'][n]
-            line = '{:<28}{:<14.5g}{:<10.1g}{:<6.1f}{:<10.1e}{:<13.1e}\n'\
-                .format(q, v, u, d, s, c)
+            line = '{0:<28}{1:<16.{2}g}{3:<10.2g}{4:<6.1f}{5:<10.1e}{6:<13.1e}\n'\
+                .format(q, v, self.SetPrecision(v, u), u, d, s, c)
             budget_str += line
         self.Budget.SetValue(budget_str)
 
-#    def GetNamefromComment(self, c):
-#        return c[c.find('DUC: ') + 5: c.find(' monitored by GMH')]
+    def SetPrecision(self, v, u):
+        if v == 0:
+            v_lg = 0
+        else:
+            v_lg = math.log10(abs(v))
+        if u == 0:
+            u_lg = 0
+        else:
+            u_lg = math.log10(u)
+        if v > u:
+            return int(round(v_lg - u_lg)) + 2
+        else:
+            return 2
+
     def GetDUCNamefromRunID(self, runid):
         start = 'IVY.v' + self.version + ' '
         end = ' (Gain='
-        return runid[len(start)-1: runid.find(end)]
+        return runid[len(start): runid.find(end)]
 
     def GetMeanDate(self):
         '''
