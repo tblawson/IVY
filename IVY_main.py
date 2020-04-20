@@ -7,9 +7,9 @@ Created on Mon Jul 31 12:00:00 2017
 
 @author: t.lawson
 
-IVY_main.py - Version 0.3
+IVY_main.py - Version 1.0
 
-A Python version of the I-to-V TestPoint application.
+A Python-3 version of the I-to-V TestPoint application.
 This app is intended to offer the same functionality as the original
 TestPoint version but avoiding the clutter. It uses a wxPython notebook,
 with separate pages (tabs) dedicated to:
@@ -32,6 +32,7 @@ also contain GTC.ureals.
 
 import os
 import wx
+import wx.adv as wxadv
 import nbpages as page
 import IVY_events as evts
 import devices
@@ -39,9 +40,9 @@ import time
 import datetime as dt
 import logging
 
-VERSION = "0.3"
+VERSION = "1.0"
 
-print 'IVY', VERSION
+print('IVY', VERSION)
 
 # Start logging
 logname = 'IVYv'+VERSION+'_'+str(dt.date.today())+'.log'
@@ -57,9 +58,9 @@ logger.info('\n_____________START____________')
 
 
 class MainFrame(wx.Frame):
-    '''
+    """
     MainFrame Definition: holds the MainPanel in which the appliction runs
-    '''
+    """
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, size=(900, 600), *args, **kwargs)
         self.data_file = ""
@@ -68,31 +69,31 @@ class MainFrame(wx.Frame):
         self.version = VERSION
 
         # Event bindings
-        self.Bind(evts.EVT_STAT, self.UpdateStatus)
+        self.Bind(evts.EVT_STAT, self.update_status)
 
         self.sb = self.CreateStatusBar()
         self.sb.SetFieldsCount(2)
 
-        MenuBar = wx.MenuBar()
-        FileMenu = wx.Menu()
+        menu_bar = wx.MenuBar()
+        file_menu = wx.Menu()
 
-        About = FileMenu.Append(wx.ID_ABOUT, text='&About',
-                                help='About HighResBridgeControl (HRBC)')
-        self.Bind(wx.EVT_MENU, self.OnAbout, About)
+        about = file_menu.Append(wx.ID_ABOUT, text='&About',
+                                 help='About HighResBridgeControl (HRBC)')
+        self.Bind(wx.EVT_MENU, self.on_about, about)
 
-        SetDir = FileMenu.Append(wx.ID_OPEN, text='Set &Directory',
-                                 help='Set working directory for raw data and'
-                                 ' analysis results')
-        self.Bind(wx.EVT_MENU, self.OnSetDir, SetDir)  # OnOpen
+        set_dir = file_menu.Append(wx.ID_OPEN, text='Set &Directory',
+                                   help='Set working directory for raw data and'
+                                   ' analysis results')
+        self.Bind(wx.EVT_MENU, self.on_set_dir, set_dir)  # OnOpen
 
-        FileMenu.AppendSeparator()
+        file_menu.AppendSeparator()
 
-        Quit = FileMenu.Append(wx.ID_EXIT, text='&Quit',
-                               help='Exit HighResBridge')
-        self.Bind(wx.EVT_MENU, self.OnQuit, Quit)
+        exit_app = file_menu.Append(wx.ID_EXIT, text='&Quit',
+                                    help='Exit HighResBridge')
+        self.Bind(wx.EVT_MENU, self.on_quit, exit_app)
 
-        MenuBar.Append(FileMenu, "&File")
-        self.SetMenuBar(MenuBar)
+        menu_bar.Append(file_menu, "&File")
+        self.SetMenuBar(menu_bar)
 
         # Create a panel to hold the NoteBook...
         self.MainPanel = wx.Panel(self)
@@ -117,14 +118,14 @@ class MainFrame(wx.Frame):
         sizer.Add(self.NoteBook, 1, wx.EXPAND)
         self.MainPanel.SetSizer(sizer)
 
-    def UpdateStatus(self, e):
+    def update_status(self, e):
         if e.field == 'b':
             self.sb.SetStatusText(e.msg, 0)
             self.sb.SetStatusText(e.msg, 1)
         else:
             self.sb.SetStatusText(e.msg, e.field)
 
-    def OnAbout(self, event=None):
+    def on_about(self):
         # A message dialog with 'OK' button. wx.OK is a standard wxWidgets ID.
         dlg_description = "IVY v"+VERSION+": A Python'd version of the TestPoint \
 I-to-V converter program for Light Standards."
@@ -133,14 +134,14 @@ I-to-V converter program for Light Standards."
         dlg.ShowModal()  # Show dialog.
         dlg.Destroy()  # Destroy when done.
 
-    def OnSetDir(self, event=None):
+    def on_set_dir(self):
         dlg = wx.DirDialog(self, message='Select working directory',
                            style=wx.DD_DEFAULT_STYLE | wx.DD_CHANGE_DIR)
         dlg.SetPath(os.getcwd())
         if dlg.ShowModal() == wx.ID_OK:
             self.directory = dlg.GetPath()
             self.data_file = os.path.join(self.directory, 'IVY_RunData.json')
-            print self.directory
+            print(self.directory)
             # Get resistor and instrument data:
             devices.RES_DATA, devices.INSTR_DATA = devices.RefreshParams(self.directory)
             # Ensure working directory is displayed on SetupPage:
@@ -148,30 +149,30 @@ I-to-V converter program for Light Standards."
             wx.PostEvent(self.page1, file_evt)
         dlg.Destroy()
 
-    def CloseInstrSessions(self, event=None):
+    def close_instr_sessions(self):
         for r in devices.ROLES_INSTR.keys():
             devices.ROLES_INSTR[r].Close()
             time.sleep(0.1)
         devices.RM.close()
-        print'Main.CloseInstrSessions(): closed VISA resource manager.'
+        print('Main.CloseInstrSessions(): closed VISA resource manager.')
 
-    def OnQuit(self, event=None):
-        self.CloseInstrSessions()
+    def on_quit(self):
+        self.close_instr_sessions()
         time.sleep(0.1)
-        print 'Closing IVY...'
+        print('Closing IVY...')
         self.Close()
 
 
 """_______________________________________________"""
 
 
-class SplashScreen(wx.SplashScreen):
+class SplashScreen(wxadv.SplashScreen):
     def __init__(self, parent=None):
         ivy_bmp = wx.Image(name="ivy-splash.png").ConvertToBitmap()
-        splashStyle = wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_TIMEOUT
-        splashDuration = 2000  # milliseconds
-        wx.SplashScreen.__init__(self, ivy_bmp, splashStyle,
-                                 splashDuration, parent)
+        splash_style = wxadv.SPLASH_CENTRE_ON_SCREEN | wxadv.SPLASH_TIMEOUT
+        splash_duration = 2000  # milliseconds
+        wxadv.SplashScreen.__init__(self, ivy_bmp, splash_style,
+                                    splash_duration, parent)
         wx.Yield()
 
 
@@ -179,13 +180,14 @@ class MainApp(wx.App):
     """Class MainApp."""
     def OnInit(self):
         """Initiate Main App."""
-        Splash = SplashScreen()
-        Splash.Show()
+        splash = SplashScreen()
+        splash.Show()
         self.frame = MainFrame(None, wx.ID_ANY)
         self.frame.Show(True)
         self.SetTopWindow(self.frame)
         self.frame.SetTitle("IVY v"+VERSION)
         return True
+
 
 if __name__ == '__main__':
     app = MainApp(0)
