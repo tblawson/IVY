@@ -50,7 +50,7 @@ class SetupPage(wx.Panel):
         wx.Panel.__init__(self, parent)
 
         # Event bindings
-        self.Bind(evts.EVT_FILEPATH, self.UpdateDir)
+        self.Bind(evts.EVT_FILEPATH, self.update_dir)
 
         self.status = self.GetTopLevelParent().sb
         self.version = self.GetTopLevelParent().version
@@ -65,6 +65,12 @@ class SetupPage(wx.Panel):
                                    'Rs=10^5': '5',
                                    'Rs=10^6': '6',
                                    }  # '': None
+        self.instrument_choice = {'SRC': 'SRC_F5520A',
+                                  'DVM12': 'DVM_3458A:s/n518',
+                                  'DVM3': 'DVM_3458A:s/n066',
+                                  'DVMT': 'DVM_34401A:s/n976',
+                                  'GMH': 'GMH:s/n627',
+                                  'GMHroom': 'GMH:s/n367'}
         self.T_SENSOR_CHOICE = devices.T_Sensors
         self.cbox_addr_COM = []
         self.cbox_addr_GPIB = []
@@ -88,7 +94,7 @@ class SetupPage(wx.Panel):
         self.Sources = wx.ComboBox(self, wx.ID_ANY,
                                    choices=self.SRC_COMBO_CHOICE,
                                    size=(150, 10), style=wx.CB_DROPDOWN)
-        self.Sources.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
+        self.Sources.Bind(wx.EVT_COMBOBOX, self.update_instr)
         self.cbox_instr_SRC.append(self.Sources)
 
         self.IP_DVM_Lbl = wx.StaticText(self, label='Input DVM (DVM12):',
@@ -96,21 +102,21 @@ class SetupPage(wx.Panel):
         self.IP_Dvms = wx.ComboBox(self, wx.ID_ANY,
                                    choices=self.DVM_COMBO_CHOICE,
                                    style=wx.CB_DROPDOWN)
-        self.IP_Dvms.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
+        self.IP_Dvms.Bind(wx.EVT_COMBOBOX, self.update_instr)
         self.cbox_instr_DVM.append(self.IP_Dvms)
         self.OP_DVM_Lbl = wx.StaticText(self, label='Output DVM (DVM3):',
                                         id=wx.ID_ANY)
         self.OP_Dvms = wx.ComboBox(self, wx.ID_ANY,
                                    choices=self.DVM_COMBO_CHOICE,
                                    style=wx.CB_DROPDOWN)
-        self.OP_Dvms.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
+        self.OP_Dvms.Bind(wx.EVT_COMBOBOX, self.update_instr)
         self.cbox_instr_DVM.append(self.OP_Dvms)
         self.TDvmLbl = wx.StaticText(self, label='T-probe DVM (DVMT):',
                                      id=wx.ID_ANY)
         self.TDvms = wx.ComboBox(self, wx.ID_ANY,
                                  choices=self.DVM_COMBO_CHOICE,
                                  style=wx.CB_DROPDOWN)
-        self.TDvms.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
+        self.TDvms.Bind(wx.EVT_COMBOBOX, self.update_instr)
         self.cbox_instr_DVM.append(self.TDvms)
 
         self.GMHLbl = wx.StaticText(self, label='GMH probe (GMH):',
@@ -118,7 +124,7 @@ class SetupPage(wx.Panel):
         self.GMHProbes = wx.ComboBox(self, wx.ID_ANY,
                                      choices=self.GMH_COMBO_CHOICE,
                                      style=wx.CB_DROPDOWN)
-        self.GMHProbes.Bind(wx.EVT_COMBOBOX, self.BuildCommStr)
+        self.GMHProbes.Bind(wx.EVT_COMBOBOX, self.build_comm_str)
         self.cbox_instr_GMH.append(self.GMHProbes)
 
         self.GMHroomLbl = wx.StaticText(self,
@@ -127,7 +133,7 @@ class SetupPage(wx.Panel):
         self.GMHroomProbes = wx.ComboBox(self, wx.ID_ANY,
                                          choices=self.GMH_COMBO_CHOICE,
                                          style=wx.CB_DROPDOWN)
-        self.GMHroomProbes.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
+        self.GMHroomProbes.Bind(wx.EVT_COMBOBOX, self.update_instr)
         self.cbox_instr_GMH.append(self.GMHroomProbes)
 
         self.IVboxLbl = wx.StaticText(self, label='IV_box (IVbox) setting:',
@@ -141,46 +147,46 @@ class SetupPage(wx.Panel):
                                    choices=self.GPIBAddressList,
                                    size=(150, 10), style=wx.CB_DROPDOWN)
         self.cbox_addr_GPIB.append(self.SrcAddr)
-        self.SrcAddr.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
+        self.SrcAddr.Bind(wx.EVT_COMBOBOX, self.update_addr)
 
         self.IP_DvmAddr = wx.ComboBox(self, wx.ID_ANY,
                                       choices=self.GPIBAddressList,
                                       style=wx.CB_DROPDOWN)
         self.cbox_addr_GPIB.append(self.IP_DvmAddr)
-        self.IP_DvmAddr.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
+        self.IP_DvmAddr.Bind(wx.EVT_COMBOBOX, self.update_addr)
 
         self.OP_DvmAddr = wx.ComboBox(self, wx.ID_ANY,
                                       choices=self.GPIBAddressList,
                                       style=wx.CB_DROPDOWN)
         self.cbox_addr_GPIB.append(self.OP_DvmAddr)
-        self.OP_DvmAddr.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
+        self.OP_DvmAddr.Bind(wx.EVT_COMBOBOX, self.update_addr)
 
         self.TDvmAddr = wx.ComboBox(self, wx.ID_ANY,
                                     choices=self.GPIBAddressList,
                                     style=wx.CB_DROPDOWN)
         self.cbox_addr_GPIB.append(self.TDvmAddr)
-        self.TDvmAddr.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
+        self.TDvmAddr.Bind(wx.EVT_COMBOBOX, self.update_addr)
 
         self.GMHPorts = wx.ComboBox(self, wx.ID_ANY,
                                     choices=self.COMAddressList,
                                     style=wx.CB_DROPDOWN)
         self.cbox_addr_COM.append(self.GMHPorts)
-        self.GMHPorts.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
+        self.GMHPorts.Bind(wx.EVT_COMBOBOX, self.update_addr)
 
         self.GMHroomPorts = wx.ComboBox(self, wx.ID_ANY,
                                         choices=self.COMAddressList,
                                         style=wx.CB_DROPDOWN)
         self.cbox_addr_COM.append(self.GMHroomPorts)
-        self.GMHroomPorts.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
+        self.GMHroomPorts.Bind(wx.EVT_COMBOBOX, self.update_addr)
 
         self.IVboxAddr = wx.ComboBox(self, wx.ID_ANY,
                                      choices=self.COMAddressList,
                                      style=wx.CB_DROPDOWN)
         self.cbox_addr_COM.append(self.IVboxAddr)
-        self.IVboxAddr.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
+        self.IVboxAddr.Bind(wx.EVT_COMBOBOX, self.update_addr)
 
         # Filename
-        DirLbl = wx.StaticText(self, label='Working directory:',
+        dir_lbl = wx.StaticText(self, label='Working directory:',
                                id=wx.ID_ANY)
         self.WorkingDir = wx.TextCtrl(self, id=wx.ID_ANY,
                                       value=self.GetTopLevelParent().directory,
@@ -188,134 +194,134 @@ class SetupPage(wx.Panel):
 
         # DUC
         self.DUCName = wx.TextCtrl(self, id=wx.ID_ANY, value='DUC Name')
-        self.DUCName.Bind(wx.EVT_TEXT, self.BuildCommStr)
+        self.DUCName.Bind(wx.EVT_TEXT, self.build_comm_str)
 
         # Autopopulate btn
         self.AutoPop = wx.Button(self, id=wx.ID_ANY, label='AutoPopulate')
-        self.AutoPop.Bind(wx.EVT_BUTTON, self.OnAutoPop)
+        self.AutoPop.Bind(wx.EVT_BUTTON, self.on_auto_pop)
 
         # Test buttons
         self.VisaList = wx.Button(self, id=wx.ID_ANY, label='List Visa res')
-        self.VisaList.Bind(wx.EVT_BUTTON, self.OnVisaList)
+        self.VisaList.Bind(wx.EVT_BUTTON, self.on_visa_list)
         self.ResList = wx.TextCtrl(self, id=wx.ID_ANY,
                                    value='Available Visa resources',
                                    style=wx.TE_READONLY | wx.TE_MULTILINE)
 
         self.STest = wx.Button(self, id=wx.ID_ANY, label='Test')
-        self.STest.Bind(wx.EVT_BUTTON, self.OnTest)
+        self.STest.Bind(wx.EVT_BUTTON, self.on_test)
 
         self.D12Test = wx.Button(self, id=wx.ID_ANY, label='Test')
-        self.D12Test.Bind(wx.EVT_BUTTON, self.OnTest)
+        self.D12Test.Bind(wx.EVT_BUTTON, self.on_test)
 
         self.D3Test = wx.Button(self, id=wx.ID_ANY, label='Test')
-        self.D3Test.Bind(wx.EVT_BUTTON, self.OnTest)
+        self.D3Test.Bind(wx.EVT_BUTTON, self.on_test)
 
         self.DTTest = wx.Button(self, id=wx.ID_ANY, label='Test')
-        self.DTTest.Bind(wx.EVT_BUTTON, self.OnTest)
+        self.DTTest.Bind(wx.EVT_BUTTON, self.on_test)
 
         self.GMHTest = wx.Button(self, id=wx.ID_ANY, label='Test')
-        self.GMHTest.Bind(wx.EVT_BUTTON, self.OnTest)
+        self.GMHTest.Bind(wx.EVT_BUTTON, self.on_test)
 
         self.GMHroomTest = wx.Button(self, id=wx.ID_ANY, label='Test')
-        self.GMHroomTest.Bind(wx.EVT_BUTTON, self.OnTest)
+        self.GMHroomTest.Bind(wx.EVT_BUTTON, self.on_test)
 
         self.IVboxTest = wx.Button(self, id=wx.ID_ANY, label='Test')
-        self.IVboxTest.Bind(wx.EVT_BUTTON, self.OnIVBoxTest)
+        self.IVboxTest.Bind(wx.EVT_BUTTON, self.on_IV_box_test)
 
-        ResponseLbl = wx.StaticText(self,
+        response_lbl = wx.StaticText(self,
                                     label='Instrument Test Response:',
                                     id=wx.ID_ANY)
         self.Response = wx.TextCtrl(self, id=wx.ID_ANY, value='',
                                     style=wx.TE_READONLY)
 
-        gbSizer = wx.GridBagSizer()
+        gb_sizer = wx.GridBagSizer()
 
         # Instruments
-        gbSizer.Add(self.SrcLbl, pos=(0, 0), span=(1, 1),
+        gb_sizer.Add(self.SrcLbl, pos=(0, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.Sources, pos=(0, 1), span=(1, 1),
+        gb_sizer.Add(self.Sources, pos=(0, 1), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.IP_DVM_Lbl, pos=(1, 0), span=(1, 1),
+        gb_sizer.Add(self.IP_DVM_Lbl, pos=(1, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.IP_Dvms, pos=(1, 1), span=(1, 1),
+        gb_sizer.Add(self.IP_Dvms, pos=(1, 1), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.OP_DVM_Lbl, pos=(2, 0), span=(1, 1),
+        gb_sizer.Add(self.OP_DVM_Lbl, pos=(2, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.OP_Dvms, pos=(2, 1), span=(1, 1),
+        gb_sizer.Add(self.OP_Dvms, pos=(2, 1), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.TDvmLbl, pos=(3, 0), span=(1, 1),
+        gb_sizer.Add(self.TDvmLbl, pos=(3, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.TDvms, pos=(3, 1), span=(1, 1),
+        gb_sizer.Add(self.TDvms, pos=(3, 1), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.GMHLbl, pos=(4, 0), span=(1, 1),
+        gb_sizer.Add(self.GMHLbl, pos=(4, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.GMHProbes, pos=(4, 1), span=(1, 1),
+        gb_sizer.Add(self.GMHProbes, pos=(4, 1), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.GMHroomLbl, pos=(5, 0), span=(1, 1),
+        gb_sizer.Add(self.GMHroomLbl, pos=(5, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.GMHroomProbes, pos=(5, 1), span=(1, 1),
+        gb_sizer.Add(self.GMHroomProbes, pos=(5, 1), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.IVboxLbl, pos=(6, 0), span=(1, 1),
+        gb_sizer.Add(self.IVboxLbl, pos=(6, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.IVbox, pos=(6, 1), span=(1, 1),
+        gb_sizer.Add(self.IVbox, pos=(6, 1), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
         # Addresses
-        gbSizer.Add(self.SrcAddr, pos=(0, 2), span=(1, 1),
+        gb_sizer.Add(self.SrcAddr, pos=(0, 2), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.IP_DvmAddr, pos=(1, 2), span=(1, 1),
+        gb_sizer.Add(self.IP_DvmAddr, pos=(1, 2), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.OP_DvmAddr, pos=(2, 2), span=(1, 1),
+        gb_sizer.Add(self.OP_DvmAddr, pos=(2, 2), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.TDvmAddr, pos=(3, 2), span=(1, 1),
+        gb_sizer.Add(self.TDvmAddr, pos=(3, 2), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.GMHPorts, pos=(4, 2), span=(1, 1),
+        gb_sizer.Add(self.GMHPorts, pos=(4, 2), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.GMHroomPorts, pos=(5, 2), span=(1, 1),
+        gb_sizer.Add(self.GMHroomPorts, pos=(5, 2), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.IVboxAddr, pos=(6, 2), span=(1, 1),
+        gb_sizer.Add(self.IVboxAddr, pos=(6, 2), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
         # DUC Name
-        gbSizer.Add(self.DUCName, pos=(6, 4), span=(1, 1),
+        gb_sizer.Add(self.DUCName, pos=(6, 4), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
         # Filename
-        gbSizer.Add(DirLbl, pos=(8, 0), span=(1, 1),
+        gb_sizer.Add(dir_lbl, pos=(8, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.WorkingDir, pos=(8, 1), span=(1, 5),
+        gb_sizer.Add(self.WorkingDir, pos=(8, 1), span=(1, 5),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
         # Test buttons
-        gbSizer.Add(self.STest, pos=(0, 3), span=(1, 1),
+        gb_sizer.Add(self.STest, pos=(0, 3), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.D12Test, pos=(1, 3), span=(1, 1),
+        gb_sizer.Add(self.D12Test, pos=(1, 3), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.D3Test, pos=(2, 3), span=(1, 1),
+        gb_sizer.Add(self.D3Test, pos=(2, 3), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.DTTest, pos=(3, 3), span=(1, 1),
+        gb_sizer.Add(self.DTTest, pos=(3, 3), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.GMHTest, pos=(4, 3), span=(1, 1),
+        gb_sizer.Add(self.GMHTest, pos=(4, 3), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.GMHroomTest, pos=(5, 3), span=(1, 1),
+        gb_sizer.Add(self.GMHroomTest, pos=(5, 3), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.IVboxTest, pos=(6, 3), span=(1, 1),
+        gb_sizer.Add(self.IVboxTest, pos=(6, 3), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
-        gbSizer.Add(ResponseLbl, pos=(3, 4), span=(1, 1),
+        gb_sizer.Add(response_lbl, pos=(3, 4), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.Response, pos=(4, 4), span=(1, 3),
+        gb_sizer.Add(self.Response, pos=(4, 4), span=(1, 3),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.VisaList, pos=(0, 5), span=(1, 1),
+        gb_sizer.Add(self.VisaList, pos=(0, 5), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.ResList, pos=(0, 4), span=(3, 1),
+        gb_sizer.Add(self.ResList, pos=(0, 4), span=(3, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
         # Autopopulate btn
-        gbSizer.Add(self.AutoPop, pos=(2, 5), span=(1, 1),
+        gb_sizer.Add(self.AutoPop, pos=(2, 5), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
-        self.SetSizerAndFit(gbSizer)
+        self.SetSizerAndFit(gb_sizer)
 
         # Roles and corresponding comboboxes/test btns are associated here:
         devices.ROLES_WIDGETS = {'SRC': {'lbl': self.SrcLbl,
@@ -350,11 +356,11 @@ class SetupPage(wx.Panel):
         # Create IV-box instrument once:
         d = 'IV_box'  # Description
         r = 'IVbox'  # Role
-        self.CreateInstr(d, r)
+        self.create_instr(d, r)
 
-        self.BuildComboChoices()
+        self.build_combo_choices()
 
-    def BuildComboChoices(self):
+    def build_combo_choices(self):
         for d in devices.INSTR_DATA.keys():
             if 'SRC' in d:
                 self.SRC_COMBO_CHOICE.append(d)
@@ -386,73 +392,70 @@ class SetupPage(wx.Panel):
 
         # No choices for IV box - there's only one
 
-    def UpdateDir(self, e):
-        '''
+    def update_dir(self, e):
+        """
         Display working directory once selected.
-        '''
+        """
         self.WorkingDir.SetValue(e.Dir)
 
-    def OnAutoPop(self, e):
-        '''
+    def on_auto_pop(self, e):
+        """
         Pre-select instrument and address comboboxes -
         Choose from instrument descriptions listed in devices.DESCR
         (Uses address assignments in devices.INSTR_DATA)
-        '''
-        self.instrument_choice = {'SRC': 'SRC_F5520A',
-                                  'DVM12': 'DVM_3458A:s/n518',
-                                  'DVM3': 'DVM_3458A:s/n066',
-                                  'DVMT': 'DVM_34401A:s/n976',
-                                  'GMH': 'GMH:s/n627',
-                                  'GMHroom': 'GMH:s/n367'}
+        """
         for r in self.instrument_choice.keys():
             d = self.instrument_choice[r]
             devices.ROLES_WIDGETS[r]['icb'].SetValue(d)  # Update instr. cbox
-            self.CreateInstr(d, r)
+            self.create_instr(d, r)
         if self.DUCName.GetValue() == u'DUC Name':
             self.DUCName.SetForegroundColour((255, 0, 0))
             self.DUCName.SetValue('CHANGE_THIS!')
 
-    def UpdateInstr(self, e):
-        '''
+    def update_instr(self, e):
+        """
         An instrument was selected for a role.
         Find description d and role r, then pass to CreatInstr()
-        '''
+        """
+        r = ''
         d = e.GetString()
         for r in devices.ROLES_WIDGETS.keys():  # Cycle through roles
             if devices.ROLES_WIDGETS[r]['icb'] == e.GetEventObject():
                 break  # stop looking on finding the right instr & role
-        self.CreateInstr(d, r)
+        self.create_instr(d, r)
 
-    def CreateInstr(self, d, r):
-        '''
+    def create_instr(self, d, r):
+        """
          Called by both OnAutoPop() and UpdateInstr().
          Create each instrument in software & open visa session
          (GPIB and IVbox only).
          For GMH instruments, use GMH dll, not visa.
-        '''
-        print '\nCreateInstr(%s,%s)...' % (d, r)
-        logger.info('Instr = %s; role = %s)...', d, r)
+        """
+        msg_head = 'CreateInstr():'
+        print('\nCreateInstr({},{})...'.format(d, r))
+        logger.info('\nCreateInstr({},{})...'.format(d, r))
         if 'GMH' in r:  # Changed from d to r
             # create and open a GMH instrument instance
             msg = 'Creating GMH device ({0:s} -> {1:s})'.format(d, r)
-            print'\nnbpages.SetupPage.CreateInstr():', msg
-            logger.info(msg)
+            print('\n', msg_head, msg)
+            logger.info(msg_head, msg)
             devices.ROLES_INSTR.update({r: devices.GMHSensor(d, r)})
         else:
             # create a visa instrument instance
             msg = 'Creating VISA device ({0:s} -> {1:s}).'.format(d, r)
-            print'\nnbpages.SetupPage.CreateInstr():', msg
-            logger.info(msg)
+            print('\n', msg_head, msg)
+            logger.info(msg_head, msg)
             devices.ROLES_INSTR.update({r: devices.Instrument(d, r)})
             devices.ROLES_INSTR[r].open()
-        self.SetInstr(d, r)
+        self.set_instr(d, r)
 
-    def SetInstr(self, d, r):
+    def set_instr(self, d, r):
         """
-        Called by CreateInstr().
-        Updates internal info (INSTR_DATA), updates the addresses
+        Update internal info (INSTR_DATA), updates the addresses
         and Enables/disables testbuttons as necessary.
+        Called by CreateInstr().
         """
+        msg_head = 'SetInstr():'
         assert d in devices.INSTR_DATA, 'Unknown instrument: %s' % d
         assert_msg = 'Unknown parameter ("role") for %s: .' % d
         assert 'role' in devices.INSTR_DATA[d], assert_msg
@@ -461,18 +464,21 @@ class SetupPage(wx.Panel):
         # Set the address cb to correct value (refer to devices.INSTR_DATA)
         a_cb = devices.ROLES_WIDGETS[r]['acb']
         msg = 'Address = {}'.format(devices.INSTR_DATA[d]['str_addr'])
-        print 'SetInstr():', msg
-        logger.info(msg)
+        print(msg_head, msg)
+        logger.info(msg_head, msg)
         a_cb.SetValue((devices.INSTR_DATA[d]['str_addr']))
         if d == 'none':
             devices.ROLES_WIDGETS[r]['tbtn'].Enable(False)
         else:
             devices.ROLES_WIDGETS[r]['tbtn'].Enable(True)
 
-    def UpdateAddr(self, e):
+    def update_addr(self, e):
         # An address was manually selected
         # 1st, we'll need instrument description d...
+        msg_head = 'UpdateAddr():'
         d = 'none'
+        r = ''
+        addr = '0'
         acb = e.GetEventObject()  # 'a'ddress 'c'ombo 'b'ox
         for r in devices.ROLES_WIDGETS.keys():
             if devices.ROLES_WIDGETS[r]['acb'] == acb:
@@ -493,27 +499,29 @@ class SetupPage(wx.Panel):
             devices.ROLES_INSTR[r].addr = int(addr)
         msg = '{0:s} using {1:s} set to '\
               'addr {2:s} ({3:s})'.format(r, d, addr, a)
-        print'UpdateAddr():', msg
-        logger.info(msg)
+        print(msg_head, msg)
+        logger.info(msg_head, msg)
 
-    def OnTest(self, e):
+    def on_test(self, e):
         # Called when a 'test' button is clicked
+        msg_head = 'nbpages.SetupPage.OnTest():'
+        r = ''
         d = 'none'
         for r in devices.ROLES_WIDGETS.keys():  # check every role
             if devices.ROLES_WIDGETS[r]['tbtn'] == e.GetEventObject():
                 d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
                 break  # stop looking when we've found right instr descr
-        print'\nnbpages.SetupPage.OnTest():', d
-        logger.info('%s', d)
-        assert_msg = '%s has no "test" parameter' % d
+        print('\n', msg_head, d)
+        logger.info(msg_head, d)
+        assert_msg = '{} has no "test" parameter'.format(d)
         assert 'test' in devices.INSTR_DATA[d], assert_msg
         test = devices.INSTR_DATA[d]['test']  # test string
-        print '\tTest string:', test
-        logger.info('Test string: %s', test)
+        print('\tTest string:', test)
+        logger.info('Test string: {}'.format(test))
         self.Response.SetValue(str(devices.ROLES_INSTR[r].test(test)))
         self.status.SetStatusText('Testing %s with cmd %s' % (d, test), 0)
 
-    def OnIVBoxTest(self, e):
+    def on_IV_box_test(self, e):
         # NOTE: config is the configuration description NOT the test string:
         config = devices.ROLES_WIDGETS['IVbox']['icb'].GetValue()
         test = self.IVBOX_COMBO_CHOICE[config]
@@ -526,17 +534,18 @@ class SetupPage(wx.Panel):
         else:
             self.Response.SetValue('IV_box: empty test!')
 
-    def BuildCommStr(self, e):
+    def build_comm_str(self, e):
         # Called by a change in GMH probe selection, or DUC name
         self.version = self.GetTopLevelParent().version
         d = e.GetString()
+        r = ''
         if 'GMH' in d:  # A GMH probe selection changed
             # Find the role associated with the selected instrument description
             for r in devices.ROLES_WIDGETS.keys():
                 if devices.ROLES_WIDGETS[r]['icb'].GetValue() == d:
                     break
             # Update our knowledge of role <-> instr. descr. association
-            self.CreateInstr(d, r)
+            self.create_instr(d, r)
         else:  # DUC name has been set or changed
             if d in ('CHANGE_THIS!', 'DUC Name'):  # DUC not yet specified!
                 self.DUCName.SetForegroundColour((255, 0, 0))
@@ -550,7 +559,7 @@ class SetupPage(wx.Panel):
 #        evt = evts.UpdateCommentEvent(str=commstr)
 #        wx.PostEvent(RunPage, evt)
 
-    def OnVisaList(self, e):
+    def on_visa_list(self, e):
         res_list = devices.RM.list_resources()
         del self.ResourceList[:]  # list of COM ports ('COM X') & GPIB addr's
         del self.ComList[:]  # list of COM ports (numbers only)
@@ -566,21 +575,21 @@ class SetupPage(wx.Panel):
 
         # Re-build combobox choices from list of COM ports
         for cbox in self.cbox_addr_COM:
-            current_COM = cbox.GetValue()
+            current_port = cbox.GetValue()
             cbox.Clear()
             cbox.AppendItems(self.ComList)
-            cbox.SetValue(current_COM)
+            cbox.SetValue(current_port)
 
         # Re-build combobox choices from list of GPIB addresses
         for cbox in self.cbox_addr_GPIB:
-            current_COM = cbox.GetValue()
+            current_port = cbox.GetValue()
             cbox.Clear()
             cbox.AppendItems(self.GPIBList)
-            cbox.SetValue(current_COM)
+            cbox.SetValue(current_port)
 
         # Add resources to ResList TextCtrl widget
-        self.res_addr_list = '\n'.join(self.ResourceList)
-        self.ResList.SetValue(self.res_addr_list)
+        res_addr_list = '\n'.join(self.ResourceList)
+        self.ResList.SetValue(res_addr_list)
 
 '''
 ____________________________________________
