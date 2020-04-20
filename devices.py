@@ -17,9 +17,7 @@ Created on Fri Mar 17 13:52:15 2017
 @author: t.lawson
 """
 
-import numpy as np
 import os
-# import ctypes as ct
 import visa
 import logging
 import json
@@ -32,6 +30,8 @@ logger = logging.getLogger(__name__)
 The following are generally-useful utility functions and code to
 ensure information about resitors and instruments are available:
 """
+
+
 def strip_chars(oldstr, charlist=''):
     """
     Strip characters from oldstr and return newstr that does not
@@ -40,6 +40,7 @@ def strip_chars(oldstr, charlist=''):
     Note that the built-in str.strip() only removes characters from
     the start and end (not throughout).
     """
+    newstr = ''
     for ch in charlist:
         newstr = ''.join(oldstr.split(ch))
         oldstr = newstr
@@ -219,8 +220,8 @@ class Instrument(Device):
         # Close comms with instrument
         msg_head = 'devices.instrument.Close():'
         if self.demo is True:
-            print(msg_head,'{} in demo mode - nothing to close.'.format(self.descr))
-            logger.info(msg_head,'{} in demo mode - nothing to close.'.format(self.descr))
+            print(msg_head, '{} in demo mode - nothing to close.'.format(self.descr))
+            logger.info(msg_head, '{} in demo mode - nothing to close.'.format(self.descr))
         elif self.instr is not None:
             print(msg_head, 'Closing {} (session handle={})'.format(self.descr, self.instr.session))
             logger.info(msg_head, 'Closing {} (session handle={})'.format(self.descr, self.instr.session))
@@ -233,12 +234,12 @@ class Instrument(Device):
     def init(self):
         # Send initiation string
         msg_head = 'devices.instrument.Init():'
+        s = ''
         if self.demo is True:
             print(msg_head, '{} in demo mode - no initiation necessary.'.format(self.descr))
             logger.info(msg_head, '{} in demo mode - no initiation necessary.'.format(self.descr))
-            return '0'
+            return 0
         else:
-            reply = '1'
             for s in self.InitStr:
                 if s != '':  # instrument has an initiation string
                     try:
@@ -246,10 +247,14 @@ class Instrument(Device):
                     except visa.VisaIOError:
                         print(msg_head, 'Failed to write {} to {}'.format(s, self.descr))
                         logger.warning(msg_head, 'Failed to write {} to {}'.format(s, self.descr))
-                        return '-1'
+                        return -1
+                else:
+                    print(msg_head, '{} has no initiation string.'.format(self.descr))
+                    logger.warning(msg_head, '{} has no initiation string.'.format(self.descr))
+                    return 1
             print(msg_head, '{} initiated with cmd:"{}".'.format(self.descr, s))
             logger.info(msg_head, '{} initiated with cmd:"{}".'.format(self.descr, s))
-        return reply
+        return 1
 
     def set_v(self, v):
         """
