@@ -143,7 +143,7 @@ I-to-V converter program for Light Standards."
             self.data_file = os.path.join(self.directory, 'IVY_RunData.json')
             print(self.directory)
             # Get resistor and instrument data:
-            devices.RES_DATA, devices.INSTR_DATA = devices.RefreshParams(self.directory)
+            devices.RES_DATA, devices.INSTR_DATA = devices.refresh_params(self.directory)
             # Ensure working directory is displayed on SetupPage:
             file_evt = evts.FilePathEvent(Dir=self.directory)
             wx.PostEvent(self.page1, file_evt)
@@ -151,7 +151,7 @@ I-to-V converter program for Light Standards."
 
     def close_instr_sessions(self):
         for r in devices.ROLES_INSTR.keys():
-            devices.ROLES_INSTR[r].Close()
+            devices.ROLES_INSTR[r].close()
             time.sleep(0.1)
         devices.RM.close()
         print('Main.CloseInstrSessions(): closed VISA resource manager.')

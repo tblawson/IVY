@@ -437,14 +437,14 @@ class SetupPage(wx.Panel):
             msg = 'Creating GMH device ({0:s} -> {1:s})'.format(d, r)
             print'\nnbpages.SetupPage.CreateInstr():', msg
             logger.info(msg)
-            devices.ROLES_INSTR.update({r: devices.GMH_Sensor(d, r)})
+            devices.ROLES_INSTR.update({r: devices.GMHSensor(d, r)})
         else:
             # create a visa instrument instance
             msg = 'Creating VISA device ({0:s} -> {1:s}).'.format(d, r)
             print'\nnbpages.SetupPage.CreateInstr():', msg
             logger.info(msg)
-            devices.ROLES_INSTR.update({r: devices.instrument(d, r)})
-            devices.ROLES_INSTR[r].Open()
+            devices.ROLES_INSTR.update({r: devices.Instrument(d, r)})
+            devices.ROLES_INSTR[r].open()
         self.SetInstr(d, r)
 
     def SetInstr(self, d, r):
@@ -510,7 +510,7 @@ class SetupPage(wx.Panel):
         test = devices.INSTR_DATA[d]['test']  # test string
         print '\tTest string:', test
         logger.info('Test string: %s', test)
-        self.Response.SetValue(str(devices.ROLES_INSTR[r].Test(test)))
+        self.Response.SetValue(str(devices.ROLES_INSTR[r].test(test)))
         self.status.SetStatusText('Testing %s with cmd %s' % (d, test), 0)
 
     def OnIVBoxTest(self, e):
@@ -519,7 +519,7 @@ class SetupPage(wx.Panel):
         test = self.IVBOX_COMBO_CHOICE[config]
         if test is not None:
             try:
-                devices.ROLES_INSTR['IVbox'].Test(test)
+                devices.ROLES_INSTR['IVbox'].test(test)
                 self.Response.SetValue(config)
             except devices.visa.VisaIOError:
                 self.Response.SetValue('IV_box test failed!')
@@ -799,7 +799,7 @@ class RunPage(wx.Panel):
             s = str(int(math.log10(self.Rs_val)))  # '3','4','5' or '6'
             print '\nSwitching Rs - Sending "%s" to IVbox' % s
             logger.info('Switching Rs - Sending "%s" to IVbox', s)
-            devices.ROLES_INSTR['IVbox'].SendCmd(s)
+            devices.ROLES_INSTR['IVbox'].send_cmd(s)
 
     def OnNode(self, e):
         node = e.GetString()  # 'V1', 'V2', or 'V3'
@@ -809,7 +809,7 @@ class RunPage(wx.Panel):
         if s in ('1', '2'):
             print'\nRunPage.OnNode():Sending IVbox "', s, '"'
             logger.info('Sending IVbox "%s"', s)
-            devices.ROLES_INSTR['IVbox'].SendCmd(s)
+            devices.ROLES_INSTR['IVbox'].send_cmd(s)
         else:  # '3'
             print'\nRunPage.OnNode():IGNORING IVbox cmd "', s, '"'
             logger.info('IGNORING IVbox cmd "%s"', s)
@@ -821,12 +821,12 @@ class RunPage(wx.Panel):
         print'RunPage.OnV1Set(): ', msg
         logger.info(msg)
         src = devices.ROLES_INSTR['SRC']
-        src.SetV(V1)
+        src.set_v(V1)
         time.sleep(0.5)
         if V1 == 0:
-            src.Stby()
+            src.stby()
         else:
-            src.Oper()
+            src.oper()
         time.sleep(0.5)
 
     def OnZeroVolts(self, e):
@@ -835,8 +835,8 @@ class RunPage(wx.Panel):
         if self.V1Setting.GetValue() == 0:
             print'RunPage.OnZeroVolts(): Zero/Stby directly'
             logger.info('Zero/Stby directly')
-            src.SetV(0)
-            src.Stby()
+            src.set_v(0)
+            src.stby()
         else:
             self.V1Setting.SetValue('0')  # Calls OnV1Set() ONLY IF VAL CHANGES
             print'RunPage.OnZeroVolts():  Zero/Stby via V1 display'

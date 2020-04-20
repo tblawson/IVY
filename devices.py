@@ -383,7 +383,7 @@ class Instrument(Device):
 
     def read(self):
         msg_head = 'devices.instrument.read():'
-        demo_reply = '{} - DEMO resp. to {}.'.format(self.descr, s)
+        demo_reply = '{} - DEMO resp.'.format(self.descr)
         reply = ''
         if self.demo is True:
             return demo_reply

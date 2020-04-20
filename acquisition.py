@@ -249,8 +249,8 @@ class AqnThread(Thread):
                     Set DVM ranges to suit voltages that they're
                     about to be exposed to:
                     '''
-                    devices.ROLES_INSTR['DVM12'].SendCmd('DCV AUTO')
-                    devices.ROLES_INSTR['DVM3'].SendCmd('DCV AUTO')
+                    devices.ROLES_INSTR['DVM12'].send_cmd('DCV AUTO')
+                    devices.ROLES_INSTR['DVM3'].send_cmd('DCV AUTO')
                     if not (devices.ROLES_INSTR['DVM12'].demo and devices.ROLES_INSTR['DVM3'].demo):
                         time.sleep(0.5)  # Settle after setting range
 
@@ -260,7 +260,7 @@ class AqnThread(Thread):
                     if not devices.ROLES_INSTR['SRC'].demo:
                         time.sleep(0.5)  # Settle after setting V
                     if self.v1_set == 0:
-                        devices.ROLES_INSTR['SRC'].Oper()  # Over-ride 0V STBY
+                        devices.ROLES_INSTR['SRC'].oper()  # Over-ride 0V STBY
                     if self._want_abort:
                         self.abort_run()
                         return
@@ -272,16 +272,16 @@ class AqnThread(Thread):
                                                field=1)
                     wx.PostEvent(self.TopLevel, stat_ev)
 
-                    devices.ROLES_INSTR['DVM12'].SendCmd('LFREQ LINE')
-                    devices.ROLES_INSTR['DVM3'].SendCmd('LFREQ LINE')
+                    devices.ROLES_INSTR['DVM12'].send_cmd('LFREQ LINE')
+                    devices.ROLES_INSTR['DVM3'].send_cmd('LFREQ LINE')
                     if self._want_abort:
                         self.abort_run()
                         return
                     if not (devices.ROLES_INSTR['DVM12'].demo and devices.ROLES_INSTR['DVM3'].demo):
                         time.sleep(3)
 
-                    devices.ROLES_INSTR['DVM12'].SendCmd('AZERO ONCE')
-                    devices.ROLES_INSTR['DVM3'].SendCmd('AZERO ON')
+                    devices.ROLES_INSTR['DVM12'].send_cmd('AZERO ONCE')
+                    devices.ROLES_INSTR['DVM3'].send_cmd('AZERO ON')
                     if self._want_abort:
                         self.abort_run()
                         return
@@ -334,7 +334,7 @@ class AqnThread(Thread):
 
                     update_ev = evts.DataEvent(ud=update)
                     wx.PostEvent(self.RunPage, update_ev)
-                    input_range = devices.ROLES_INSTR['DVM12'].SendCmd('RANGE?')
+                    input_range = devices.ROLES_INSTR['DVM12'].send_cmd('RANGE?')
                     if not isinstance(input_range, float):
                         input_range = 0.0
                     self.input_range = input_range
@@ -346,7 +346,7 @@ class AqnThread(Thread):
                     self.V3m = np.mean(self.V3Data)
                     self.V3sd = np.std(self.V3Data, ddof=1)
                     self.T = devices.ROLES_INSTR['GMH'].Measure('T')
-                    output_range = devices.ROLES_INSTR['DVM3'].SendCmd('RANGE?')
+                    output_range = devices.ROLES_INSTR['DVM3'].send_cmd('RANGE?')
                     if not isinstance(output_range, float):
                         output_range = 0.0
                     self.output_range = output_range
@@ -394,7 +394,7 @@ class AqnThread(Thread):
             msg = 'Sending IVbox "{:s}"'.format(s)
             print('AqnThread.SetNode():', msg)
             logger.info(msg)
-            devices.ROLES_INSTR['IVbox'].SendCmd(s)
+            devices.ROLES_INSTR['IVbox'].send_cmd(s)
         else:  # '3'
             msg = 'IGNORING IVbox cmd "{:s}"'.format(s)
             print('AqnThread.SetNode():', msg)
@@ -430,7 +430,7 @@ class AqnThread(Thread):
                 msg = 'Opening {:s}'.format(d)
                 print('AqnThread.initialise():', msg)
                 logger.info(msg)
-                devices.ROLES_INSTR[r].Open()
+                devices.ROLES_INSTR[r].open()
             else:
                 msg = '{:s} already open'.format(d)
                 print('AqnThread.initialise():', msg)
@@ -438,7 +438,7 @@ class AqnThread(Thread):
 
             stat_ev = evts.StatusEvent(msg=d, field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
-            devices.ROLES_INSTR[r].Init()
+            devices.ROLES_INSTR[r].init()
             if not devices.ROLES_INSTR[r].demo:
                 time.sleep(1)
         stat_ev = evts.StatusEvent(msg='Done', field=0)
@@ -447,7 +447,7 @@ class AqnThread(Thread):
     def set_up_meas_this_row(self, node):
         d = devices.ROLES_INSTR['SRC'].Descr
         if 'F5520A' in d:
-            err = devices.ROLES_INSTR['SRC'].CheckErr()  # 'ERR?','*CLS'
+            err = devices.ROLES_INSTR['SRC'].check_err()  # 'ERR?','*CLS'
             msg = 'Cleared F5520A error: "{}"'.format(err)
             print(msg)
             logger.info(msg)
@@ -464,7 +464,7 @@ class AqnThread(Thread):
                 dvm_op = np.random.normal(self.v1_set, 1.0e-5 * abs(self.v1_set) + 1e-6)
                 # self.V12Data['V1'].append(dvmOP)
             else:
-                dvm_op = float(devices.ROLES_INSTR['DVM12'].Read())
+                dvm_op = float(devices.ROLES_INSTR['DVM12'].read())
                 # V = float(dvmOP)  # float(filter(self.filt, dvmOP))
                 # self.V12Data['V1'].append(V)
             self.V12Data['V1'].append(dvm_op)
@@ -474,7 +474,7 @@ class AqnThread(Thread):
                 dvm_op = np.random.normal(0.0, 1.0e-5 * abs(self.v1_set) + 1e-6)
                 # self.V12Data['V2'].append(dvmOP)
             else:
-                dvm_op = float(devices.ROLES_INSTR['DVM12'].Read())
+                dvm_op = float(devices.ROLES_INSTR['DVM12'].read())
                 # V = float(filter(self.filt, dvmOP))
                 # self.V12Data['V2'].append(V)
             self.V12Data['V2'].append(dvm_op)
@@ -490,7 +490,7 @@ class AqnThread(Thread):
                                           1.0e-5 * abs(self.v_out) + 1e-6)
                 # self.V3Data.append(dvm_op)
             else:
-                dvm_op = float(devices.ROLES_INSTR['DVM3'].Read())
+                dvm_op = float(devices.ROLES_INSTR['DVM3'].read())
                 # V = float(filter(self.filt, dvm_op))
             self.V3Data.append(dvm_op)
             print('dvmOP =', dvm_op)
@@ -510,7 +510,7 @@ class AqnThread(Thread):
             T_dvm_op = np.random.normal(108.0, 1.0e-2)
             self.T_dvm_op = T_dvm_op
         else:
-            T_dvm_op = devices.ROLES_INSTR['DVMT'].Read()  # .SendCmd('READ?')
+            T_dvm_op = devices.ROLES_INSTR['DVMT'].read()  # .SendCmd('READ?')
             self.T_dvm_op = float(T_dvm_op) # float(filter(self.filt, T_dvm_op))
 
         # Update run_dict:
@@ -576,7 +576,7 @@ class AqnThread(Thread):
     def standby(self):
         # Set sources to 0V and disable outputs
         self.RunPage.V1Setting.SetValue(str(0))
-        devices.ROLES_INSTR['SRC'].Stby()  # .SendCmd('R0=')
+        devices.ROLES_INSTR['SRC'].stby()  # .SendCmd('R0=')
 
     def abort(self):
         """abort worker thread."""
