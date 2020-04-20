@@ -19,61 +19,72 @@ Created on Fri Mar 17 13:52:15 2017
 
 import numpy as np
 import os
-import ctypes as ct
+# import ctypes as ct
 import visa
 import logging
 import json
+import GMHstuff as GMH
 
 
 logger = logging.getLogger(__name__)
 
-Res_file = 'IVY_Resistors.json'
-Instr_file = 'IVY_Instruments.json'
+"""
+The following are generally-useful utility functions and code to
+ensure information about resitors and instruments are available:
+"""
+def strip_chars(oldstr, charlist=''):
+    """
+    Strip characters from oldstr and return newstr that does not
+    contain any of the characters in charlist.
 
-
-def StripChars(oldstr, charlist=''):
-    '''
-    Strip characters from oldstr and return newstr that does not contain any of
-    the characters in charlist.
-    '''
+    Note that the built-in str.strip() only removes characters from
+    the start and end (not throughout).
+    """
     for ch in charlist:
         newstr = ''.join(oldstr.split(ch))
         oldstr = newstr
     return newstr
 
+
 #  Load default resistor and instrument info:
-with open(Res_file, 'r') as Res_fp:
-    R_str = StripChars(Res_fp.read(), '\t\n')
+resistor_file = 'IVY_Resistors.json'
+with open(resistor_file, 'r') as resistor_fp:
+    R_str = strip_chars(resistor_fp.read(), '\t\n')
 RES_DATA = json.loads(R_str)
 
-with open(Instr_file, 'r') as Instr_fp:
-    I_str = StripChars(Instr_fp.read(), '\t\n')
+instrument_file = 'IVY_Instruments.json'
+with open(instrument_file, 'r') as instrument_fp:
+    I_str = strip_chars(instrument_fp.read(), '\t\n')
 INSTR_DATA = json.loads(I_str)
 
 
-def RefreshParams(Dir):
-    with open(os.path.join(Dir, Res_file), 'r') as Res_fp:
-        R_str = StripChars(Res_fp.read(), '\t\n')
-    RES_DATA = json.loads(R_str)
+def refresh_params(directory):
+    """
+    Refreshes stat-of-knowledge of resistors and instruments.
 
-    with open(os.path.join(Dir, Instr_file), 'r') as Instr_fp:
-        I_str = StripChars(Instr_fp.read(), '\t\n')
-    INSTR_DATA = json.loads(I_str)
+    Returns:
+    RES_DATA: Dictionary of known resistance standards.
+    INSTR_DATA: Dictionary of instrument parameter dictionaries,
+    both keyed by description.
+    """
+    with open(os.path.join(directory, resistor_file), 'r') as new_resistor_fp:
+        resistor_str = strip_chars(new_resistor_fp.read(), '\t\n')
+    res_data = json.loads(resistor_str)
 
-    return RES_DATA, INSTR_DATA
+    with open(os.path.join(directory, instrument_file), 'r') as new_instr_fp:
+        instr_str = strip_chars(new_instr_fp.read(), '\t\n')
+    instr_data = json.loads(instr_str)
+
+    return res_data, instr_data
 
 
-ROLES_WIDGETS = {}
-ROLES_INSTR = {}
-
-'''
-RES_DATA: Dictionary of known resistance standards.
-INSTR_DATA: Dictionary of instrument parameter dictionaries,
-keyed by description.
+"""
 ROLES_WIDGETS: Dictionary of GUI widgets keyed by role.
 ROLES_INSTR: Dictionary of GMH_sensor or Instrument objects,
 keyed by role.
-'''
+"""
+ROLES_WIDGETS = {}
+ROLES_INSTR = {}
 
 RED = (255, 0, 0)
 GREEN = (0, 127, 0)
@@ -92,21 +103,35 @@ IVBOX_CONFIGS = {'V1': '1', 'V2': '2', '1k': '3', '10k': '4', '100k': '5',
 
 T_Sensors = ('none', 'Pt', 'SR104t', 'thermistor')
 
-"""
----------------------------------------------------------------
-GMH-specific stuff:
-GMH probe communications are handled by low-level routines in GMHdll.dll.
-"""
-os.environ['GMHPATH'] = 'I:\MSL\Private\Electricity\Staff\TBL\Python\High_Res_Bridge\GMHdll'
-gmhpath = os.environ['GMHPATH']
-GMHLIB = ct.windll.LoadLibrary(os.path.join(gmhpath, 'GMH3x32E'))
-GMH_DESCR = ('GMH, s/n627',
-             'GMH, s/n628')
-LANG_OFFSET = 4096
-'''--------------------------------------------------------------'''
+
+class GMHSensor(GMH.GMHSensor):
+    """
+    A derived class of GMHstuff.GMHSensor with additional functionality.
+    On creation, an instance needs a description string, descr.
+    """
+    def __init__(self, descr):
+        self.descr = descr
+        self.port = int(INSTR_DATA[self.descr]['addr'])
+        self.demo = True
+
+    def test(self, meas):
+        """
+        Test that the device is functioning.
+        :argument meas (str) - an alias for the measurement type:
+            'T', 'P', 'RH', 'T_dew', 't_wb', 'H_atm' or 'H_abs'.
+        :returns measurement tuple: (<value>, <unit string>)
+        """
+        print('\ndevices.GMH_Sensor.Test()...')
+        result = self.measure(meas)
+        return result
 
 
-class device():
+'''
+###############################################################################
+'''
+
+
+class Device(object):
     """
     A generic external device or instrument
     """
@@ -120,469 +145,224 @@ class device():
         pass
 
 
-class GMH_Sensor(device):
+class Instrument(Device):
     """
-    A class to wrap around the low-level functions of GMH3x32E.dll.
-    For use with most Greisinger GMH devices.
-    """
-    def __init__(self, descr, role, demo=True):
-        self.Descr = descr
-        self.demo = demo
-
-        '''
-        self.addr: COM port-number assigned to USB 3100N adapter cable.
-        '''
-        self.addr = int(INSTR_DATA[self.Descr]['addr'])
-        self.str_addr = INSTR_DATA[self.Descr]['str_addr']
-        self.role = role
-
-        '''
-        self.flData: pointer to output data -
-        Don't change this type!! It's the exactly right one!
-        self.lang_offset: English language-offset
-        self.MeasFn: access to GetMeasCode() fn
-        self.UnitFn: access to GetUnitCode() fn
-        self.ValFn: access to GetValue() fn
-        '''
-        self.Prio = ct.c_short()
-        self.flData = ct.c_double()
-        self.intData = ct.c_long()
-        self.meas_str = ct.create_string_buffer(30)
-        self.unit_str = ct.create_string_buffer(10)
-        self.lang_offset = ct.c_int16(LANG_OFFSET)
-        self.MeasFn = ct.c_short(180)
-        self.UnitFn = ct.c_int16(178)
-        self.ValFn = ct.c_short(0)
-        self.SetPowOffFn = ct.c_short(223)
-        self.error_msg = ct.create_string_buffer(70)
-        self.meas_alias = {'T': 'Temperature',
-                           'P': 'Absolute Pressure',
-                           'RH': 'Rel. Air Humidity',
-                           'T_dew': 'Dewpoint Temperature',
-                           'T_wb': 'Wet Bulb Temperature',
-                           'H_atm': 'Atmospheric Humidity',
-                           'H_abs': 'Absolute Humidity'}
-        self.info = {}
-
-    def Open(self):
-        """
-        Use COM port number to open device
-        Returns 1 if successful, 0 if not
-        """
-        self.error_code = ct.c_int16(GMHLIB.GMH_OpenCom(self.addr))
-        self.GetErrMsg()  # Get self.error_msg
-
-        if self.error_code.value in range(0, 4) or self.error_code.value == -2:
-            print 'devices.GMH_Sensor.Open(): ', self.str_addr, 'is open.'
-            logger.info('%s is open', self.str_addr)
-
-            # We're not there yet - test device responsiveness
-            self.GetErrMsg()
-            if self.error_code.value in range(0, 4):  # Sensor responds...
-                # Ensure max poweroff time
-                self.intData.value = 120  # 120 mins B4 power-off
-                self.Transmit(1, self.SetPowOffFn)
-
-                self.Transmit(1, self.ValFn)
-                if len(self.info) == 0:  # No device info yet
-                    print 'devices.GMH_Sensor.Open(): Getting sensor info...'
-                    logger.info('Getting sensor info...')
-                    self.GetSensorInfo()
-                    self.demo = False  # If we've got this far, probably OK
-                    ROLES_WIDGETS[self.role]['lbl'].SetForegroundColour(GREEN)
-                    ROLES_WIDGETS[self.role]['lbl'].Refresh()
-                    return True
-                else:  # Already have device measurement info
-                    print'devices.GMH_Sensor.Open(): Instr ready. demo=False.'
-                    logger.info('Instr ready. demo=False.')
-                    self.demo = False  # If we've got this far, probably OK
-                    return True
-            else:  # No response
-                print 'devices.GMH_Sensor.Open():', self.error_msg.value
-                logger.info('%s', self.error_msg.value)
-                self.Close()
-                self.demo = True
-                ROLES_WIDGETS[self.role]['lbl'].SetForegroundColour(RED)
-                ROLES_WIDGETS[self.role]['lbl'].Refresh()
-                return False
-
-        else:  # Com open failed
-            print'devices.GMH_Sensor.Open() FAILED:', self.Descr
-            logger.warning('FAILED: %s', self.Descr)
-            ROLES_WIDGETS[self.role]['lbl'].SetForegroundColour(RED)
-            ROLES_WIDGETS[self.role]['lbl'].Refresh()
-            self.Close()
-            self.demo = True
-            return False
-
-    def Init(self):
-        print'devices.GMH_Sensor.Init():', self.Descr,
-        'initiated (nothing happens here).'
-        logger.info('%s initiated (nothing happens here).', self.Descr)
-        pass
-
-    def Close(self):
-        """
-        Closes all / any GMH devices that are currently open.
-        """
-        self.demo = True
-        self.error_code = ct.c_int16(GMHLIB.GMH_CloseCom())
-        return 1
-
-    def Transmit(self, Addr, Func):
-        """
-        A wrapper for the general-purpose interrogation function
-        GMH_Transmit().
-        """
-        self.error_code = ct.c_int16(GMHLIB.GMH_Transmit(Addr, Func,
-                                                         ct.byref(self.Prio),
-                                                         ct.byref(self.flData),
-                                                         ct.byref(self.intData)))
-        self.GetErrMsg()
-        if self.error_code.value < 0:
-            print'\ndevices.GMH_Sensor.Transmit():FAIL'
-            logger.warning('FAIL')
-            return False
-        else:
-            print'\ndevices.GMH_Sensor.Transmit():PASS'
-            logger.info('PASS')
-            return True
-
-    def GetErrMsg(self):
-        """
-        Translate return code into error message and store in self.error_msg.
-        """
-        error_code_ENG = ct.c_int16(self.error_code.value +
-                                    self.lang_offset.value)
-        GMHLIB.GMH_GetErrorMessageRet(error_code_ENG, ct.byref(self.error_msg))
-        if self.error_code.value in range(0, 4):  # Correct message_0
-            self.error_msg.value = 'Success'
-        return 1
-
-    def GetSensorInfo(self):
-        """
-        Interrogates GMH sensor.
-        Returns a dictionary keyed by measurement string.
-        Values are tuples: (<address>, <measurement unit>),
-        where <address> is an int and <measurement unit> is a string.
-
-        The address corresponds with a unique measurement function within
-        the device. It's assumed the measurement functions are at
-        consecutive addresses starting at 1.
-
-        measurements list contains measurement-type strings e.g.
-        'Temperature', 'Absolute Pressure', 'Rel. Air Humidity',etc
-        """
-        addresses = []  # Between 1 and 99
-        measurements = []
-        units = []  # E.g. 'deg C', 'hPascal', '%RH',...
-        self.info.clear()
-
-        for Address in range(1, 100):
-            Addr = ct.c_short(Address)
-            if self.Transmit(Addr, self.MeasFn):  # Result -> self.intData
-                # Transmit() was successful
-                addresses.append(Address)
-
-                meas_code = ct.c_int16(self.intData.value +
-                                       self.lang_offset.value)
-                GMHLIB.GMH_GetMeasurement(meas_code,
-                                          ct.byref(self.meas_str))
-                measurements.append(self.meas_str.value)
-
-                self.Transmit(Addr, self.UnitFn)  # Result -> self.intData
-
-                unit_code = ct.c_int16(self.intData.value +
-                                       self.lang_offset.value)
-                GMHLIB.GMH_GetUnit(unit_code,
-                                   ct.byref(self.unit_str))
-                units.append(self.unit_str.value)
-
-                print'Found', self.meas_str.value, '(', self.unit_str.value, ')', 'at address', Address
-                logger.info('Found %s (%s) at address %d',
-                            self.meas_str.value, self.unit_str.value, Address)
-            else:
-                print'devices.GMH_Sensor.GetSensorInfo(): Exhausted addresses at', Address
-                logger.info('Exhausted addresses at %d', Address)
-                if Address > 1:  # Don't let last address tried screw it up.
-                    self.error_code.value = 0
-                    self.demo = False
-                else:
-                    self.demo = True
-                break  # Assumes all functions are in a contiguous address range from 1
-
-        self.info = dict(zip(measurements, zip(addresses, units)))
-        print 'devices.GMH_Sensor.GetSensorInfo():\n', self.info,
-        'demo =', self.demo
-        logger.info('%s demo = %s', self.info, self.demo)
-        return len(self.info)
-
-    def Measure(self, meas):
-        """
-        Measure either temperature, pressure or humidity, based on parameter
-        meas
-        Returns a float.
-        meas is one of: 'T', 'P', 'RH', 'T_dew', 't_wb', 'H_atm' or 'H_abs'.
-
-        NOTE that because GMH_CloseCom() acts on ALL open GMH devices it makes
-        sense to only have a device open when communicating with it and to
-        immediately close it afterwards. This way the default state is closed
-        and the open state is treated as a special case. Hence an
-        Open()-Close() 'bracket' surrounds the Measure() function.
-        """
-
-        self.flData.value = 0
-        if self.Open():  # port and device open success
-            assert self.demo is False, 'Illegal access to demo device!'
-            Address = self.info[self.meas_alias[meas]][0]
-            Addr = ct.c_short(Address)
-            self.Transmit(Addr, self.ValFn)
-            self.Close()
-
-            print'devices.Measure():', self.meas_alias[meas],
-            '=', self.flData.value
-            logger.info('%s = %f', self.meas_alias[meas], self.flData.value)
-            return self.flData.value
-        else:
-            assert self.demo is True, 'Illegal denial to demo device!'
-            print'Generating demo data...'
-            logger.info('Generating demo data...')
-            demo_rtn = {'T': (-20.5, 0.2), 'P': (-1013, 5), 'RH': (-50, 10)}
-            return np.random.normal(*demo_rtn[meas])
-
-    def Test(self, meas):
-        """ Used to test that the device is functioning. """
-        print'\ndevices.GMH_Sensor.Test()...'
-        logger.info('Testing %s with cmd %s...', self.Descr, meas)
-        result = self.Measure(meas)
-        return result
-
-
-'''
-###############################################################################
-'''
-
-
-class instrument(device):
-    '''
     A class for associating instrument data with a VISA instance of
     that instrument
-    '''
+    """
     def __init__(self, descr, role, demo=True):  # Default to demo mode
-        self.Descr = descr
+        self.instr = None
+        self.descr = descr
         self.demo = demo
         self.is_open = 0
         self.is_operational = 0
 
-        assert_msg = 'Unknown instrument ({0:s})'.format(self.Descr)
+        assert_msg = 'Unknown instrument ({0:s})'.format(self.descr)
         # check instrument data is loaded from Excel Parameters sheet.'
-        assert self.Descr in INSTR_DATA, assert_msg
+        assert self.descr in INSTR_DATA, assert_msg
 
-        self.addr = INSTR_DATA[self.Descr]['addr']
-        self.str_addr = INSTR_DATA[self.Descr]['str_addr']
+        self.addr = INSTR_DATA[self.descr]['addr']
+        self.str_addr = INSTR_DATA[self.descr]['str_addr']
         self.role = role
 
-        if 'init_str' in INSTR_DATA[self.Descr]:
-            self.InitStr = INSTR_DATA[self.Descr]['init_str']  # tuple of str
+        if 'init_str' in INSTR_DATA[self.descr]:
+            self.InitStr = INSTR_DATA[self.descr]['init_str']  # tuple of str
         else:
             self.InitStr = ('',)  # a tuple of empty strings
-        if 'setfn_str' in INSTR_DATA[self.Descr]:
-            self.SetFnStr = INSTR_DATA[self.Descr]['setfn_str']
+        if 'setfn_str' in INSTR_DATA[self.descr]:
+            self.SetFnStr = INSTR_DATA[self.descr]['setfn_str']
         else:
             self.SetFnStr = ''  # an empty string
-        if 'oper_str' in INSTR_DATA[self.Descr]:
-            self.OperStr = INSTR_DATA[self.Descr]['oper_str']
+        if 'oper_str' in INSTR_DATA[self.descr]:
+            self.OperStr = INSTR_DATA[self.descr]['oper_str']
         else:
             self.OperStr = ''  # an empty string
-        if 'stby_str' in INSTR_DATA[self.Descr]:
-            self.StbyStr = INSTR_DATA[self.Descr]['stby_str']
+        if 'stby_str' in INSTR_DATA[self.descr]:
+            self.StbyStr = INSTR_DATA[self.descr]['stby_str']
         else:
             self.StbyStr = ''
-        if 'chk_err_str' in INSTR_DATA[self.Descr]:
-            self.ChkErrStr = INSTR_DATA[self.Descr]['chk_err_str']
+        if 'chk_err_str' in INSTR_DATA[self.descr]:
+            self.ChkErrStr = INSTR_DATA[self.descr]['chk_err_str']
         else:
             self.ChkErrStr = ('',)
-        if 'setV_str' in INSTR_DATA[self.Descr]:
-            self.VStr = INSTR_DATA[self.Descr]['setV_str']  # a tuple of str
+        if 'setV_str' in INSTR_DATA[self.descr]:
+            self.VStr = INSTR_DATA[self.descr]['setV_str']  # a tuple of str
         else:
             self.VStr = ''
 
-    def Open(self):
+    def open(self):
+        msg_head = 'devices.instrument.Open():'
         try:
             self.instr = RM.open_resource(self.str_addr)
-            if '3458A' in self.Descr:
+            if '3458A' in self.descr:
                 self.instr.read_termination = '\r\n'
                 self.instr.write_termination = '\r\n'
             self.instr.timeout = 2000  # default 2 s timeout
-            INSTR_DATA[self.Descr]['demo'] = False  # A real working instrument
+            INSTR_DATA[self.descr]['demo'] = False  # A real working instrument
             self.demo = False  # A real instrument ONLY on Open() success
             green = (0, 255, 0)
             ROLES_WIDGETS[self.role]['lbl'].SetBackgroundColour(green)
-            print 'devices.instrument.Open():', self.Descr,
-            'session handle=', self.instr.session
-            logger.info('%s: session handle=%d', self.Descr,
-                        self.instr.session)
+            print(msg_head, '{} session handle={}.'.format(self.descr, self.instr.session))
+            logger.info(msg_head, '{} session handle={}.'.format(self.descr, self.instr.session))
             self.is_open = 1
         except visa.VisaIOError:
-            self.instr = None
             self.demo = True  # default to demo mode if can't open
             red = (255, 0, 0)
             ROLES_WIDGETS[self.role]['lbl'].SetForegroundColour(red)
             ROLES_WIDGETS[self.role]['lbl'].Refresh()
-            INSTR_DATA[self.Descr]['demo'] = True
-            print 'devices.instrument.Open() failed:', self.Descr, 'opened in demo mode' 
-            logger.warning('Failed: %s opened in demo mode', self.Descr)
+            INSTR_DATA[self.descr]['demo'] = True
+            print(msg_head, 'failed: {} opened in demo mode'.format(self.descr))
+            logger.warning(msg_head,  'failed: {} opened in demo mode'.format(self.descr))
         return self.instr
 
-    def Close(self):
+    def close(self):
         # Close comms with instrument
+        msg_head = 'devices.instrument.Close():'
         if self.demo is True:
-            print 'devices.instrument.Close():', self.Descr,
-            'in demo mode - nothing to close'
-            logger.info('%s in demo mode - nothing to close.', self.Descr)
+            print(msg_head,'{} in demo mode - nothing to close.'.format(self.descr))
+            logger.info(msg_head,'{} in demo mode - nothing to close.'.format(self.descr))
         elif self.instr is not None:
-            print 'devices.instrument.Close(): Closing', self.Descr,
-            '(session handle=', self.instr.session, ')'
-            logger.info('Closing %s (session handle=%d)',
-                        self.Descr, self.instr.session)
+            print(msg_head, 'Closing {} (session handle={})'.format(self.descr, self.instr.session))
+            logger.info(msg_head, 'Closing {} (session handle={})'.format(self.descr, self.instr.session))
             self.instr.close()
         else:
-            print 'devices.instrument.Close():', self.Descr,
-            'is "None" or already closed'
-            logger.info('%s is "None" or already closed', self.Descr)
+            print(msg_head, '{} is "None" or already closed.'.format(self.descr))
+            logger.info(msg_head, '{} is "None" or already closed.'.format(self.descr))
         self.is_open = 0
 
-    def Init(self):
+    def init(self):
         # Send initiation string
+        msg_head = 'devices.instrument.Init():'
         if self.demo is True:
-            print 'devices.instrument.Init():', self.Descr,
-            'in demo mode - no initiation necessary'
-            logger.info('%s in demo mode - no initiation necessary',
-                        self.Descr)
-            return 1
+            print(msg_head, '{} in demo mode - no initiation necessary.'.format(self.descr))
+            logger.info(msg_head, '{} in demo mode - no initiation necessary.'.format(self.descr))
+            return '0'
         else:
-            reply = 1
+            reply = '1'
             for s in self.InitStr:
                 if s != '':  # instrument has an initiation string
                     try:
                         self.instr.write(s)
                     except visa.VisaIOError:
-                        print'Failed to write "%s" to %s' % (s, self.Descr)
-                        logger.warning('Failed to write "%s" to %s',
-                                       s, self.Descr)
-                        reply = -1
-                        return reply
-            print 'devices.instrument.Init():', self.Descr,
-            'initiated with cmd:', s
-            logger.info('%s initiated with cmd: %s', self.Descr, s)
+                        print(msg_head, 'Failed to write {} to {}'.format(s, self.descr))
+                        logger.warning(msg_head, 'Failed to write {} to {}'.format(s, self.descr))
+                        return '-1'
+            print(msg_head, '{} initiated with cmd:"{}".'.format(self.descr, s))
+            logger.info(msg_head, '{} initiated with cmd:"{}".'.format(self.descr, s))
         return reply
 
-    def SetV(self, V):
-        '''
+    def set_v(self, v):
+        """
         Set output voltage (SRC) or input range (DVM)
-        '''
+        """
+        msg_head = 'devices.instrument.SetV()'
         if self.demo is True:
-            return 1
-        elif 'SRC:' in self.Descr:
+            return 0
+        elif 'SRC:' in self.descr:
             # Set voltage-source to V
-            s = str(V).join(self.VStr)
-            print'devices.instrument.SetV(): V =', V
-            print'devices.instrument.SetV():', self.Descr, 's=', s
-            logging.info('%s: V = %f; s = "%s"', self.Descr, V, s)
+            s = str(v).join(self.VStr)
+            print(msg_head, '{}: V = {}; s = "{}"'.format(self.descr, v, s))
+            logging.info(msg_head, '{}: V = {}; s = "{}"'.format(self.descr, v, s))
             try:
                 self.instr.write(s)
             except visa.VisaIOError:
-                print'Failed to write "%s" to %s,\
-                via handle %s' % (s, self.Descr, self.instr.session)
-                logger.warning('Failed to write "%s" to %s via handle %s',
-                               s, self.Descr, self.instr.session)
+                print(msg_head, 'Failed to write "{}" to {}, via handle {}'.format(s,
+                                                                                   self.descr,
+                                                                                   self.instr.session))
+                logger.warning(msg_head, 'Failed to write "{}" to {}, via handle {}'.format(s,
+                                                                                            self.descr,
+                                                                                            self.instr.session))
                 return -1
             return 1
-        elif 'DVM:' in self.Descr:
+        elif 'DVM:' in self.descr:
             # Set DVM range to V
-            s = str(V).join(self.VStr)
+            s = str(v).join(self.VStr)
             self.instr.write(s)
             return 1
         else:  # 'none' in self.Descr, (or something odd has happened)
-            print 'Invalid function for instrument', self.Descr
-            logger.warning('Invalid function for instrument %s', self.Descr)
+            print(msg_head, 'Invalid function for instrument {}'.format(self.descr))
+            logger.warning(msg_head, 'Invalid function for instrument {}'.format(self.descr))
             return -1
 
-    def SetFn(self):
+    def set_fn(self):
         # Set DVM function
+        msg_head = 'devices.instrument.SetFn():'
         if self.demo is True:
-            return 1
-        if 'DVM' in self.Descr:
+            return 0
+        if 'DVM' in self.descr:
             s = self.SetFnStr
             if s != '':
                 self.instr.write(s)
-            print'devices.instrument.SetFn():', self.Descr, '- OK.'
-            logger.info('%s OK', self.Descr)
+            print(msg_head, '{} - OK.'.format(self.descr))
+            logger.info(msg_head, '{} - OK.'.format(self.descr))
             return 1
         else:
-            print'devices.instrument.SetFn(): Invalid function for', self.Descr
-            logger.warning('Invalid function for %s', self.Descr)
+            print(msg_head, 'Invalid function for {}'.format(self.descr))
+            logger.warning(msg_head, 'Invalid function for {}'.format(self.descr))
             return -1
 
-    def Oper(self):
+    def oper(self):
         # Enable O/P terminals
         # For V-source instruments only
+        msg_head = 'devices.instrument.oper():'
         if self.demo is True:
-            return 1
-        if 'SRC' in self.Descr:
+            return 0
+        if 'SRC' in self.descr:
             s = self.OperStr
             if s != '':
                 try:
                     self.instr.write(s)
                 except visa.VisaIOError:
-                    print'Failed to write "%s" to %s' % (s, self.Descr)
-                    logger.warning('Failed to write "%s" to %s', s, self.Descr)
+                    print(msg_head, 'Failed to write "{}" to {}'.format(s, self.descr))
+                    logger.warning(msg_head, 'Failed to write "{}" to {}'.format(s, self.descr))
                     return -1
-            print'devices.instrument.Oper():', self.Descr, 'output ENABLED.'
-            logger.info('%s output ENABLED.', self.Descr)
+            print(msg_head, '{} output ENABLED.'.format(self.descr))
+            logger.info(msg_head, '{} output ENABLED.'.format(self.descr))
             return 1
         else:
-            print'devices.instrument.Oper(): Invalid function for', self.Descr
-            logger.warning('Invalid function for %s', self.Descr)
+            print(msg_head, 'Invalid function for {}'.format(self.descr))
+            logger.warning(msg_head, 'Invalid function for {}'.format(self.descr))
             return -1
 
-    def Stby(self):
+    def stby(self):
         # Disable O/P terminals
         # For V-source instruments only
+        msg_head = 'devices.instrument.stby():'
         if self.demo is True:
-            return 1
-        if 'SRC' in self.Descr:
+            return 0
+        if 'SRC' in self.descr:
             s = self.StbyStr
             if s != '':
                 self.instr.write(s)  # was: query(s)
-            print'devices.instrument.Stby():', self.Descr, 'output DISABLED.'
-            logger.info('%s output DISABLED.', self.Descr)
+            print(msg_head, '{} output DISABLED.'.format(self.descr))
+            logger.info(msg_head, '{} output DISABLED.'.format(self.descr))
             return 1
         else:
-            print'devices.instrument.Stby(): Invalid function for', self.Descr
-            logger.warning('Invalid function for %s', self.Descr)
+            print(msg_head, 'Invalid function for {}.'.format(self.descr))
+            logger.warning(msg_head, 'Invalid function for {}.'.format(self.descr))
             return -1
 
-    def CheckErr(self):
+    def check_err(self):
         # Get last error string and clear error queue
         # For V-source instruments only (F5520A)
+        msg_head = 'devices.instrument.check_err():'
+        reply = '-1'
         if self.demo is True:
-            return 1
-        if 'F5520A' in self.Descr:
+            return '0'
+        if 'F5520A' in self.descr:
             s = self.ChkErrStr
             if s != ('',):
                 reply = self.instr.query(s[0])  # read error message
                 self.instr.write(s[1])  # clear registers
             return reply
         else:
-            print'devices.instrument.CheckErr(): Invalid function for',
-            self.Descr
-            logger.warning('Invalid function for %s', self.Descr)
-            return -1
+            print(msg_head, 'Invalid function for {}'.format(self.descr))
+            logger.warning(msg_head, 'Invalid function for {}'.format(self.descr))
+            return '-1'
 
-    def SendCmd(self, s):
-        demo_reply = self.Descr + ' - DEMO resp. to ' + s
-        reply = 1
+    def send_cmd(self, s):
+        demo_reply = '{} - DEMO resp. to {}.'.format(self.descr, s)
+        reply = ''
         if self.role == 'IVbox':  # update icb
             pass  # may need an event here...
         if self.demo is True:
@@ -591,7 +371,7 @@ class instrument(device):
         Check if s contains '?' or 'X' or is an empty string,
         in which case a response is expected:
         '''
-        if any(x in s for x in'?X'):
+        if any(x in s for x in '?X'):
             reply = self.instr.query(s)
             return reply
         elif s == '':
@@ -601,27 +381,29 @@ class instrument(device):
             self.instr.write(s)
             return reply
 
-    def Read(self):
-        reply = 0
+    def read(self):
+        msg_head = 'devices.instrument.read():'
+        demo_reply = '{} - DEMO resp. to {}.'.format(self.descr, s)
+        reply = ''
         if self.demo is True:
-            return reply
-        if 'DVM' in self.Descr:
-            print'devices.instrument.Read(): from', self.Descr
-            logger.info('Reading from %s...', self.Descr)
-            if '3458A' in self.Descr:
+            return demo_reply
+        if 'DVM' in self.descr:
+            print(msg_head, 'from {}'.format(self.descr))
+            logger.info(msg_head, 'from {}'.format(self.descr))
+            if '3458A' in self.descr:
                 reply = self.instr.read()
-                print reply
+                print(reply)
                 logger.info('Reply = %s', reply)
                 return reply
             else:
                 reply = self.instr.query('READ?')
                 return reply
         else:
-            print 'devices.instrument.Read(): Invalid function for', self.Descr
-            logger.warning('Invalid function for %s', self.Descr)
+            print(msg_head, 'Invalid function for {}.'.format(self.descr))
+            logger.warning(msg_head, 'Invalid function for {}.'.format(self.descr))
             return reply
 
-    def Test(self, s):
+    def test(self, s):
         """ Used to test that the instrument is functioning. """
-        return self.SendCmd(s)
+        return self.send_cmd(s)
 # __________________________________________
