@@ -10,39 +10,36 @@ Created on Tue Jun 30 10:10:16 2015
 
 import os
 import logging
-
 import wx
 from wx.lib.masked import NumCtrl
 import datetime as dt
 import time
 import math
 import json
-
+import IVY_events as Evts
+import acquisition as acq
+import devices
+import GTC
 import matplotlib
 matplotlib.use('WXAgg')  # Agg renderer for drawing on a wx canvas
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
-# from matplotlib.backends.backend_wx import NavigationToolbar2Wx
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.ticker as mtick
 
+# from matplotlib.backends.backend_wx import NavigationToolbar2Wx
 #from openpyxl import load_workbook, cell
-import IVY_events as evts
-import acquisition as acq
-import devices
-
-import GTC
 
 matplotlib.rc('lines', linewidth=1, color='blue')
 
 logger = logging.getLogger(__name__)
 
-'''
+"""
 ------------------------
 # Setup Page definition:
 ------------------------
-'''
+"""
 
 
 class SetupPage(wx.Panel):
@@ -50,7 +47,7 @@ class SetupPage(wx.Panel):
         wx.Panel.__init__(self, parent)
 
         # Event bindings
-        self.Bind(evts.EVT_FILEPATH, self.update_dir)
+        self.Bind(Evts.EVT_FILEPATH, self.update_dir)
 
         self.status = self.GetTopLevelParent().sb
         self.version = self.GetTopLevelParent().version
@@ -63,8 +60,7 @@ class SetupPage(wx.Panel):
                                    'Rs=10^3': '3',
                                    'Rs=10^4': '4',
                                    'Rs=10^5': '5',
-                                   'Rs=10^6': '6',
-                                   }  # '': None
+                                   'Rs=10^6': '6'}  # '': None
         self.instrument_choice = {'SRC': 'SRC_F5520A',
                                   'DVM12': 'DVM_3458A:s/n518',
                                   'DVM3': 'DVM_3458A:s/n066',
@@ -187,7 +183,7 @@ class SetupPage(wx.Panel):
 
         # Filename
         dir_lbl = wx.StaticText(self, label='Working directory:',
-                               id=wx.ID_ANY)
+                                id=wx.ID_ANY)
         self.WorkingDir = wx.TextCtrl(self, id=wx.ID_ANY,
                                       value=self.GetTopLevelParent().directory,
                                       style=wx.TE_READONLY)
@@ -229,8 +225,8 @@ class SetupPage(wx.Panel):
         self.IVboxTest.Bind(wx.EVT_BUTTON, self.on_IV_box_test)
 
         response_lbl = wx.StaticText(self,
-                                    label='Instrument Test Response:',
-                                    id=wx.ID_ANY)
+                                     label='Instrument Test Response:',
+                                     id=wx.ID_ANY)
         self.Response = wx.TextCtrl(self, id=wx.ID_ANY, value='',
                                     style=wx.TE_READONLY)
 
@@ -238,88 +234,88 @@ class SetupPage(wx.Panel):
 
         # Instruments
         gb_sizer.Add(self.SrcLbl, pos=(0, 0), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.Sources, pos=(0, 1), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.IP_DVM_Lbl, pos=(1, 0), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.IP_Dvms, pos=(1, 1), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.OP_DVM_Lbl, pos=(2, 0), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.OP_Dvms, pos=(2, 1), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.TDvmLbl, pos=(3, 0), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.TDvms, pos=(3, 1), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.GMHLbl, pos=(4, 0), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.GMHProbes, pos=(4, 1), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.GMHroomLbl, pos=(5, 0), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.GMHroomProbes, pos=(5, 1), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.IVboxLbl, pos=(6, 0), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.IVbox, pos=(6, 1), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
 
         # Addresses
         gb_sizer.Add(self.SrcAddr, pos=(0, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.IP_DvmAddr, pos=(1, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.OP_DvmAddr, pos=(2, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.TDvmAddr, pos=(3, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.GMHPorts, pos=(4, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.GMHroomPorts, pos=(5, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.IVboxAddr, pos=(6, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
 
         # DUC Name
         gb_sizer.Add(self.DUCName, pos=(6, 4), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
 
         # Filename
         gb_sizer.Add(dir_lbl, pos=(8, 0), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.WorkingDir, pos=(8, 1), span=(1, 5),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
 
         # Test buttons
         gb_sizer.Add(self.STest, pos=(0, 3), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.D12Test, pos=(1, 3), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.D3Test, pos=(2, 3), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.DTTest, pos=(3, 3), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.GMHTest, pos=(4, 3), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.GMHroomTest, pos=(5, 3), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.IVboxTest, pos=(6, 3), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
 
         gb_sizer.Add(response_lbl, pos=(3, 4), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.Response, pos=(4, 4), span=(1, 3),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.VisaList, pos=(0, 5), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.ResList, pos=(0, 4), span=(3, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
 
         # Autopopulate btn
         gb_sizer.Add(self.AutoPop, pos=(2, 5), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+                     flag=wx.ALL | wx.EXPAND, border=5)
 
         self.SetSizerAndFit(gb_sizer)
 
@@ -398,7 +394,7 @@ class SetupPage(wx.Panel):
         """
         self.WorkingDir.SetValue(e.Dir)
 
-    def on_auto_pop(self, e):
+    def on_auto_pop(self):
         """
         Pre-select instrument and address comboboxes -
         Choose from instrument descriptions listed in devices.DESCR
@@ -449,7 +445,8 @@ class SetupPage(wx.Panel):
             devices.ROLES_INSTR[r].open()
         self.set_instr(d, r)
 
-    def set_instr(self, d, r):
+    @staticmethod
+    def set_instr(d, r):
         """
         Update internal info (INSTR_DATA), updates the addresses
         and Enables/disables testbuttons as necessary.
@@ -521,7 +518,7 @@ class SetupPage(wx.Panel):
         self.Response.SetValue(str(devices.ROLES_INSTR[r].test(test)))
         self.status.SetStatusText('Testing %s with cmd %s' % (d, test), 0)
 
-    def on_IV_box_test(self, e):
+    def on_IV_box_test(self):
         # NOTE: config is the configuration description NOT the test string:
         config = devices.ROLES_WIDGETS['IVbox']['icb'].GetValue()
         test = self.IVBOX_COMBO_CHOICE[config]
@@ -559,7 +556,7 @@ class SetupPage(wx.Panel):
 #        evt = evts.UpdateCommentEvent(str=commstr)
 #        wx.PostEvent(RunPage, evt)
 
-    def on_visa_list(self, e):
+    def on_visa_list(self):
         res_list = devices.RM.list_resources()
         del self.ResourceList[:]  # list of COM ports ('COM X') & GPIB addr's
         del self.ComList[:]  # list of COM ports (numbers only)
@@ -590,6 +587,7 @@ class SetupPage(wx.Panel):
         # Add resources to ResList TextCtrl widget
         res_addr_list = '\n'.join(self.ResourceList)
         self.ResList.SetValue(res_addr_list)
+
 
 '''
 ____________________________________________
@@ -623,13 +621,13 @@ class RunPage(wx.Panel):
 
         # Event bindings
 #        self.Bind(evts.EVT_UPDATE_COM_STR, self.UpdateComment)
-        self.Bind(evts.EVT_DATA, self.UpdateData)
+        self.Bind(Evts.EVT_DATA, self.update_data)
 #        self.Bind(evts.EVT_START_ROW, self.UpdateStartRow)
 
         self.RunThread = None
 
         # Comment widgets
-        CommentLbl = wx.StaticText(self, id=wx.ID_ANY, label='Comment:')
+        comment_lbl = wx.StaticText(self, id=wx.ID_ANY, label='Comment:')
         self.Comment = wx.TextCtrl(self, id=wx.ID_ANY, size=(600, 20))
 #        self.Comment.Bind(wx.EVT_TEXT, self.OnComment)
         comtip = 'Use this field to add remarks and observations that may not'\
@@ -641,138 +639,140 @@ class RunPage(wx.Panel):
         idcomtip = 'Create new id to uniquely identify this set of '\
                    'measurement data.'
         self.NewRunIDBtn.SetToolTipString(idcomtip)
-        self.NewRunIDBtn.Bind(wx.EVT_BUTTON, self.OnNewRunID)
+        self.NewRunIDBtn.Bind(wx.EVT_BUTTON, self.on_new_run_id)
         self.RunID = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
 
         # Run Setup widgets
-        DUCgainLbl = wx.StaticText(self, id=wx.ID_ANY,
-                                   style=wx.ALIGN_LEFT,
-                                   label='DUC gain (V/A):')
+        duc_gain_lbl = wx.StaticText(self, id=wx.ID_ANY,
+                                     style=wx.ALIGN_LEFT,
+                                     label='DUC gain (V/A):')
         self.DUCgain = wx.ComboBox(self, wx.ID_ANY,
                                    choices=self.GAINS_CHOICE,
                                    style=wx.CB_DROPDOWN)
-        RsLbl = wx.StaticText(self, id=wx.ID_ANY,
-                              style=wx.ALIGN_LEFT, label='I/P Rs:')
+        rs_lbl = wx.StaticText(self, id=wx.ID_ANY,
+                               style=wx.ALIGN_LEFT, label='I/P Rs:')
         self.Rs = wx.ComboBox(self, wx.ID_ANY, choices=self.Rs_CHOICE,
                               style=wx.CB_DROPDOWN)
-        self.Rs.Bind(wx.EVT_COMBOBOX, self.OnRs)
-        SettleDelLbl = wx.StaticText(self, id=wx.ID_ANY, label='Settle delay:')
+        self.Rs.Bind(wx.EVT_COMBOBOX, self.on_Rs)
+        settle_del_lbl = wx.StaticText(self, id=wx.ID_ANY, label='Settle delay:')
         self.SettleDel = wx.SpinCtrl(self, id=wx.ID_ANY, value='0',
                                      min=0, max=3600)
-        SrcLbl = wx.StaticText(self, id=wx.ID_ANY, style=wx.ALIGN_LEFT,
-                               label='V1 Setting:')
+        src_lbl = wx.StaticText(self, id=wx.ID_ANY, style=wx.ALIGN_LEFT,
+                                label='V1 Setting:')
         self.V1Setting = NumCtrl(self, id=wx.ID_ANY, integerWidth=3,
                                  fractionWidth=8, groupDigits=True)
-        self.V1Setting.Bind(wx.lib.masked.EVT_NUM, self.OnV1Set)
-        ZeroVoltsBtn = wx.Button(self, id=wx.ID_ANY, label='Set zero volts',
-                                 size=(200, 20))
-        ZeroVoltsBtn.Bind(wx.EVT_BUTTON, self.OnZeroVolts)
+        self.V1Setting.Bind(wx.lib.masked.EVT_NUM, self.on_v1_set)
+        zero_volts_btn = wx.Button(self, id=wx.ID_ANY, label='Set zero volts',
+                                   size=(200, 20))
+        zero_volts_btn.Bind(wx.EVT_BUTTON, self.on_zero_volts)
 
         self.h_sep1 = wx.StaticLine(self, id=wx.ID_ANY, style=wx.LI_HORIZONTAL)
 
         #  Run control and progress widgets
         self.StartBtn = wx.Button(self, id=wx.ID_ANY, label='Start run')
-        self.StartBtn.Bind(wx.EVT_BUTTON, self.OnStart)
+        self.StartBtn.Bind(wx.EVT_BUTTON, self.on_start)
         self.StopBtn = wx.Button(self, id=wx.ID_ANY, label='Abort run')
-        self.StopBtn.Bind(wx.EVT_BUTTON, self.OnAbort)
+        self.StopBtn.Bind(wx.EVT_BUTTON, self.on_abort)
         self.StopBtn.Enable(False)
-        NodeLbl = wx.StaticText(self, id=wx.ID_ANY, label='Node:')
+        node_lbl = wx.StaticText(self, id=wx.ID_ANY, label='Node:')
         self.Node = wx.ComboBox(self, wx.ID_ANY, choices=self.VNODE_CHOICE,
                                 style=wx.CB_DROPDOWN)
-        self.Node.Bind(wx.EVT_COMBOBOX, self.OnNode)
-        VavLbl = wx.StaticText(self, id=wx.ID_ANY, label='Mean V:')
+        self.Node.Bind(wx.EVT_COMBOBOX, self.on_node)
+        v_av_lbl = wx.StaticText(self, id=wx.ID_ANY, label='Mean V:')
         self.Vav = NumCtrl(self, id=wx.ID_ANY, integerWidth=3, fractionWidth=9,
                            groupDigits=True)
-        VsdLbl = wx.StaticText(self, id=wx.ID_ANY, label='Stdev V:')
+        v_sd_lbl = wx.StaticText(self, id=wx.ID_ANY, label='Stdev V:')
         self.Vsd = NumCtrl(self, id=wx.ID_ANY, integerWidth=3, fractionWidth=9,
                            groupDigits=True)
-        TimeLbl = wx.StaticText(self, id=wx.ID_ANY, label='Timestamp:')
+        time_lbl = wx.StaticText(self, id=wx.ID_ANY, label='Timestamp:')
         self.Time = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY,
                                 size=(200, 20))
-        RowLbl = wx.StaticText(self, id=wx.ID_ANY,
-                               label='Current measurement:')
+        row_lbl = wx.StaticText(self, id=wx.ID_ANY,
+                                label='Current measurement:')
         self.Row = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        ProgressLbl = wx.StaticText(self, id=wx.ID_ANY, style=wx.ALIGN_RIGHT,
-                                    label='Run progress:')
+        progress_lbl = wx.StaticText(self, id=wx.ID_ANY, style=wx.ALIGN_RIGHT,
+                                     label='Run progress:')
         self.Progress = wx.Gauge(self, id=wx.ID_ANY, range=100,
                                  name='Progress')
 
-        gbSizer = wx.GridBagSizer()
+        gb_sizer = wx.GridBagSizer()
 
         # Comment widgets
-        gbSizer.Add(CommentLbl, pos=(0, 0), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.Comment, pos=(0, 1), span=(1, 5),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.NewRunIDBtn, pos=(1, 0), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.RunID, pos=(1, 1), span=(1, 5),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(comment_lbl, pos=(0, 0), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.Comment, pos=(0, 1), span=(1, 5),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.NewRunIDBtn, pos=(1, 0), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.RunID, pos=(1, 1), span=(1, 5),
+                     flag=wx.ALL | wx.EXPAND, border=5)
 
         # Run setup widgets
-        gbSizer.Add(DUCgainLbl, pos=(2, 0), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.DUCgain, pos=(3, 0), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(RsLbl, pos=(2, 1), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.Rs, pos=(3, 1), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(SettleDelLbl, pos=(2, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.SettleDel, pos=(3, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(SrcLbl, pos=(2, 3), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.V1Setting, pos=(3, 3), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(ZeroVoltsBtn, pos=(3, 4), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.h_sep1, pos=(4, 0), span=(1, 6),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(duc_gain_lbl, pos=(2, 0), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.DUCgain, pos=(3, 0), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(rs_lbl, pos=(2, 1), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.Rs, pos=(3, 1), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(settle_del_lbl, pos=(2, 2), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.SettleDel, pos=(3, 2), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(src_lbl, pos=(2, 3), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.V1Setting, pos=(3, 3), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(zero_volts_btn, pos=(3, 4), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.h_sep1, pos=(4, 0), span=(1, 6),
+                     flag=wx.ALL | wx.EXPAND, border=5)
 
         #  Run control and progress widgets
-        gbSizer.Add(self.StartBtn, pos=(5, 0), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.StopBtn, pos=(6, 0), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(NodeLbl, pos=(5, 1), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.Node, pos=(6, 1), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(VavLbl, pos=(5, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.Vav, pos=(6, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(VsdLbl, pos=(5, 3), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.Vsd, pos=(6, 3), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(TimeLbl, pos=(5, 4), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.Time, pos=(6, 4), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(RowLbl, pos=(5, 5), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.Row, pos=(6, 5), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(ProgressLbl, pos=(7, 0), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.Progress, pos=(7, 1), span=(1, 5),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.StartBtn, pos=(5, 0), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.StopBtn, pos=(6, 0), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(node_lbl, pos=(5, 1), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.Node, pos=(6, 1), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(v_av_lbl, pos=(5, 2), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.Vav, pos=(6, 2), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(v_sd_lbl, pos=(5, 3), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.Vsd, pos=(6, 3), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(time_lbl, pos=(5, 4), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.Time, pos=(6, 4), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(row_lbl, pos=(5, 5), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.Row, pos=(6, 5), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(progress_lbl, pos=(7, 0), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.Progress, pos=(7, 1), span=(1, 5),
+                     flag=wx.ALL | wx.EXPAND, border=5)
 
-        self.SetSizerAndFit(gbSizer)
+        self.SetSizerAndFit(gb_sizer)
 
         self.autocomstr = ''
         self.manstr = ''
 
+        self.Rs_val = 0
+
         # Dictionary to hold ALL runs for this application session:
         self.master_run_dict = {}
 
-    def OnNewRunID(self, e):
+    def on_new_run_id(self):
         self.version = self.GetTopLevelParent().version
-        DUCname = self.SetupPage.DUCName.GetValue()
-        self.run_id = str('IVY.v' + self.version + ' ' + DUCname + ' (Gain=' +
+        duc_name = self.SetupPage.DUCName.GetValue()
+        self.run_id = str('IVY.v' + self.version + ' ' + duc_name + ' (Gain=' +
                           self.DUCgain.GetValue() + '; Rs=' +
                           self.Rs.GetValue() + ') ' +
                           dt.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
@@ -780,7 +780,7 @@ class RunPage(wx.Panel):
         self.status.SetStatusText(str(self.run_id), 1)
         self.RunID.SetValue(str(self.run_id))
 
-    def UpdateData(self, e):
+    def update_data(self, e):
         # Triggered by an 'update data' event
         # event parameter is a dictionary:
         # ud{'node:,'Vm':,'Vsd':,'time':,'row':,'Prog':,'end_flag':[0,1]}
@@ -800,58 +800,58 @@ class RunPage(wx.Panel):
             self.RunThread = None
             self.StartBtn.Enable(True)
 
-    def OnRs(self, e):
+    def on_Rs(self, e):
         self.Rs_val = self.Rs_choice_to_val[e.GetString()]  # an INT
-        print '\nRunPage.OnRs(): Rs =', self.Rs_val
+        print('\nRunPage.OnRs(): Rs =', self.Rs_val)
         logger.info('Rs = %d', self.Rs_val)
         if e.GetString() in self.Rs_SWITCHABLE:  # a STRING
             s = str(int(math.log10(self.Rs_val)))  # '3','4','5' or '6'
-            print '\nSwitching Rs - Sending "%s" to IVbox' % s
-            logger.info('Switching Rs - Sending "%s" to IVbox', s)
+            print('\nSwitching Rs - Sending "{}" to IVbox.'.format(s))
+            logger.info('Switching Rs - Sending "{}" to IVbox.'.format(s))
             devices.ROLES_INSTR['IVbox'].send_cmd(s)
 
-    def OnNode(self, e):
+    def on_node(self, e):
         node = e.GetString()  # 'V1', 'V2', or 'V3'
-        print'\nRunPage.OnNode():', node
-        logger.info('Node = %s', node)
+        print('\nRunPage.OnNode():', node)
+        logger.info('\nRunPage.OnNode():', node)
         s = node[1]
         if s in ('1', '2'):
-            print'\nRunPage.OnNode():Sending IVbox "', s, '"'
-            logger.info('Sending IVbox "%s"', s)
+            print('\nRunPage.OnNode():Sending IVbox "{}".'.format(s))
+            logger.info('\nRunPage.OnNode():Sending IVbox "{}"'.format(s))
             devices.ROLES_INSTR['IVbox'].send_cmd(s)
         else:  # '3'
-            print'\nRunPage.OnNode():IGNORING IVbox cmd "', s, '"'
+            print('\nRunPage.OnNode():IGNORING IVbox cmd "{}".'.format(s))
             logger.info('IGNORING IVbox cmd "%s"', s)
 
-    def OnV1Set(self, e):
+    def on_v1_set(self, e):
         # Called by change in value (manually OR by software!)
-        V1 = e.GetValue()
-        msg = 'V1 = {}'.format(V1)
-        print'RunPage.OnV1Set(): ', msg
+        v1 = e.GetValue()
+        msg = 'V1 = {}'.format(v1)
+        print('RunPage.OnV1Set(): ', msg)
         logger.info(msg)
         src = devices.ROLES_INSTR['SRC']
-        src.set_v(V1)
+        src.set_v(v1)
         time.sleep(0.5)
-        if V1 == 0:
+        if v1 == 0:
             src.stby()
         else:
             src.oper()
         time.sleep(0.5)
 
-    def OnZeroVolts(self, e):
+    def on_zero_volts(self):
         # V1:
         src = devices.ROLES_INSTR['SRC']
         if self.V1Setting.GetValue() == 0:
-            print'RunPage.OnZeroVolts(): Zero/Stby directly'
-            logger.info('Zero/Stby directly')
+            print('RunPage.OnZeroVolts(): Zero/Stby directly')
+            logger.info('RunPage.OnZeroVolts(): Zero/Stby directly')
             src.set_v(0)
             src.stby()
         else:
             self.V1Setting.SetValue('0')  # Calls OnV1Set() ONLY IF VAL CHANGES
-            print'RunPage.OnZeroVolts():  Zero/Stby via V1 display'
-            logger.info('Zero/Stby via V1 display')
+            print('RunPage.OnZeroVolts():  Zero/Stby via V1 display')
+            logger.info('RunPage.OnZeroVolts():  Zero/Stby via V1 display')
 
-    def OnStart(self, e):
+    def on_start(self):
         self.Progress.SetValue(0)
         self.RunThread = None
         self.status.SetStatusText('', 1)
@@ -862,7 +862,7 @@ class RunPage(wx.Panel):
             # start acquisition thread here
             self.RunThread = acq.AqnThread(self)
 
-    def OnAbort(self, e):
+    def on_abort(self):
         self.StartBtn.Enable(True)
         self.StopBtn.Enable(False)  # Disable Stop button
         self.RunThread._want_abort = 1  # .abort
@@ -884,8 +884,8 @@ class PlotPage(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
 
-        self.Bind(evts.EVT_PLOT, self.UpdatePlot)
-        self.Bind(evts.EVT_CLEARPLOT, self.ClearPlot)
+        self.Bind(Evts.EVT_PLOT, self.update_plot)
+        self.Bind(Evts.EVT_CLEARPLOT, self.clear_plot)
 
         self.figure = Figure()
 
@@ -917,8 +917,8 @@ class PlotPage(wx.Panel):
                  visible=False)  # Hide x-axis labels
         self.V1ax.set_ylabel('V1')
         self.V1ax.set_ylim(auto=True)
-        V1_y_ost = self.V1ax.get_xaxis().get_offset_text()
-        V1_y_ost.set_visible(False)
+        v1_y_ost = self.V1ax.get_xaxis().get_offset_text()
+        v1_y_ost.set_visible(False)
 
         # 3high x 1wide, 2nd plot down:
         self.V2ax = self.figure.add_subplot(3, 1, 2, sharex=self.V3ax)
@@ -931,19 +931,20 @@ class PlotPage(wx.Panel):
                  visible=False)  # Hide x-axis labels
         self.V2ax.set_ylabel('V2')
         self.V2ax.set_ylim(auto=True)
-        V2_y_ost = self.V2ax.get_xaxis().get_offset_text()
-        V2_y_ost.set_visible(False)
+        v2_y_ost = self.V2ax.get_xaxis().get_offset_text()
+        v2_y_ost.set_visible(False)
 
         self.canvas = FigureCanvas(self, wx.ID_ANY, self.figure)
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.canvas, 1, wx.LEFT | wx.TOP | wx.GROW)
         self.SetSizerAndFit(self.sizer)
 
-    def UpdatePlot(self, e):
-        print'PlotPage.UpdatePlot(): len(t)=', len(e.t)
-        logger.info('len(t) = %d', len(e.t))
-        print e.node, 'len(V1)=', len(e.V12), 'len(V3)=', len(e.V3)
-        logger.info('len(V1) = %d, len(V3) = %d', len(e.V12), len(e.V3))
+    def update_plot(self, e):
+        msg_head = 'PlotPage.UpdatePlot():'
+        print(msg_head, 'len(t)={}'.format(len(e.t)))
+        logger.info(msg_head, 'len(t)={}'.format(len(e.t)))
+        print(msg_head, '{} len(V1)={}', 'len(V3)={}'.format(e.node, len(e.V12), len(e.V3)))
+        logger.info(msg_head, '{} len(V1)={}', 'len(V3)={}'.format(e.node, len(e.V12), len(e.V3)))
         if e.node == 'V1':
             self.V1ax.plot_date(e.t, e.V12, 'bo')
         else:  # V2 data
@@ -954,7 +955,7 @@ class PlotPage(wx.Panel):
         self.canvas.draw()
         self.canvas.Refresh()
 
-    def ClearPlot(self, e):
+    def clear_plot(self, e):
         self.V1ax.cla()
         self.V2ax.cla()
         self.V3ax.cla()
@@ -963,6 +964,7 @@ class PlotPage(wx.Panel):
         self.V3ax.set_ylabel('V3')
         self.canvas.draw()
         self.canvas.Refresh()
+
 
 '''
 __________________________________________
@@ -994,144 +996,155 @@ class CalcPage(wx.Panel):
                          'IV100M 100M', 'IV1G 1G']
         self.Rs_VAL_NAME = dict(zip(self.Rs_VALUES, self.Rs_NAMES))
 
-        gbSizer = wx.GridBagSizer()
+        gb_sizer = wx.GridBagSizer()
 
         # Analysis set-up:
         self.ListRuns = wx.Button(self, id=wx.ID_ANY, label='List run IDs')
-        self.ListRuns.Bind(wx.EVT_BUTTON, self.OnListRuns)
-        gbSizer.Add(self.ListRuns, pos=(0, 0), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        self.ListRuns.Bind(wx.EVT_BUTTON, self.on_list_runs)
+        gb_sizer.Add(self.ListRuns, pos=(0, 0), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
 
         self.RunID = wx.ComboBox(self, id=wx.ID_ANY,
                                  style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        self.RunID.Bind(wx.EVT_COMBOBOX, self.OnRunChoice)
-        self.RunID.Bind(wx.EVT_TEXT, self.OnRunChoice)
-        gbSizer.Add(self.RunID, pos=(0, 1), span=(1, 6),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        self.RunID.Bind(wx.EVT_COMBOBOX, self.on_run_choice)
+        self.RunID.Bind(wx.EVT_TEXT, self.on_run_choice)
+        gb_sizer.Add(self.RunID, pos=(0, 1), span=(1, 6),
+                     flag=wx.ALL | wx.EXPAND, border=5)
 
         self.Analyze = wx.Button(self, id=wx.ID_ANY, label='Analyze')
-        self.Analyze.Bind(wx.EVT_BUTTON, self.OnAnalyze)
-        gbSizer.Add(self.Analyze, pos=(0, 7), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)  #
+        self.Analyze.Bind(wx.EVT_BUTTON, self.on_analyze)
+        gb_sizer.Add(self.Analyze, pos=(0, 7), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)  #
 
         # -----------------------------------------------------------------
         self.h_sep1 = wx.StaticLine(self, id=wx.ID_ANY, size=(720, 1),
                                     style=wx.LI_HORIZONTAL)
-        gbSizer.Add(self.h_sep1, pos=(1, 0), span=(1, 8),
-                    flag=wx.ALL | wx.EXPAND, border=5)  #
+        gb_sizer.Add(self.h_sep1, pos=(1, 0), span=(1, 8),
+                     flag=wx.ALL | wx.EXPAND, border=5)  #
         # -----------------------------------------------------------------
 
         # Run summary:
-        RunInfoLbl = wx.StaticText(self, id=wx.ID_ANY, label='Run Summary:')
-        gbSizer.Add(RunInfoLbl, pos=(2, 0), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        run_info_lbl = wx.StaticText(self, id=wx.ID_ANY, label='Run Summary:')
+        gb_sizer.Add(run_info_lbl, pos=(2, 0), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
 
         self.RunInfo = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_MULTILINE |
                                    wx.TE_READONLY | wx.HSCROLL,
                                    size=(250, 1))
-        gbSizer.Add(self.RunInfo, pos=(3, 0), span=(20, 2),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.RunInfo, pos=(3, 0), span=(20, 2),
+                     flag=wx.ALL | wx.EXPAND, border=5)
 
         # Analysis results:
         # Headings & environment readings
-        QuantityLbl = wx.StaticText(self, id=wx.ID_ANY, label='Quantity')
-        gbSizer.Add(QuantityLbl, pos=(2, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        quantity_lbl = wx.StaticText(self, id=wx.ID_ANY, label='Quantity')
+        gb_sizer.Add(quantity_lbl, pos=(2, 2), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
 
-        UrealSummaryLbl = wx.StaticText(self, id=wx.ID_ANY, size=(200, 1),
-                                        label='Val, Unc, DoF')
-        gbSizer.Add(UrealSummaryLbl, pos=(2, 3), span=(1, 2),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        KLbl = wx.StaticText(self, id=wx.ID_ANY, label='k(95%)')
-        gbSizer.Add(KLbl, pos=(2, 5), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        ExpULbl = wx.StaticText(self, id=wx.ID_ANY, label='Exp Uncert')
-        gbSizer.Add(ExpULbl, pos=(2, 6), span=(1, 1),
-                    flag=wx.ALL, border=5)  # | wx.EXPAND
+        ureal_summary_lbl = wx.StaticText(self, id=wx.ID_ANY, size=(200, 1),
+                                          label='Val, Unc, DoF')
+        gb_sizer.Add(ureal_summary_lbl, pos=(2, 3), span=(1, 2),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        k_lbl = wx.StaticText(self, id=wx.ID_ANY, label='k(95%)')
+        gb_sizer.Add(k_lbl, pos=(2, 5), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        exp_u_lbl = wx.StaticText(self, id=wx.ID_ANY, label='Exp Uncert')
+        gb_sizer.Add(exp_u_lbl, pos=(2, 6), span=(1, 1),
+                     flag=wx.ALL, border=5)  # | wx.EXPAND
 
-        PLbl = wx.StaticText(self, id=wx.ID_ANY, label='Pressure:')
-        gbSizer.Add(PLbl, pos=(3, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        p_lbl = wx.StaticText(self, id=wx.ID_ANY, label='Pressure:')
+        gb_sizer.Add(p_lbl, pos=(3, 2), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
         self.PSummary = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.PSummary, pos=(3, 3), span=(1, 2),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.PSummary, pos=(3, 3), span=(1, 2),
+                     flag=wx.ALL | wx.EXPAND, border=5)
         self.Pk = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.Pk, pos=(3, 5), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.Pk, pos=(3, 5), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
         self.PExpU = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.PExpU, pos=(3, 6), span=(1, 1),
-                    flag=wx.ALL, border=5)  # | wx.EXPAND
+        gb_sizer.Add(self.PExpU, pos=(3, 6), span=(1, 1),
+                     flag=wx.ALL, border=5)  # | wx.EXPAND
 
-        RHLbl = wx.StaticText(self, id=wx.ID_ANY, label='%RH:')
-        gbSizer.Add(RHLbl, pos=(4, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        rh_lbl = wx.StaticText(self, id=wx.ID_ANY, label='%RH:')
+        gb_sizer.Add(rh_lbl, pos=(4, 2), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
         self.RHSummary = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.RHSummary, pos=(4, 3), span=(1, 2),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.RHSummary, pos=(4, 3), span=(1, 2),
+                     flag=wx.ALL | wx.EXPAND, border=5)
         self.RHk = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.RHk, pos=(4, 5), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.RHk, pos=(4, 5), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
         self.RHExpU = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.RHExpU, pos=(4, 6), span=(1, 1),
-                    flag=wx.ALL, border=5)  # | wx.EXPAND
+        gb_sizer.Add(self.RHExpU, pos=(4, 6), span=(1, 1),
+                     flag=wx.ALL, border=5)  # | wx.EXPAND
 
-        TGMHLbl = wx.StaticText(self, id=wx.ID_ANY, label='T (GMH):')
-        gbSizer.Add(TGMHLbl, pos=(5, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        tgmh_lbl = wx.StaticText(self, id=wx.ID_ANY, label='T (GMH):')
+        gb_sizer.Add(tgmh_lbl, pos=(5, 2), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
         self.TGMHSummary = wx.TextCtrl(self, id=wx.ID_ANY,
                                        style=wx.TE_READONLY)
-        gbSizer.Add(self.TGMHSummary, pos=(5, 3), span=(1, 2),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.TGMHSummary, pos=(5, 3), span=(1, 2),
+                     flag=wx.ALL | wx.EXPAND, border=5)
         self.TGMHk = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.TGMHk, pos=(5, 5), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.TGMHk, pos=(5, 5), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
         self.TGMHExpU = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.TGMHExpU, pos=(5, 6), span=(1, 1),
-                    flag=wx.ALL, border=5)  # | wx.EXPAND
+        gb_sizer.Add(self.TGMHExpU, pos=(5, 6), span=(1, 1),
+                     flag=wx.ALL, border=5)  # | wx.EXPAND
         # -----------------------------------------------------------------
         self.h_sep3 = wx.StaticLine(self, id=wx.ID_ANY, size=(480, 1),
                                     style=wx.LI_HORIZONTAL)
-        gbSizer.Add(self.h_sep3, pos=(6, 2), span=(1, 5),
-                    flag=wx.ALL | wx.EXPAND, border=5)  #
+        gb_sizer.Add(self.h_sep3, pos=(6, 2), span=(1, 5),
+                     flag=wx.ALL | wx.EXPAND, border=5)  #
         # -----------------------------------------------------------------
-        VoutLbl = wx.StaticText(self, id=wx.ID_ANY,
-                                label='Nom. ' + DELTA + 'Vout:')
-        gbSizer.Add(VoutLbl, pos=(7, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        vout_lbl = wx.StaticText(self, id=wx.ID_ANY,
+                                 label='Nom. ' + DELTA + 'Vout:')
+        gb_sizer.Add(vout_lbl, pos=(7, 2), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
         self.NomVout = wx.ComboBox(self, id=wx.ID_ANY,
                                    style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        self.NomVout.Bind(wx.EVT_COMBOBOX, self.OnNomVoutChoice)
-        gbSizer.Add(self.NomVout, pos=(7, 3), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        self.NomVout.Bind(wx.EVT_COMBOBOX, self.on_nom_vout_choice)
+        gb_sizer.Add(self.NomVout, pos=(7, 3), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
 
-        IinLbl = wx.StaticText(self, id=wx.ID_ANY, label=DELTA+'I_in:')
-        gbSizer.Add(IinLbl, pos=(8, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        i_in_lbl = wx.StaticText(self, id=wx.ID_ANY, label=DELTA + 'I_in:')
+        gb_sizer.Add(i_in_lbl, pos=(8, 2), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
         self.IinSummary = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.IinSummary, pos=(8, 3), span=(1, 2),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.IinSummary, pos=(8, 3), span=(1, 2),
+                     flag=wx.ALL | wx.EXPAND, border=5)
         self.Iink = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.Iink, pos=(8, 5), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.Iink, pos=(8, 5), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
         self.IinExpU = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gbSizer.Add(self.IinExpU, pos=(8, 6), span=(1, 1),
-                    flag=wx.ALL, border=5)  # | wx.EXPAND
+        gb_sizer.Add(self.IinExpU, pos=(8, 6), span=(1, 1),
+                     flag=wx.ALL, border=5)  # | wx.EXPAND
 
         self.Budget = wx.TextCtrl(self, style=wx.TE_MULTILINE |
                                   wx.TE_READONLY | wx.HSCROLL, id=wx.ID_ANY,)
         budget_font = wx.Font(8, wx.MODERN, wx.NORMAL, wx.NORMAL)
         self.Budget.SetFont(budget_font)
-        gbSizer.Add(self.Budget, pos=(9, 2), span=(14, 6),
-                    flag=wx.ALL | wx.EXPAND, border=5)  #
+        gb_sizer.Add(self.Budget, pos=(9, 2), span=(14, 6),
+                     flag=wx.ALL | wx.EXPAND, border=5)  #
 
-        self.SetSizerAndFit(gbSizer)
+        self.SetSizerAndFit(gb_sizer)
 
-    def OnListRuns(self, e):
-        '''
+        self.data_file = None
+        self.run_data = None
+        self.run_IDs = []
+        self.runstr = ''
+        self.run_ID = ''
+        self.ThisResult = {}
+        self.nom_Vout = {}
+        self.budget_table_sorted = {'pos': [], 'neg': []}
+        self.result_row = []
+        self.results_file = ''
+
+    def on_list_runs(self):
+        """
         Open the .json data file and de-serialize into the dictionary
         self.run_data for later access. Update the choices in the 'Run ID'
         widget to the run ids (used as primary keys in self.run_data).
-        '''
+        """
         self.data_file = self.GetTopLevelParent().data_file
         with open(self.data_file, 'r') as in_file:
             self.run_data = json.load(in_file)
@@ -1141,7 +1154,7 @@ class CalcPage(wx.Panel):
         self.RunID.AppendItems(self.run_IDs)
         self.RunID.SetSelection(0)
 
-    def OnRunChoice(self, e):
+    def on_run_choice(self, e):
         ID = e.GetString()
         self.runstr = json.dumps(self.run_data[ID], indent=4)
         self.RunInfo.SetValue(self.runstr)
@@ -1159,233 +1172,233 @@ class CalcPage(wx.Panel):
         self.IinExpU.Clear()
         self.Budget.Clear()
 
-    def OnAnalyze(self, e):
+    def on_analyze(self, e):
         self.run_ID = self.RunID.GetValue()
-        self.this_run = self.run_data[self.run_ID]
+        this_run = self.run_data[self.run_ID]
 
         logger.info('STARTING ANALYSIS...')
 
         # Correction for Pt-100 sensor DVM:
-        DVMT = self.this_run['Instruments']['DVMT']
-        DVMT_cor = self.BuildUreal(devices.INSTR_DATA[DVMT]['correction_100r'])
+        dvmt = this_run['Instruments']['DVMT']
+        dvmt_cor = self.build_ureal(devices.INSTR_DATA[dvmt]['correction_100r'])
 
-        '''
+        """
         Pt sensor is a few cm away from input resistors, so assume a
         fairly large type B Tdef of 0.1 deg C:
-        '''
-        Pt_T_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](0.1),
+        """
+        pt_t_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](0.1),
                              3, label='Pt_T_def')
 
-        Pt_alpha = self.BuildUreal(devices.RES_DATA['Pt 100r']['alpha'])
-        Pt_beta = self.BuildUreal(devices.RES_DATA['Pt 100r']['beta'])
-        Pt_R0 = self.BuildUreal(devices.RES_DATA['Pt 100r']['R0_LV'])
-        Pt_TRef = self.BuildUreal(devices.RES_DATA['Pt 100r']['TRef_LV'])
+        pt_alpha = self.build_ureal(devices.RES_DATA['Pt 100r']['alpha'])
+        pt_beta = self.build_ureal(devices.RES_DATA['Pt 100r']['beta'])
+        pt_r0 = self.build_ureal(devices.RES_DATA['Pt 100r']['R0_LV'])
+        pt_t_ref = self.build_ureal(devices.RES_DATA['Pt 100r']['TRef_LV'])
 
-        '''
+        """
         GMH sensor is a few cm away from DUC which, itself, has a size of
         several cm, so assume a fairly large type B Tdef of 0.1 deg C:
-        '''
-        GMH_T_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](0.1),
+        """
+        gmh_t_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](0.1),
                               3, label='GMH_T_def')
 
-        Comment = self.this_run['Comment']
-        DUC_name = self.GetDUCNamefromRunID(self.run_ID)
-        DUC_gain = self.this_run['DUC_G']
-        Mean_date = self.GetMeanDate()
-        Proc_date = dt.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+        comment = this_run['Comment']
+        duc_name = self.get_duc_name_from_run_id(self.run_ID)
+        duc_gain = this_run['DUC_G']
+        mean_date = self.get_mean_date()
+        processed_date = dt.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
 
-        print'Comment:', Comment
-        print'Run_Id:', self.run_ID
-        print'gain =', DUC_gain
-        print 'Mean_date:', Mean_date
+        print('Comment:', comment)
+        print('Run_Id:', self.run_ID)
+        print('gain ={}'.format(duc_gain))
+        print('Mean_date:', mean_date)
         logger.info('Comment: %s\nRun_ID: %s\ngain = %s\nMean_date: %s',
-                    Comment, self.run_ID, DUC_gain, Mean_date)
+                    comment, self.run_ID, duc_gain, mean_date)
 
         # Determine mean env. conditions
-        GMH_Ts = self.this_run['T_GMH']
-        GMHroom_RHs = self.this_run['Room_conds']['RH']
-        GMHroom_Ps = self.this_run['Room_conds']['P']
+        gmh_temps = this_run['T_GMH']
+        gmh_room_rhs = this_run['Room_conds']['RH']
+        gmh_room_ps = this_run['Room_conds']['P']
 
-        d = self.this_run['Instruments']['GMH']
-        T_GMH_cor = self.BuildUreal(devices.INSTR_DATA[d]['T_correction'])
-        T_GMH_raw = GTC.ta.estimate_digitized(GMH_Ts, 0.01)
-        T_GMH = T_GMH_raw + T_GMH_cor + GMH_T_def
-        T_GMH_k = GTC.rp.k_factor(T_GMH.df)
-        T_GMH_EU = T_GMH.u*T_GMH_k
+        d = this_run['Instruments']['GMH']
+        t_gmh_cor = self.build_ureal(devices.INSTR_DATA[d]['T_correction'])
+        t_gmh_raw = GTC.ta.estimate_digitized(gmh_temps, 0.01)
+        t_gmh = t_gmh_raw + t_gmh_cor + gmh_t_def
+        t_gmh_k = GTC.rp.k_factor(t_gmh.df)
+        t_gmh_eu = t_gmh.u*t_gmh_k
 
-        d = self.this_run['Instruments']['GMHroom']
-        RH_cor = self.BuildUreal(devices.INSTR_DATA[d]['RH_correction'])
-        RH_raw = GTC.ta.estimate_digitized(GMHroom_RHs, 0.1)
-        RH = RH_raw*(1 + RH_cor)
-        RH_k = GTC.rp.k_factor(RH.df)
-        RH_EU = RH.u*RH_k
+        d = this_run['Instruments']['GMHroom']
+        rh_cor = self.build_ureal(devices.INSTR_DATA[d]['RH_correction'])
+        rh_raw = GTC.ta.estimate_digitized(gmh_room_rhs, 0.1)
+        rh = rh_raw*(1 + rh_cor)
+        rh_k = GTC.rp.k_factor(rh.df)
+        rh_eu = rh.u*rh_k
 
         # Re-use d (same instrument description)
-        P_cor = self.BuildUreal(devices.INSTR_DATA[d]['P_correction'])
-        P_raw = GTC.ta.estimate_digitized(GMHroom_Ps, 0.1)
-        P = P_raw*(1 + P_cor)
-        P_k = GTC.rp.k_factor(P.df)
-        P_EU = P.u*P_k
+        press_cor = self.build_ureal(devices.INSTR_DATA[d]['P_correction'])
+        press_raw = GTC.ta.estimate_digitized(gmh_room_ps, 0.1)
+        press = press_raw * (1 + press_cor)
+        press_k = GTC.rp.k_factor(press.df)
+        press_eu = press.u * press_k
 
         self.Results.update({self.run_ID: {}})
         self.ThisResult = self.Results[self.run_ID]
-        self.ThisResult.update({'Comment': Comment,
-                                'Date': Mean_date,
-                                'Processed date': Proc_date,
-                                'DUC name': DUC_name,
-                                'DUC gain': DUC_gain,
+        self.ThisResult.update({'Comment': comment,
+                                'Date': mean_date,
+                                'Processed date': processed_date,
+                                'DUC name': duc_name,
+                                'DUC gain': duc_gain,
                                 'T_GMH': {},
                                 'RH': {},
                                 'P': {},
                                 'Nom_dV': {}})
 
-        self.ThisResult['T_GMH'].update({'value': T_GMH.x,
-                                         'uncert': T_GMH.u,
-                                         'dof': T_GMH.df,
-                                         'label': T_GMH.label,
-                                         'k': T_GMH_k,
-                                         'ExpU': T_GMH_EU})
+        self.ThisResult['T_GMH'].update({'value': t_gmh.x,
+                                         'uncert': t_gmh.u,
+                                         'dof': t_gmh.df,
+                                         'label': t_gmh.label,
+                                         'k': t_gmh_k,
+                                         'ExpU': t_gmh_eu})
 
-        self.ThisResult['RH'].update({'value': RH.x,
-                                      'uncert': RH.u,
-                                      'dof': RH.df,
-                                      'label': RH.label,
-                                      'k': RH_k,
-                                      'ExpU': RH_EU})
+        self.ThisResult['RH'].update({'value': rh.x,
+                                      'uncert': rh.u,
+                                      'dof': rh.df,
+                                      'label': rh.label,
+                                      'k': rh_k,
+                                      'ExpU': rh_eu})
 
-        self.ThisResult['P'].update({'value': P.x,
-                                     'uncert': P.u,
-                                     'dof': P.df,
-                                     'label': P.label,
-                                     'k': P_k,
-                                     'ExpU': P_EU})
+        self.ThisResult['P'].update({'value': press.x,
+                                     'uncert': press.u,
+                                     'dof': press.df,
+                                     'label': press.label,
+                                     'k': press_k,
+                                     'ExpU': press_eu})
 
-        self.PSummary.SetValue(str(P.s))
-        self.Pk.SetValue('{0:.1f}'.format(P_k))
-        self.PExpU.SetValue('{0:.2f}'.format(P_EU))
-        self.RHSummary.SetValue(str(RH.s))
-        self.RHk.SetValue('{0:.1f}'.format(RH_k))
-        self.RHExpU.SetValue('{0:.2f}'.format(RH_EU))
-        self.TGMHSummary.SetValue(str(T_GMH.s))
-        self.TGMHk.SetValue('{0:.1f}'.format(T_GMH_k))
-        self.TGMHExpU.SetValue('{0:.2f}'.format(T_GMH_EU))
+        self.PSummary.SetValue(str(press.s))
+        self.Pk.SetValue('{0:.1f}'.format(press_k))
+        self.PExpU.SetValue('{0:.2f}'.format(press_eu))
+        self.RHSummary.SetValue(str(rh.s))
+        self.RHk.SetValue('{0:.1f}'.format(rh_k))
+        self.RHExpU.SetValue('{0:.2f}'.format(rh_eu))
+        self.TGMHSummary.SetValue(str(t_gmh.s))
+        self.TGMHk.SetValue('{0:.1f}'.format(t_gmh_k))
+        self.TGMHExpU.SetValue('{0:.2f}'.format(t_gmh_eu))
 
         influencies = []
-        V1s = []
-        V2s = []
-        V3s = []
+        v1s = []
+        v2s = []
+        v3s = []
 
-        num_rows = len(self.this_run['Nom_Vout'])
+        num_rows = len(this_run['Nom_Vout'])
         for row in range(0, num_rows, 8):  # 0, [8, [16]]
             gains = set()
             # 'neg' and 'pos' refer to polarity of OUTPUT VOLTAGE, not
             # input current! nom_Vout = +/-( 0.1,[1,[10]] ):
-            self.nom_Vout = {'pos': self.this_run['Nom_Vout'][row+2],
-                             'neg': self.this_run['Nom_Vout'][row+1]}
-            abs_nom_Vout = self.nom_Vout['pos']
+            self.nom_Vout = {'pos': this_run['Nom_Vout'][row+2],
+                             'neg': this_run['Nom_Vout'][row+1]}
+            abs_nom_vout = self.nom_Vout['pos']
 
             # Construct ureals from raw voltage data, including gain correction
             for n in range(4):
-                label_suffix_1 = self.this_run['Node'][row+n]+'_'+str(n)
-                label_suffix_2 = self.this_run['Node'][row+4+n]+'_'+str(n)
+                label_suffix_1 = this_run['Node'][row+n]+'_'+str(n)
+                label_suffix_2 = this_run['Node'][row+4+n]+'_'+str(n)
                 label_suffix_3 = 'V3' + '_' + str(n)
 
-                V1_v = self.this_run['IP_V']['val'][row+n]
-                V1_u = self.this_run['IP_V']['sd'][row+n]
-                V1_d = self.this_run['Nreads'] - 1
-                V1_l = 'OP'+str(abs_nom_Vout)+'_'+label_suffix_1
+                v1_v = this_run['IP_V']['val'][row+n]
+                v1_u = this_run['IP_V']['sd'][row+n]
+                v1_dof = this_run['Nreads'] - 1
+                v1_label = 'OP' + str(abs_nom_vout) + '_' + label_suffix_1
 
-                d1 = self.this_run['Instruments']['DVM12']
-                gain_param = self.get_gain_err_param(V1_v)
-                print devices.INSTR_DATA[d1].keys()
-                gain = self.BuildUreal(devices.INSTR_DATA[d1][gain_param])
+                d1 = this_run['Instruments']['DVM12']
+                gain_param = self.get_gain_err_param(v1_v)
+                print(devices.INSTR_DATA[d1].keys())
+                gain = self.build_ureal(devices.INSTR_DATA[d1][gain_param])
                 gains.add(gain)
-                V1_raw = GTC.ureal(V1_v, V1_u, V1_d, label=V1_l)
-                V1s.append(GTC.result(V1_raw/gain))
+                v1_raw = GTC.ureal(v1_v, v1_u, v1_dof, label=v1_label)
+                v1s.append(GTC.result(v1_raw/gain))
 
-                V2_v = self.this_run['IP_V']['val'][row+4+n]
-                V2_u = self.this_run['IP_V']['sd'][row+4+n]
-                V2_d = self.this_run['Nreads'] - 1
-                V2_l = 'OP'+str(abs_nom_Vout)+'_'+label_suffix_2
+                v2_v = this_run['IP_V']['val'][row+4+n]
+                v2_u = this_run['IP_V']['sd'][row+4+n]
+                v2_dof = this_run['Nreads'] - 1
+                v2_label = 'OP' + str(abs_nom_vout) + '_' + label_suffix_2
 
                 d2 = d1  # Same DVM
-                gain_param = self.get_gain_err_param(V2_v)
-                gain = self.BuildUreal(devices.INSTR_DATA[d2][gain_param])
+                gain_param = self.get_gain_err_param(v2_v)
+                gain = self.build_ureal(devices.INSTR_DATA[d2][gain_param])
                 gains.add(gain)
-                V2_raw = GTC.ureal(V2_v, V2_u, V2_d, label=V2_l)
-                V2s.append(GTC.result(V2_raw/gain))
+                v2_raw = GTC.ureal(v2_v, v2_u, v2_dof, label=v2_label)
+                v2s.append(GTC.result(v2_raw/gain))
 
-                V3_v = self.this_run['OP_V']['val'][row+n]
-                V3_u = self.this_run['OP_V']['sd'][row+n]
-                V3_d = self.this_run['Nreads'] - 1
-                V3_l = 'OP'+str(abs_nom_Vout)+'_'+label_suffix_3
+                v3_v = this_run['OP_V']['val'][row+n]
+                v3_u = this_run['OP_V']['sd'][row+n]
+                v3_dof = this_run['Nreads'] - 1
+                v3_label = 'OP' + str(abs_nom_vout) + '_' + label_suffix_3
 
-                d3 = self.this_run['Instruments']['DVM3']
-                gain_param = self.get_gain_err_param(V3_v)
-                gain = self.BuildUreal(devices.INSTR_DATA[d3][gain_param])
+                d3 = this_run['Instruments']['DVM3']
+                gain_param = self.get_gain_err_param(v3_v)
+                gain = self.build_ureal(devices.INSTR_DATA[d3][gain_param])
                 gains.add(gain)
-                V3_raw = GTC.ureal(V3_v, V3_u, V3_d, label=V3_l)
-                V3s.append(GTC.result(V3_raw/gain))
+                v3_raw = GTC.ureal(v3_v, v3_u, v3_dof, label=v3_label)
+                v3s.append(GTC.result(v3_raw/gain))
 
-                influencies.extend([V1_raw, V2_raw, V3_raw])
+                influencies.extend([v1_raw, v2_raw, v3_raw])
 
             influencies.extend(list(gains))  # List of unique gain corrections.
-            print 'list of gains:'
+            print('list of gains:')
             for g in list(gains):
-                print g.s
+                print('{} +/- {}, dof={}'.format(g.x, g.u, g.df))
 
             # Offset-adjustment
-            V1_pos = GTC.result(V1s[2] - (V1s[0] + V1s[3]) / 2)
-            V1_neg = GTC.result(V1s[1] - (V1s[0] + V1s[3]) / 2)
-            V2_pos = GTC.result(V2s[2] - (V2s[0] + V2s[3]) / 2)
-            V2_neg = GTC.result(V2s[1] - (V2s[0] + V2s[3]) / 2)
-            V3_pos = GTC.result(V3s[2] - (V3s[0] + V3s[3]) / 2)
-            V3_neg = GTC.result(V3s[1] - (V3s[0] + V3s[3]) / 2)
+            v1_pos = GTC.result(v1s[2] - (v1s[0] + v1s[3]) / 2)
+            v1_neg = GTC.result(v1s[1] - (v1s[0] + v1s[3]) / 2)
+            v2_pos = GTC.result(v2s[2] - (v2s[0] + v2s[3]) / 2)
+            v2_neg = GTC.result(v2s[1] - (v2s[0] + v2s[3]) / 2)
+            v3_pos = GTC.result(v3s[2] - (v3s[0] + v3s[3]) / 2)
+            v3_neg = GTC.result(v3s[1] - (v3s[0] + v3s[3]) / 2)
 
             # V-drop across Rs
-            V_Rs_pos = GTC.result(V1_pos - V2_pos)
-            V_Rs_neg = GTC.result(V1_neg - V2_neg)
-            assert V_Rs_pos.x * V_Rs_neg.x < 0, 'V_Rs polarity error!'
+            v_rs_pos = GTC.result(v1_pos - v2_pos)
+            v_rs_neg = GTC.result(v1_neg - v2_neg)
+            assert v_rs_pos.x * v_rs_neg.x < 0, 'V_Rs polarity error!'
 
             # Rs Temperature
-            T_Rs = []
-            Pt_R_cor = []
-            for n, R_raw in enumerate(self.this_run['Pt_DVM'][row:row+8]):
-                Pt_R_cor.append(GTC.result(R_raw * (1 + DVMT_cor),
+            t_rs = []
+            pt_r_cor = []
+            for n, R_raw in enumerate(this_run['Pt_DVM'][row:row+8]):
+                pt_r_cor.append(GTC.result(R_raw * (1 + dvmt_cor),
                                            label='Pt_Rcor'+str(n)))
-                T_Rs.append(GTC.result(self.R_to_T(Pt_alpha, Pt_beta,
-                                                   Pt_R_cor[n],
-                                                   Pt_R0, Pt_TRef)))
+                t_rs.append(GTC.result(self.R_to_T(pt_alpha, pt_beta,
+                                                   pt_r_cor[n],
+                                                   pt_r0, pt_t_ref)))
 
-            av_T_Rs = GTC.result(GTC.fn.mean(T_Rs),
-                                 label='av_T_Rs'+str(abs_nom_Vout))
-            influencies.extend(Pt_R_cor)
-            influencies.extend([Pt_alpha, Pt_beta, Pt_R0, Pt_TRef,
-                                DVMT_cor, Pt_T_def])  # av_T_Rs
-            assert Pt_alpha in influencies, 'Influencies missing Pt_alpha!'
-            assert Pt_beta in influencies, 'Influencies missing Pt_beta!'
-            assert Pt_R0 in influencies, 'Influencies missing Pt_R0!'
-            assert Pt_TRef in influencies, 'Influencies missing Pt_TRef!'
-            assert DVMT_cor in influencies, 'Influencies missing DVMT_cor!'
-            assert Pt_T_def in influencies, 'Influencies missing Pt_T_def!'
+            av_t_rs = GTC.result(GTC.fn.mean(t_rs),
+                                 label='av_T_Rs'+str(abs_nom_vout))
+            influencies.extend(pt_r_cor)
+            influencies.extend([pt_alpha, pt_beta, pt_r0, pt_t_ref,
+                                dvmt_cor, pt_t_def])  # av_T_Rs
+            assert pt_alpha in influencies, 'Influencies missing Pt_alpha!'
+            assert pt_beta in influencies, 'Influencies missing Pt_beta!'
+            assert pt_r0 in influencies, 'Influencies missing Pt_R0!'
+            assert pt_t_ref in influencies, 'Influencies missing Pt_TRef!'
+            assert dvmt_cor in influencies, 'Influencies missing DVMT_cor!'
+            assert pt_t_def in influencies, 'Influencies missing Pt_T_def!'
 
             # Value of Rs
-            nom_Rs = self.this_run['Rs']
+            nom_Rs = this_run['Rs']
             msg = 'Nominal Rs value: {0}, '\
-                  'Abs. Nom. Vout: {1:.1f}'.format(nom_Rs, abs_nom_Vout)
-            print '\n', msg, '\n'
+                  'Abs. Nom. Vout: {1:.1f}'.format(nom_Rs, abs_nom_vout)
+            print( '\n', msg, '\n')
             logger.info(msg)
-            Rs_name = self.Rs_VAL_NAME[nom_Rs]
-            Rs_0 = self.BuildUreal(devices.RES_DATA[Rs_name]['R0_LV'])
-            Rs_TRef = self.BuildUreal(devices.RES_DATA[Rs_name]['TRef_LV'])
-            Rs_alpha = self.BuildUreal(devices.RES_DATA[Rs_name]['alpha'])
-            Rs_beta = self.BuildUreal(devices.RES_DATA[Rs_name]['beta'])
+            rs_name = self.Rs_VAL_NAME[nom_Rs]
+            rs_0 = self.build_ureal(devices.RES_DATA[rs_name]['R0_LV'])
+            rs_t_ref = self.build_ureal(devices.RES_DATA[rs_name]['TRef_LV'])
+            rs_alpha = self.build_ureal(devices.RES_DATA[rs_name]['alpha'])
+            rs_beta = self.build_ureal(devices.RES_DATA[rs_name]['beta'])
 
             # Correct Rs value for temperature
-            dT = GTC.result(av_T_Rs - Rs_TRef + Pt_T_def)
-            Rs = GTC.result(Rs_0*(1 + Rs_alpha*dT + Rs_beta*dT**2))
+            delta_t = GTC.result(av_t_rs - rs_t_ref + pt_t_def)
+            rs = GTC.result(rs_0 * (1 + rs_alpha * delta_t + rs_beta * delta_t ** 2))
 
-            influencies.extend([Rs_0, Rs_alpha, Rs_beta, Rs_TRef])
+            influencies.extend([rs_0, rs_alpha, rs_beta, rs_t_ref])
 
             '''
             Finally, calculate current-change in,
@@ -1393,52 +1406,50 @@ class CalcPage(wx.Panel):
             REMEMBER: POSITIVE 'Vout' is caused by 'I_pos'
             (which may be NEGATIVE for inverting device)!
             '''
-            Iin_pos = GTC.result(V_Rs_pos/Rs)
-            Iin_neg = GTC.result(V_Rs_neg/Rs)
-            assert Iin_pos.x * Iin_neg.x < 0, 'Iin polarity error!'
+            i_in_pos = GTC.result(v_rs_pos / rs)
+            i_in_neg = GTC.result(v_rs_neg / rs)
+            assert i_in_pos.x * i_in_neg.x < 0, 'Iin polarity error!'
 
             # Calculate I_in that would produce nominal Vout:
-            I_pos = GTC.result(Iin_pos*self.nom_Vout['pos']/V3_pos)
-            I_neg = GTC.result(Iin_neg*self.nom_Vout['neg']/V3_neg)
-            assert I_pos.x * I_neg.x < 0, 'I polarity error!'
+            i_pos = GTC.result(i_in_pos * self.nom_Vout['pos'] / v3_pos)
+            i_neg = GTC.result(i_in_neg * self.nom_Vout['neg'] / v3_neg)
+            assert i_pos.x * i_neg.x < 0, 'I polarity error!'
 
-            this_result = {'pos': I_pos, 'neg': I_neg}
+            this_result = {'pos': i_pos, 'neg': i_neg}
 
             # build uncertainty budget table
             budget_table = {'pos': [], 'neg': []}
             for i in influencies:
-                print'Working through influence variables:', i.label
-                logger.info('Working through influence variables: %s', i.label)
+                print('Working through influence variables: {}.'.format(i.label))
+                logger.info('Working through influence variables: {}.'.format(i.label))
                 if i.u == 0:
                     sensitivity = {'pos': 0, 'neg': 0}
                 else:
-                    sensitivity = {'pos': GTC.component(I_pos, i)/i.u,
-                                   'neg': GTC.component(I_neg, i)/i.u}
+                    sensitivity = {'pos': GTC.component(i_pos, i)/i.u,
+                                   'neg': GTC.component(i_neg, i)/i.u}
 
                 # Only include non-zero influencies:
-                if abs(GTC.component(I_pos, i)) > 0:
-                    print 'Included component of I+:', GTC.component(I_pos, i)
-                    logger.info('Included component of I+: %d',
-                                GTC.component(I_pos, i))
+                if abs(GTC.component(i_pos, i)) > 0:
+                    print('Included component of I+: {}'.format(GTC.component(i_pos, i)))
+                    logger.info('Included component of I+: {}'.format(GTC.component(i_pos, i)))
                     budget_table['pos'].append([i.label, i.x, i.u, i.df,
                                                 sensitivity['pos'],
-                                                GTC.component(I_pos, i)])
+                                                GTC.component(i_pos, i)])
                 else:
-                    print'ZERO COMPONENT of I+'
+                    print('ZERO COMPONENT of I+')
                     logger.info('ZERO COMPONENT of I+')
 
-                if abs(GTC.component(I_neg, i)) > 0:
-                    print 'Included component of I-:', GTC.component(I_neg, i)
-                    logger.info('Included component of I-: %d',
-                                GTC.component(I_neg, i))
+                if abs(GTC.component(i_neg, i)) > 0:
+                    print('Included component of I-: {}'.format(GTC.component(i_neg, i)))
+                    logger.info('Included component of I-: {}'.format(GTC.component(i_neg, i)))
                     budget_table['neg'].append([i.label, i.x, i.u, i.df,
                                                 sensitivity['neg'],
-                                                GTC.component(I_neg, i)])
+                                                GTC.component(i_neg, i)])
                 else:
-                    print'ZERO COMPONENT of I-'
+                    print('ZERO COMPONENT of I-')
                     logger.info('ZERO COMPONENT of I-')
 
-            self.budget_table_sorted = {'pos': [], 'neg': []}
+            # self.budget_table_sorted = {'pos': [], 'neg': []}
             self.budget_table_sorted['pos'] = sorted(budget_table['pos'],
                                                      key=self.by_u_cont,
                                                      reverse=True)
@@ -1447,13 +1458,13 @@ class CalcPage(wx.Panel):
                                                      reverse=True)
 
             # Write results (including budgets)
-            self.result_row = self.WriteThisResult(this_result)
+            self.result_row = self.write_this_result(this_result)
             time.sleep(0.1)
             row += 8
             del influencies[:]
-            del V1s[:]
-            del V2s[:]
-            del V3s[:]
+            del v1s[:]
+            del v2s[:]
+            del v3s[:]
         # <-- End of analysis loop for this run
 
         # Save analysis result
@@ -1469,26 +1480,26 @@ class CalcPage(wx.Panel):
             self.NomVout.Append(str(V))
         # ______________END OF OnAnalyze()________________
 
-    def OnNomVoutChoice(self, e):
-        '''
+    def on_nom_vout_choice(self, e):
+        """
         Select which analysed data sub-set (by Vout) to display
         - Delta_Iin and
         - Uncert budget
-        '''
-        Vout = float(e.GetString())
-        Iin = self.BuildUreal(self.ThisResult['Nom_dV'][Vout]['Delta_Iin'])
-        IinStr = '{0:.5e}, u={1:.1e}, df={2:.1f}'.format(Iin.x, Iin.u, Iin.df)
-        Iin_k = GTC.rp.k_factor(Iin.df)
-        Iin_EU = Iin.u*Iin_k
-        self.IinSummary.SetValue(IinStr)
-        self.Iink.SetValue('{0:.1f}'.format(Iin_k))
-        self.IinExpU.SetValue('{0:.2e}'.format(Iin_EU))
+        """
+        v_out = float(e.GetString())
+        i_in = self.build_ureal(self.ThisResult['Nom_dV'][v_out]['Delta_Iin'])
+        i_in_str = '{0:.5e}, u={1:.1e}, df={2:.1f}'.format(i_in.x, i_in.u, i_in.df)
+        i_in_k = GTC.rp.k_factor(i_in.df)
+        i_in_EU = i_in.u * i_in_k
+        self.IinSummary.SetValue(i_in_str)
+        self.Iink.SetValue('{0:.1f}'.format(i_in_k))
+        self.IinExpU.SetValue('{0:.2e}'.format(i_in_EU))
 
         # Build uncertainty budget table (as a string for display):
         budget_str = '{:28}{:<14}{:<10}{:<6}{:<10}{:<13}\n'\
             .format('Quantity', 'Value', 'Std u.', 'dof',
                     'Sens. Co.', 'U. Cont.')
-        u_budget_dict = self.ThisResult['Nom_dV'][Vout]['U_Budget']
+        u_budget_dict = self.ThisResult['Nom_dV'][v_out]['U_Budget']
         for n, q in enumerate(u_budget_dict['quantity(label)']):
             v = u_budget_dict['value'][n]
             u = u_budget_dict['std. uncert'][n]
@@ -1496,11 +1507,12 @@ class CalcPage(wx.Panel):
             s = u_budget_dict['sens. co.'][n]
             c = u_budget_dict['uncert. cont.'][n]
             line = '{0:<28}{1:<16.{2}g}{3:<10.2g}{4:<6.1f}{5:<10.1e}{6:<13.1e}\n'\
-                .format(q, v, self.SetPrecision(v, u), u, d, s, c)
+                .format(q, v, self.set_precision(v, u), u, d, s, c)
             budget_str += line
         self.Budget.SetValue(budget_str)
 
-    def SetPrecision(self, v, u):
+    @staticmethod
+    def set_precision(self, v, u):
         if v == 0:
             v_lg = 0
         else:
@@ -1514,12 +1526,12 @@ class CalcPage(wx.Panel):
         else:
             return 2
 
-    def GetDUCNamefromRunID(self, runid):
-        start = 'IVY.v' + self.version + ' '
+    def get_duc_name_from_run_id(self, runid):
+        start = 'IVY.v{} '.format(self.version)
         end = ' (Gain='
         return runid[len(start): runid.find(end)]
 
-    def GetMeanDate(self):
+    def get_mean_date(self):
         '''
         Accept a list of times (as strings).
         Return a mean time (as a string).
@@ -1537,55 +1549,58 @@ class CalcPage(wx.Panel):
         t_av_dt = dt.datetime.fromtimestamp(t_av)
         return t_av_dt.strftime(time_fmt)  # av. time as string
 
-    def BuildUreal(self, d):
-        '''
+    @staticmethod
+    def build_ureal(self, d):
+        """
         Accept a dictionary contaning keys of 'value', 'uncert', 'dof' and
         'label' and use corresponding values as input to GTC.ureal().
         Return resulting ureal. Ignore any other keys.
-        '''
-        assert isinstance(d, dict), 'Not a dictionary!'
+        """
         try:
+            assert isinstance(d, dict), 'Not a dictionary!'
             return GTC.ureal(float(d['value']),
                              float(d['uncert']),
                              float(d['dof']),
                              str(d['label']))
-        except:
-            raise TypeError('Non-ureal input')
+        except (AssertionError, KeyError) as msg:
+            # raise TypeError('Non-ureal input')
+            print('build_ureal():', msg)
             return 0
 
-    def get_gain_err_param(self, V):
-        '''
+    @staticmethod
+    def get_gain_err_param(self, v):
+        """
         Return the key (a string) identifying the correct gain parameter
         for V (and appropriate range).
-        '''
-        if abs(V) < 0.001:
-            nomV = '0.0001'
-            nomRange = '0.1'
-        elif abs(V) < 0.022:
-            nomV = '0.01'
-            nomRange = '0.1'
-        elif abs(V) < 0.071:
-            nomV = '0.05'
-            nomRange = '0.1'
-        elif abs(V) < 0.22:
-            nomV = '0.1'
-            nomRange = '0.1'
-        elif abs(V) < 0.71:
-            nomV = '0.5'
-            nomRange = '1'
-        elif abs(V) < 2.2:
-            nomV = nomRange = '1'
+        """
+        if abs(v) < 0.001:
+            nom_v = '0.0001'
+            nom_range = '0.1'
+        elif abs(v) < 0.022:
+            nom_v = '0.01'
+            nom_range = '0.1'
+        elif abs(v) < 0.071:
+            nom_v = '0.05'
+            nom_range = '0.1'
+        elif abs(v) < 0.22:
+            nom_v = '0.1'
+            nom_range = '0.1'
+        elif abs(v) < 0.71:
+            nom_v = '0.5'
+            nom_range = '1'
+        elif abs(v) < 2.2:
+            nom_v = nom_range = '1'
         else:
-            nomV = nomRange = str(int(abs(round(V))))  # '1' or '10'
-        gain_param = 'Vgain_{0}r{1}'.format(nomV, nomRange)
+            nom_v = nom_range = str(int(abs(round(v))))  # '1' or '10'
+        gain_param = 'Vgain_{0}r{1}'.format(nom_v, nom_range)
         return gain_param
 
     def R_to_T(self, alpha, beta, R, R0, T0):
-        '''
+        """
         Convert a resistive T-sensor reading from resistance to temperature.
         All arguments and return value are ureals.
-        '''
-        if (beta.x == 0 and beta.u == 0):  # No 2nd-order T-Co
+        """
+        if beta.x == 0 and beta.u == 0:  # No 2nd-order T-Co
             T = GTC.result((R/R0 - 1)/alpha + T0)
         else:
             a = GTC.result(beta)
@@ -1594,17 +1609,18 @@ class CalcPage(wx.Panel):
             T = GTC.result((-b + GTC.sqrt(b**2 - 4*a*c))/(2*a))
         return T
 
+    @staticmethod
     def by_u_cont(self, line):
-        '''
+        """
         A function required for budget-table sorting
         by uncertainty contribution.
-        '''
+        """
         return line[5]
 
-    def WriteThisResult(self, result):
-        '''
+    def write_this_result(self, result):
+        """
         Write results and uncert. budget for THIS NOM_VOUT (BOTH polarities)
-        '''
+        """
         result_dict = {'pos': {'Delta_Iin': {}, 'U_Budget': {}},
                        'neg': {'Delta_Iin': {}, 'U_Budget': {}}}
 
@@ -1615,25 +1631,25 @@ class CalcPage(wx.Panel):
             dof = result[polarity].df
             lbl = result[polarity].label
             k = GTC.rp.k_factor(dof)
-            EU = k*uncert
+            exp_u = k * uncert
 
             # Delta_I_in:
             result_dict[polarity]['Delta_Iin'].update({'value': value,
                                                        'uncert': uncert,
                                                        'dof': dof,
                                                        'label': lbl,
-                                                       'k': k, 'EU': EU})
+                                                       'k': k, 'EU': exp_u})
             # Uncert Budget:
-            Q = []
+            quantity = []
             v = []
             u = []
             df = []
             sens = []
             cont = []
             for line in self.budget_table_sorted[polarity]:
-                for i, heading in enumerate((Q, v, u, df, sens, cont)):
+                for i, heading in enumerate((quantity, v, u, df, sens, cont)):
                     heading.append(line[i])
-            result_dict[polarity]['U_Budget'].update({'quantity(label)': Q,
+            result_dict[polarity]['U_Budget'].update({'quantity(label)': quantity,
                                                       'value': v,
                                                       'std. uncert': u,
                                                       'dof': df,

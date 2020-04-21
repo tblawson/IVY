@@ -110,8 +110,9 @@ class GMHSensor(GMH.GMHSensor):
     A derived class of GMHstuff.GMHSensor with additional functionality.
     On creation, an instance needs a description string, descr.
     """
-    def __init__(self, descr):
+    def __init__(self, descr, role):
         self.descr = descr
+        self.role = role
         self.port = int(INSTR_DATA[self.descr]['addr'])
         self.demo = True
 
