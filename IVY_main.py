@@ -149,12 +149,13 @@ I-to-V converter program for Light Standards."
             wx.PostEvent(self.page1, file_evt)
         dlg.Destroy()
 
+    @staticmethod
     def close_instr_sessions(self):
         for r in devices.ROLES_INSTR.keys():
             devices.ROLES_INSTR[r].close()
             time.sleep(0.1)
         devices.RM.close()
-        print('Main.CloseInstrSessions(): closed VISA resource manager.')
+        print('Main.close_instr_sessions(): closed VISA resource manager.')
 
     def on_quit(self):
         self.close_instr_sessions()

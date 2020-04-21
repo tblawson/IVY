@@ -29,7 +29,7 @@ import matplotlib.dates as mdates
 import matplotlib.ticker as mtick
 
 # from matplotlib.backends.backend_wx import NavigationToolbar2Wx
-#from openpyxl import load_workbook, cell
+# from openpyxl import load_workbook, cell
 
 matplotlib.rc('lines', linewidth=1, color='blue')
 
