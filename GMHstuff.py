@@ -12,10 +12,11 @@ import ctypes as ct
 
 # os.path.join('C:', 'Users', 't.lawson', 'PycharmProjects', 'GMHstuff2')
 # Change PATH to wherever you keep GMH3x32E.dll:
-gmhlibpath = 'I:/MSL/Private/Electricity/Ongoing/OHM/Temperature_PRTs/GMHdll'
-os.environ['GMHPATH'] = gmhlibpath
-GMHpath = os.environ['GMHPATH']
-GMHLIB = ct.windll.LoadLibrary(os.path.join('GMHdll', 'GMH3x32E'))  # (os.path.join(GMHpath, 'GMH3x32E'))
+# gmhlibpath = 'I:/MSL/Private/Electricity/Ongoing/OHM/Temperature_PRTs/GMHdll'
+# os.environ['GMHPATH'] = gmhlibpath
+GMHpath = os.getenv('GMH_PATH')
+print(GMHpath)
+GMHLIB = ct.windll.LoadLibrary(os.path.join(GMHpath, 'GMH3x32E'))  # (os.path.join(GMHpath, 'GMH3x32E'))
 
 # A (useful) subset of Transmit() function calls:
 TRANSMIT_CALLS = {'GetValue': 0, 'GetStatus': 3, 'GetTypeCode': 12, 'GetMinRange': 176, 'GetMaxRange': 177,
@@ -113,6 +114,8 @@ class GMHSensor:
             assert self.error_code >= 0, 'GMHLIB.GMH_OpenCom() failed'
         except AssertionError as msg:
             print('open_port()_except:', msg, '{} "{}"'.format(self.error_code, self.error_msg))
+            pass
+            print('port={}, type(port)={}'.format(self.port, type(self.port)))
             self.com_open = False
             return -1
         else:
@@ -199,15 +202,17 @@ class GMHSensor:
         """
         Update self.chan_count.
 
-        :return: none
+        :return: self.chan_count.
         """
         # Get number of measurement channels for this instrument -> self.c_intData:
-        self.error_code = self.transmit(1, 'GetChannelCount')
+        self.transmit(1, 'GetChannelCount')
         if self.error_code < 0:
             self.chan_count = 0
-            print('No channels found!')
+            print('No channels found!: {}'.format(self.rtncode_to_errmsg(self.error_code)))
         else:
             self.chan_count = self.c_intData.value
+            print('{} channels found: {}'.format(self.chan_count, self.rtncode_to_errmsg(self.error_code)))
+        return self.chan_count
 
     def get_status(self, chan):
         """

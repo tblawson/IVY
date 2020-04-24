@@ -32,7 +32,7 @@ also contain GTC.ureals.
 
 import os
 import wx
-import wx.adv as wxadv
+from wx.adv import SplashScreen as SplashScreen
 import nbpages as page
 import IVY_events as evts
 import devices
@@ -77,19 +77,16 @@ class MainFrame(wx.Frame):
         menu_bar = wx.MenuBar()
         file_menu = wx.Menu()
 
-        about = file_menu.Append(wx.ID_ABOUT, text='&About',
-                                 help='About HighResBridgeControl (HRBC)')
+        about = file_menu.Append(wx.ID_ABOUT, '&About', 'About HighResBridgeControl (HRBC)')
         self.Bind(wx.EVT_MENU, self.on_about, about)
 
-        set_dir = file_menu.Append(wx.ID_OPEN, text='Set &Directory',
-                                   help='Set working directory for raw data and'
-                                   ' analysis results')
+        set_dir = file_menu.Append(wx.ID_OPEN, 'Set &Directory',
+                                   'Set working directory for raw data and analysis results')
         self.Bind(wx.EVT_MENU, self.on_set_dir, set_dir)  # OnOpen
 
         file_menu.AppendSeparator()
 
-        exit_app = file_menu.Append(wx.ID_EXIT, text='&Quit',
-                                    help='Exit HighResBridge')
+        exit_app = file_menu.Append(wx.ID_EXIT, '&Quit', 'Exit IVY {}'.format(VERSION))
         self.Bind(wx.EVT_MENU, self.on_quit, exit_app)
 
         menu_bar.Append(file_menu, "&File")
@@ -125,7 +122,7 @@ class MainFrame(wx.Frame):
         else:
             self.sb.SetStatusText(e.msg, e.field)
 
-    def on_about(self):
+    def on_about(self, e):
         # A message dialog with 'OK' button. wx.OK is a standard wxWidgets ID.
         dlg_description = "IVY v"+VERSION+": A Python'd version of the TestPoint \
 I-to-V converter program for Light Standards."
@@ -134,7 +131,7 @@ I-to-V converter program for Light Standards."
         dlg.ShowModal()  # Show dialog.
         dlg.Destroy()  # Destroy when done.
 
-    def on_set_dir(self):
+    def on_set_dir(self, e):
         dlg = wx.DirDialog(self, message='Select working directory',
                            style=wx.DD_DEFAULT_STYLE | wx.DD_CHANGE_DIR)
         dlg.SetPath(os.getcwd())
@@ -150,43 +147,41 @@ I-to-V converter program for Light Standards."
         dlg.Destroy()
 
     @staticmethod
-    def close_instr_sessions(self):
+    def close_instr_sessions():
         for r in devices.ROLES_INSTR.keys():
             devices.ROLES_INSTR[r].close()
             time.sleep(0.1)
         devices.RM.close()
         print('Main.close_instr_sessions(): closed VISA resource manager.')
 
-    def on_quit(self):
+    def on_quit(self, e):
         self.close_instr_sessions()
         time.sleep(0.1)
         print('Closing IVY...')
         self.Close()
 
 
-"""_______________________________________________"""
+"""__________________End of MainFrame class_______________"""
 
 
-class SplashScreen(wxadv.SplashScreen):
+class IvySplashScreen(SplashScreen):
     def __init__(self, parent=None):
-        ivy_bmp = wx.Image(name="ivy-splash.png").ConvertToBitmap()
-        splash_style = wxadv.SPLASH_CENTRE_ON_SCREEN | wxadv.SPLASH_TIMEOUT
-        splash_duration = 2000  # milliseconds
-        wxadv.SplashScreen.__init__(self, ivy_bmp, splash_style,
-                                    splash_duration, parent)
-        wx.Yield()
+        ivy_bmp = wx.Bitmap(name="ivy-splash.png", type=wx.BITMAP_TYPE_PNG)  # wx.Image(...).ConvertToBitmap()
+        splash_style = wx.adv.SPLASH_CENTRE_ON_SCREEN | wx.adv.SPLASH_TIMEOUT
+        splash_duration = 3000  # milliseconds
+        wx.adv.SplashScreen.__init__(self, ivy_bmp, splash_style, splash_duration, parent)
 
 
 class MainApp(wx.App):
     """Class MainApp."""
     def OnInit(self):
         """Initiate Main App."""
-        splash = SplashScreen()
+        splash = IvySplashScreen()
         splash.Show()
-        self.frame = MainFrame(None, wx.ID_ANY)
-        self.frame.Show(True)
-        self.SetTopWindow(self.frame)
-        self.frame.SetTitle("IVY v"+VERSION)
+        frame = MainFrame(None, wx.ID_ANY)  # was self.frame...
+        frame.Show(True)  # was self.frame...
+        self.SetTopWindow(frame)  # was ...(self.frame)
+        frame.SetTitle("IVY v"+VERSION)  # was self.frame...
         return True
 
 

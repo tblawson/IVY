@@ -61,7 +61,7 @@ class SetupPage(wx.Panel):
                                    'Rs=10^4': '4',
                                    'Rs=10^5': '5',
                                    'Rs=10^6': '6'}  # '': None
-        self.instrument_choice = {'SRC': 'SRC_F5520A',
+        self.INSTRUMENT_CHOICE = {'SRC': 'SRC_F5520A',
                                   'DVM12': 'DVM_3458A:s/n518',
                                   'DVM3': 'DVM_3458A:s/n066',
                                   'DVMT': 'DVM_34401A:s/n976',
@@ -135,7 +135,7 @@ class SetupPage(wx.Panel):
         self.IVboxLbl = wx.StaticText(self, label='IV_box (IVbox) setting:',
                                       id=wx.ID_ANY)
         self.IVbox = wx.ComboBox(self, wx.ID_ANY,
-                                 choices=self.IVBOX_COMBO_CHOICE.keys(),
+                                 choices=list(self.IVBOX_COMBO_CHOICE.keys()),
                                  style=wx.CB_DROPDOWN)
 
         # Addresses
@@ -394,18 +394,18 @@ class SetupPage(wx.Panel):
         """
         self.WorkingDir.SetValue(e.Dir)
 
-    def on_auto_pop(self):
+    def on_auto_pop(self, e):
         """
         Pre-select instrument and address comboboxes -
         Choose from instrument descriptions listed in devices.DESCR
         (Uses address assignments in devices.INSTR_DATA)
         """
-        for r in self.instrument_choice.keys():
-            d = self.instrument_choice[r]
+        for r in self.INSTRUMENT_CHOICE.keys():
+            d = self.INSTRUMENT_CHOICE[r]
             devices.ROLES_WIDGETS[r]['icb'].SetValue(d)  # Update instr. cbox
             self.create_instr(d, r)
         if self.DUCName.GetValue() == u'DUC Name':
-            self.DUCName.SetForegroundColour((255, 0, 0))
+            self.DUCName.SetForegroundColour((255, 0, 0))  # red
             self.DUCName.SetValue('CHANGE_THIS!')
 
     def update_instr(self, e):
@@ -427,20 +427,20 @@ class SetupPage(wx.Panel):
          (GPIB and IVbox only).
          For GMH instruments, use GMH dll, not visa.
         """
-        msg_head = 'CreateInstr():'
+        msg_head = 'CreateInstr(): {}'
         print('\nCreateInstr({},{})...'.format(d, r))
-        logger.info('\nCreateInstr({},{})...'.format(d, r))
+        logger.info('\nCreateInstr({0:s},{1:s})...'.format(d, r))
         if 'GMH' in r:  # Changed from d to r
             # create and open a GMH instrument instance
             msg = 'Creating GMH device ({0:s} -> {1:s})'.format(d, r)
-            print('\n', msg_head, msg)
-            logger.info(msg_head, msg)
+            print('\n', msg_head.format(msg))
+            logger.info(msg_head.format(msg))
             devices.ROLES_INSTR.update({r: devices.GMHSensor(d, r)})
         else:
             # create a visa instrument instance
             msg = 'Creating VISA device ({0:s} -> {1:s}).'.format(d, r)
-            print('\n', msg_head, msg)
-            logger.info(msg_head, msg)
+            print('\n', msg_head.format(msg))
+            logger.info(msg_head.format(msg))
             devices.ROLES_INSTR.update({r: devices.Instrument(d, r)})
             devices.ROLES_INSTR[r].open()
         self.set_instr(d, r)
@@ -452,7 +452,7 @@ class SetupPage(wx.Panel):
         and Enables/disables testbuttons as necessary.
         Called by CreateInstr().
         """
-        msg_head = 'SetInstr():'
+        msg_head = 'SetInstr(): {}'
         assert d in devices.INSTR_DATA, 'Unknown instrument: %s' % d
         assert_msg = 'Unknown parameter ("role") for %s: .' % d
         assert 'role' in devices.INSTR_DATA[d], assert_msg
@@ -461,8 +461,8 @@ class SetupPage(wx.Panel):
         # Set the address cb to correct value (refer to devices.INSTR_DATA)
         a_cb = devices.ROLES_WIDGETS[r]['acb']
         msg = 'Address = {}'.format(devices.INSTR_DATA[d]['str_addr'])
-        print(msg_head, msg)
-        logger.info(msg_head, msg)
+        print(msg_head.format(msg))
+        logger.info(msg_head.format(msg))
         a_cb.SetValue((devices.INSTR_DATA[d]['str_addr']))
         if d == 'none':
             devices.ROLES_WIDGETS[r]['tbtn'].Enable(False)
@@ -472,10 +472,10 @@ class SetupPage(wx.Panel):
     def update_addr(self, e):
         # An address was manually selected
         # 1st, we'll need instrument description d...
-        msg_head = 'UpdateAddr():'
+        msg_head = 'UpdateAddr(): {}'
         d = 'none'
         r = ''
-        addr = '0'
+        addr = 0
         acb = e.GetEventObject()  # 'a'ddress 'c'ombo 'b'ox
         for r in devices.ROLES_WIDGETS.keys():
             if devices.ROLES_WIDGETS[r]['acb'] == acb:
@@ -491,25 +491,26 @@ class SetupPage(wx.Panel):
         if (a not in self.GPIBAddressList) or (a not in self.COMAddressList):
             devices.INSTR_DATA[d]['str_addr'] = a
             devices.ROLES_INSTR[r].str_addr = a
-            addr = a.lstrip('COMGPIB0:')  # leave only numeric part
-            devices.INSTR_DATA[d]['addr'] = int(addr)
-            devices.ROLES_INSTR[r].addr = int(addr)
+            addr = int(a.lstrip('COMGPIB0:'))  # leave only numeric part
+            devices.INSTR_DATA[d]['addr'] = addr
+            devices.ROLES_INSTR[r].addr = addr
         msg = '{0:s} using {1:s} set to '\
-              'addr {2:s} ({3:s})'.format(r, d, addr, a)
-        print(msg_head, msg)
-        logger.info(msg_head, msg)
+              'addr {2:d} ({3:s})'.format(r, d, addr, a)
+        print(msg_head.format(msg))
+        logger.info(msg_head.format(msg))
+        self.create_instr(d, r)
 
     def on_test(self, e):
         # Called when a 'test' button is clicked
-        msg_head = 'nbpages.SetupPage.OnTest():'
+        msg_head = 'nbpages.SetupPage.OnTest(): {}'
         r = ''
         d = 'none'
         for r in devices.ROLES_WIDGETS.keys():  # check every role
             if devices.ROLES_WIDGETS[r]['tbtn'] == e.GetEventObject():
                 d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
                 break  # stop looking when we've found right instr descr
-        print('\n', msg_head, d)
-        logger.info(msg_head, d)
+        print('\n', msg_head.format(d))
+        logger.info(msg_head.format(d))
         assert_msg = '{} has no "test" parameter'.format(d)
         assert 'test' in devices.INSTR_DATA[d], assert_msg
         test = devices.INSTR_DATA[d]['test']  # test string
@@ -545,9 +546,9 @@ class SetupPage(wx.Panel):
             self.create_instr(d, r)
         else:  # DUC name has been set or changed
             if d in ('CHANGE_THIS!', 'DUC Name'):  # DUC not yet specified!
-                self.DUCName.SetForegroundColour((255, 0, 0))
+                self.DUCName.SetForegroundColour((255, 0, 0))  # red
             else:
-                self.DUCName.SetForegroundColour((0, 127, 0))
+                self.DUCName.SetForegroundColour((0, 127, 0))  # green
 #        RunPage = self.GetParent().GetPage(1)
 #        params = {'DUC': self.DUCName.GetValue(),
 #                  'GMH': self.GMHProbes.GetValue()}
@@ -556,7 +557,7 @@ class SetupPage(wx.Panel):
 #        evt = evts.UpdateCommentEvent(str=commstr)
 #        wx.PostEvent(RunPage, evt)
 
-    def on_visa_list(self):
+    def on_visa_list(self, e):
         res_list = devices.RM.list_resources()
         del self.ResourceList[:]  # list of COM ports ('COM X') & GPIB addr's
         del self.ComList[:]  # list of COM ports (numbers only)
@@ -632,13 +633,15 @@ class RunPage(wx.Panel):
 #        self.Comment.Bind(wx.EVT_TEXT, self.OnComment)
         comtip = 'Use this field to add remarks and observations that may not'\
                  ' be recorded automatically.'
-        self.Comment.SetToolTipString(comtip)
+        # self.Comment.SetToolTipString(comtip)
+        self.Comment.SetToolTip(comtip)
 
         self.NewRunIDBtn = wx.Button(self, id=wx.ID_ANY,
                                      label='Create new run id')
         idcomtip = 'Create new id to uniquely identify this set of '\
                    'measurement data.'
-        self.NewRunIDBtn.SetToolTipString(idcomtip)
+        # self.NewRunIDBtn.SetToolTipString(idcomtip)
+        self.NewRunIDBtn.SetToolTip(idcomtip)
         self.NewRunIDBtn.Bind(wx.EVT_BUTTON, self.on_new_run_id)
         self.RunID = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
 
@@ -769,7 +772,7 @@ class RunPage(wx.Panel):
         # Dictionary to hold ALL runs for this application session:
         self.master_run_dict = {}
 
-    def on_new_run_id(self):
+    def on_new_run_id(self, e):
         self.version = self.GetTopLevelParent().version
         duc_name = self.SetupPage.DUCName.GetValue()
         self.run_id = str('IVY.v' + self.version + ' ' + duc_name + ' (Gain=' +
@@ -803,7 +806,7 @@ class RunPage(wx.Panel):
     def on_Rs(self, e):
         self.Rs_val = self.Rs_choice_to_val[e.GetString()]  # an INT
         print('\nRunPage.OnRs(): Rs =', self.Rs_val)
-        logger.info('Rs = %d', self.Rs_val)
+        logger.info('Rs = {}'.format(self.Rs_val))
         if e.GetString() in self.Rs_SWITCHABLE:  # a STRING
             s = str(int(math.log10(self.Rs_val)))  # '3','4','5' or '6'
             print('\nSwitching Rs - Sending "{}" to IVbox.'.format(s))
@@ -813,7 +816,7 @@ class RunPage(wx.Panel):
     def on_node(self, e):
         node = e.GetString()  # 'V1', 'V2', or 'V3'
         print('\nRunPage.OnNode():', node)
-        logger.info('\nRunPage.OnNode():', node)
+        logger.info('\nRunPage.OnNode(): {}'.format(node))
         s = node[1]
         if s in ('1', '2'):
             print('\nRunPage.OnNode():Sending IVbox "{}".'.format(s))
@@ -821,7 +824,7 @@ class RunPage(wx.Panel):
             devices.ROLES_INSTR['IVbox'].send_cmd(s)
         else:  # '3'
             print('\nRunPage.OnNode():IGNORING IVbox cmd "{}".'.format(s))
-            logger.info('IGNORING IVbox cmd "%s"', s)
+            logger.info('IGNORING IVbox cmd "{}".'.format(s))
 
     def on_v1_set(self, e):
         # Called by change in value (manually OR by software!)
@@ -843,15 +846,15 @@ class RunPage(wx.Panel):
         src = devices.ROLES_INSTR['SRC']
         if self.V1Setting.GetValue() == 0:
             print('RunPage.OnZeroVolts(): Zero/Stby directly')
-            logger.info('RunPage.OnZeroVolts(): Zero/Stby directly')
+            logger.info('RunPage.OnZeroVolts(): Zero/Stby directly.')
             src.set_v(0)
             src.stby()
         else:
             self.V1Setting.SetValue('0')  # Calls OnV1Set() ONLY IF VAL CHANGES
             print('RunPage.OnZeroVolts():  Zero/Stby via V1 display')
-            logger.info('RunPage.OnZeroVolts():  Zero/Stby via V1 display')
+            logger.info('RunPage.OnZeroVolts():  Zero/Stby via V1 display.')
 
-    def on_start(self):
+    def on_start(self, e):
         self.Progress.SetValue(0)
         self.RunThread = None
         self.status.SetStatusText('', 1)
@@ -940,11 +943,11 @@ class PlotPage(wx.Panel):
         self.SetSizerAndFit(self.sizer)
 
     def update_plot(self, e):
-        msg_head = 'PlotPage.UpdatePlot():'
+        msg_head = 'PlotPage.UpdatePlot(): {}'
         print(msg_head, 'len(t)={}'.format(len(e.t)))
-        logger.info(msg_head, 'len(t)={}'.format(len(e.t)))
+        logger.info(msg_head.format('len(t)={}'.format(len(e.t))))
         print(msg_head, '{} len(V1)={}', 'len(V3)={}'.format(e.node, len(e.V12), len(e.V3)))
-        logger.info(msg_head, '{} len(V1)={}', 'len(V3)={}'.format(e.node, len(e.V12), len(e.V3)))
+        logger.info(msg_head.format('{} len(V1)={}', 'len(V3)={}'.format(e.node, len(e.V12), len(e.V3))))
         if e.node == 'V1':
             self.V1ax.plot_date(e.t, e.V12, 'bo')
         else:  # V2 data
