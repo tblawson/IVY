@@ -69,7 +69,7 @@ def refresh_params(directory):
     both keyed by description.
     """
     with open(os.path.join(directory, resistor_file), 'r') as new_resistor_fp:
-        resistor_str = strip_chars(new_resistor_fp.read(), '\t\n')
+        resistor_str = strip_chars(new_resistor_fp.read(), '\t\n')  # Remove tabs & newlines
     res_data = json.loads(resistor_str)
 
     with open(os.path.join(directory, instrument_file), 'r') as new_instr_fp:
@@ -127,9 +127,12 @@ class GMHSensor(GMH.GMHSensor):
         print('\ndevices.GMH_Sensor.Test()...')
         self.open_port()
         reply = self.measure(meas)
+        self.set_power_off_time(120)  # Ensure sensor stays on during whole run.
         self.close()
         return reply
 
+    def init(self):
+        pass
 
 '''
 ###############################################################################

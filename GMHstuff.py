@@ -107,6 +107,8 @@ class GMHSensor:
             1 for success,
             -1 for failure.
         """
+        if self.com_open is True:
+            return 1
         try:
             c_rtn_code = ct.c_int16(GMHLIB.GMH_OpenCom(self.port))
             self.error_code = c_rtn_code.value
@@ -403,7 +405,7 @@ class GMHSensor:
                 # Visit all the channels and note their capabilities:
                 channel = 0
                 while channel <= self.chan_count:
-                    print('\nget_sensor_info(): Testing channel {}...'.format(channel))
+                    print('get_sensor_info(): Testing channel {}...'.format(channel))
                     # Try reading a value, Write result to self.c_intData:
                     self.error_code = self.transmit(channel, 'GetValue')
                     if self.error_code < 0:
@@ -463,9 +465,10 @@ class GMHSensor:
 
         :returns a tuple: (<measurement as float>, <unit as unicode string>)
         """
+        self.open_port()
         if len(self._info) == 0:
             meas = (0, 'NO UNIT')
-            print('Measure(): No measurement info available! ')
+            print('Measure(): No measurement info available!')
         elif meas not in MEAS_ALIAS.keys():
             meas = (0, 'NO UNIT')
             print('Unknown function "{}"'.format(meas))
@@ -479,5 +482,10 @@ class GMHSensor:
                 meas = (0, 'NO UNIT')
                 print('Measurement value not found!- Check sensor is connected and ON.')
             else:
-                meas = (self.c_flData.value, self._info[MEAS_ALIAS[meas]][1])
+                chan = self._info[MEAS_ALIAS[meas]][0]
+                unit_str = self._info[MEAS_ALIAS[meas]][1]
+                meas = (self.c_flData.value, unit_str)
+                print('Measured {} from port {}, chan: {}.'.format(meas, self.port, chan))
+                print(self._info)
+        self.close()
         return meas

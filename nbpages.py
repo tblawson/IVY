@@ -775,10 +775,13 @@ class RunPage(wx.Panel):
     def on_new_run_id(self, e):
         self.version = self.GetTopLevelParent().version
         duc_name = self.SetupPage.DUCName.GetValue()
-        self.run_id = str('IVY.v' + self.version + ' ' + duc_name + ' (Gain=' +
-                          self.DUCgain.GetValue() + '; Rs=' +
-                          self.Rs.GetValue() + ') ' +
-                          dt.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+        gain = self.DUCgain.GetValue()
+        rs = self.Rs.GetValue()
+        timestamp = dt.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        self.run_id = str('IVY.v{} {} (Gain={}; Rs={}) {}'.format(self.version,
+                                                                  duc_name,
+                                                                  gain, rs,
+                                                                  timestamp))
         self.status.SetStatusText('Id for subsequent runs:', 0)
         self.status.SetStatusText(str(self.run_id), 1)
         self.RunID.SetValue(str(self.run_id))
@@ -841,7 +844,7 @@ class RunPage(wx.Panel):
             src.oper()
         time.sleep(0.5)
 
-    def on_zero_volts(self):
+    def on_zero_volts(self, e):
         # V1:
         src = devices.ROLES_INSTR['SRC']
         if self.V1Setting.GetValue() == 0:
@@ -944,9 +947,9 @@ class PlotPage(wx.Panel):
 
     def update_plot(self, e):
         msg_head = 'PlotPage.UpdatePlot(): {}'
-        print(msg_head, 'len(t)={}'.format(len(e.t)))
+        print(msg_head.format('len(t)={}'.format(len(e.t))))
         logger.info(msg_head.format('len(t)={}'.format(len(e.t))))
-        print(msg_head, '{} len(V1)={}', 'len(V3)={}'.format(e.node, len(e.V12), len(e.V3)))
+        print(msg_head.format('{} len(V1)={}', 'len(V3)={}'.format(e.node, len(e.V12), len(e.V3))))
         logger.info(msg_head.format('{} len(V1)={}', 'len(V3)={}'.format(e.node, len(e.V12), len(e.V3))))
         if e.node == 'V1':
             self.V1ax.plot_date(e.t, e.V12, 'bo')
@@ -1142,7 +1145,7 @@ class CalcPage(wx.Panel):
         self.result_row = []
         self.results_file = ''
 
-    def on_list_runs(self):
+    def on_list_runs(self, e):
         """
         Open the .json data file and de-serialize into the dictionary
         self.run_data for later access. Update the choices in the 'Run ID'
@@ -1151,15 +1154,15 @@ class CalcPage(wx.Panel):
         self.data_file = self.GetTopLevelParent().data_file
         with open(self.data_file, 'r') as in_file:
             self.run_data = json.load(in_file)
-            self.run_IDs = self.run_data.keys()
+            self.run_IDs = list(self.run_data.keys())
 
         self.RunID.Clear()
         self.RunID.AppendItems(self.run_IDs)
         self.RunID.SetSelection(0)
 
     def on_run_choice(self, e):
-        ID = e.GetString()
-        self.runstr = json.dumps(self.run_data[ID], indent=4)
+        id = e.GetString()
+        self.runstr = json.dumps(self.run_data[id], indent=4)
         self.RunInfo.SetValue(self.runstr)
         self.PSummary.Clear()
         self.Pk.Clear()
@@ -1218,9 +1221,15 @@ class CalcPage(wx.Panel):
                     comment, self.run_ID, duc_gain, mean_date)
 
         # Determine mean env. conditions
-        gmh_temps = this_run['T_GMH']
-        gmh_room_rhs = this_run['Room_conds']['RH']
-        gmh_room_ps = this_run['Room_conds']['P']
+        gmh_temps = []
+        gmh_room_rhs = []
+        gmh_room_ps = []
+        for T in this_run['T_GMH']:
+            gmh_temps.append(T[0])
+        for RH in this_run['Room_conds']['RH']:
+            gmh_room_rhs.append(RH[0])
+        for P in this_run['Room_conds']['P']:
+            gmh_room_ps.append(P[0])
 
         d = this_run['Instruments']['GMH']
         t_gmh_cor = self.build_ureal(devices.INSTR_DATA[d]['T_correction'])
@@ -1276,13 +1285,13 @@ class CalcPage(wx.Panel):
                                      'k': press_k,
                                      'ExpU': press_eu})
 
-        self.PSummary.SetValue(str(press.s))
+        self.PSummary.SetValue('{0:.3f} +/- {1:.3f}. dof={2:.1f}'.format(press.x, press.u, press.df))  # str(press.s)
         self.Pk.SetValue('{0:.1f}'.format(press_k))
         self.PExpU.SetValue('{0:.2f}'.format(press_eu))
-        self.RHSummary.SetValue(str(rh.s))
+        self.RHSummary.SetValue('{0:.3f} +/- {1:.3f}. dof={2:.1f}'.format(rh.x, rh.u, rh.df))  # str(rh.s)
         self.RHk.SetValue('{0:.1f}'.format(rh_k))
         self.RHExpU.SetValue('{0:.2f}'.format(rh_eu))
-        self.TGMHSummary.SetValue(str(t_gmh.s))
+        self.TGMHSummary.SetValue('{0:.3f} +/- {1:.3f}. dof={2:.1f}'.format(t_gmh.x, t_gmh.u, t_gmh.df))  # str(t_gmh.s)
         self.TGMHk.SetValue('{0:.1f}'.format(t_gmh_k))
         self.TGMHExpU.SetValue('{0:.2f}'.format(t_gmh_eu))
 
@@ -1293,7 +1302,7 @@ class CalcPage(wx.Panel):
 
         num_rows = len(this_run['Nom_Vout'])
         for row in range(0, num_rows, 8):  # 0, [8, [16]]
-            gains = set()
+            gains = []  # gains = set()
             # 'neg' and 'pos' refer to polarity of OUTPUT VOLTAGE, not
             # input current! nom_Vout = +/-( 0.1,[1,[10]] ):
             self.nom_Vout = {'pos': this_run['Nom_Vout'][row+2],
@@ -1315,7 +1324,7 @@ class CalcPage(wx.Panel):
                 gain_param = self.get_gain_err_param(v1_v)
                 print(devices.INSTR_DATA[d1].keys())
                 gain = self.build_ureal(devices.INSTR_DATA[d1][gain_param])
-                gains.add(gain)
+                gains = self.add_if_unique(gain, gains)  # gains.add(gain)
                 v1_raw = GTC.ureal(v1_v, v1_u, v1_dof, label=v1_label)
                 v1s.append(GTC.result(v1_raw/gain))
 
@@ -1327,7 +1336,7 @@ class CalcPage(wx.Panel):
                 d2 = d1  # Same DVM
                 gain_param = self.get_gain_err_param(v2_v)
                 gain = self.build_ureal(devices.INSTR_DATA[d2][gain_param])
-                gains.add(gain)
+                gains = self.add_if_unique(gain, gains)  # gains.add(gain)
                 v2_raw = GTC.ureal(v2_v, v2_u, v2_dof, label=v2_label)
                 v2s.append(GTC.result(v2_raw/gain))
 
@@ -1339,15 +1348,15 @@ class CalcPage(wx.Panel):
                 d3 = this_run['Instruments']['DVM3']
                 gain_param = self.get_gain_err_param(v3_v)
                 gain = self.build_ureal(devices.INSTR_DATA[d3][gain_param])
-                gains.add(gain)
+                gains = self.add_if_unique(gain, gains)  # gains.add(gain)
                 v3_raw = GTC.ureal(v3_v, v3_u, v3_dof, label=v3_label)
                 v3s.append(GTC.result(v3_raw/gain))
 
                 influencies.extend([v1_raw, v2_raw, v3_raw])
 
-            influencies.extend(list(gains))  # List of unique gain corrections.
+            influencies.extend(gains)  # List of unique gain corrections.
             print('list of gains:')
-            for g in list(gains):
+            for g in gains:
                 print('{} +/- {}, dof={}'.format(g.x, g.u, g.df))
 
             # Offset-adjustment
@@ -1515,7 +1524,7 @@ class CalcPage(wx.Panel):
         self.Budget.SetValue(budget_str)
 
     @staticmethod
-    def set_precision(self, v, u):
+    def set_precision(v, u):
         if v == 0:
             v_lg = 0
         else:
@@ -1553,9 +1562,9 @@ class CalcPage(wx.Panel):
         return t_av_dt.strftime(time_fmt)  # av. time as string
 
     @staticmethod
-    def build_ureal(self, d):
+    def build_ureal(d):
         """
-        Accept a dictionary contaning keys of 'value', 'uncert', 'dof' and
+        Accept a dictionary containing keys of 'value', 'uncert', 'dof' and
         'label' and use corresponding values as input to GTC.ureal().
         Return resulting ureal. Ignore any other keys.
         """
@@ -1571,7 +1580,7 @@ class CalcPage(wx.Panel):
             return 0
 
     @staticmethod
-    def get_gain_err_param(self, v):
+    def get_gain_err_param(v):
         """
         Return the key (a string) identifying the correct gain parameter
         for V (and appropriate range).
@@ -1613,7 +1622,7 @@ class CalcPage(wx.Panel):
         return T
 
     @staticmethod
-    def by_u_cont(self, line):
+    def by_u_cont(line):
         """
         A function required for budget-table sorting
         by uncertainty contribution.
@@ -1662,3 +1671,12 @@ class CalcPage(wx.Panel):
             self.ThisResult['Nom_dV'].update(d)
 
         return 1
+
+    @staticmethod
+    def add_if_unique(item, lst):
+        """
+        Append 'item' to 'lst' only if it is not already present.
+        """
+        if item not in lst:
+            lst.append(item)
+        return lst

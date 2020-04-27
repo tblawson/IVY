@@ -55,8 +55,8 @@ class AqnThread(Thread):
         self.V12Data = {'V1': [], 'V2': []}
         self.V3Data = []
         self.Times = []
-        self.V12m = {'V1': 0, 'V2': 0}
-        self.V12sd = {'V1': 0, 'V2': 0}
+        self.V12m = {'V1': 0.0, 'V2': 0.0}
+        self.V12sd = {'V1': 0.0, 'V2': 0.0}
         self.V3m = 0.0
         self.V3sd = 0.0
         self.T = 0.0
@@ -90,7 +90,7 @@ class AqnThread(Thread):
             if r == 'IVbox':
                 d = 'IV_box'
             else:
-                d = devices.ROLES_INSTR[r].Descr
+                d = devices.ROLES_INSTR[r].descr
             sub_dict = {r: d}
             self.run_dict['Instruments'].update(sub_dict)
             print('{} \t-> {}'.format(devices.INSTR_DATA[d]['role'], d))
@@ -100,7 +100,7 @@ class AqnThread(Thread):
 
         # Local record of GMH ports and addresses
         self.GMH1Demo_status = devices.ROLES_INSTR['GMH'].demo
-        self.GMH1Port = devices.ROLES_INSTR['GMH'].addr
+        self.GMH1Port = devices.ROLES_INSTR['GMH'].port
 
         self.Rs = 0.0
         self.duc_gain = 0.0
@@ -317,10 +317,10 @@ class AqnThread(Thread):
                     msg = 'Number of timestamps != {0:d}!'.format(NREADS)
                     assert len(self.Times) == NREADS, msg
 
-                    tm_raw = dt.datetime.fromtimestamp(np.mean(self.Times)[0])
+                    tm_raw = dt.datetime.fromtimestamp(float(np.mean(self.Times)))
                     self.tm = tm_raw.strftime("%d/%m/%Y %H:%M:%S")  # self.tm
-                    self.V12m[node] = np.mean(self.V12Data[node])[0]
-                    self.V12sd[node] = np.std(self.V12Data[node], ddof=1)[0]
+                    self.V12m[node] = float(np.mean(self.V12Data[node]))
+                    self.V12sd[node] = float(np.std(self.V12Data[node], ddof=1))
 
                     msg = 'V12m[{0:s}] = {1:.6f}'.format(node, self.V12m[node])
 
@@ -342,10 +342,10 @@ class AqnThread(Thread):
                     time.sleep(2)  # Give user time to read vals before update
 
                     msg = 'Number of V3 readings != {0:d}!'.format(NREADS)
-                    assert len(self.V3Data) == NREADS, msg
-                    self.V3m = np.mean(self.V3Data)
-                    self.V3sd = np.std(self.V3Data, ddof=1)
-                    self.T = devices.ROLES_INSTR['GMH'].Measure('T')
+                    assert len(self.V3Data) == NREADS, msg + '(got {} instead)'.format(len(self.V3Data))
+                    self.V3m = float(np.mean(self.V3Data))
+                    self.V3sd = float(np.std(self.V3Data, ddof=1))
+                    self.T = devices.ROLES_INSTR['GMH'].measure('T')
                     output_range = devices.ROLES_INSTR['DVM3'].send_cmd('RANGE?')
                     if not isinstance(output_range, float):
                         output_range = 0.0
@@ -365,9 +365,9 @@ class AqnThread(Thread):
                     wx.PostEvent(self.TopLevel, stat_ev)
 
                     # Record room conditions
-                    self.Troom = devices.ROLES_INSTR['GMHroom'].Measure('T')
-                    self.Proom = devices.ROLES_INSTR['GMHroom'].Measure('P')
-                    self.RHroom = devices.ROLES_INSTR['GMHroom'].Measure('RH')
+                    self.Troom = devices.ROLES_INSTR['GMHroom'].measure('T')
+                    self.Proom = devices.ROLES_INSTR['GMHroom'].measure('P')
+                    self.RHroom = devices.ROLES_INSTR['GMHroom'].measure('RH')
 
                     self.write_data_this_row(row, node)
                     self.plot_this_row(row, node)
@@ -426,7 +426,7 @@ class AqnThread(Thread):
             else:
                 d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
             # Open non-GMH devices:
-            if 'GMH' not in devices.ROLES_INSTR[r].Descr:
+            if 'GMH' not in devices.ROLES_INSTR[r].descr:
                 msg = 'Opening {:s}'.format(d)
                 print('AqnThread.initialise():', msg)
                 logger.info(msg)
@@ -445,7 +445,7 @@ class AqnThread(Thread):
         wx.PostEvent(self.TopLevel, stat_ev)
 
     def set_up_meas_this_row(self, node):
-        d = devices.ROLES_INSTR['SRC'].Descr
+        d = devices.ROLES_INSTR['SRC'].descr
         if 'F5520A' in d:
             err = devices.ROLES_INSTR['SRC'].check_err()  # 'ERR?','*CLS'
             msg = 'Cleared F5520A error: "{}"'.format(err)
@@ -480,10 +480,10 @@ class AqnThread(Thread):
             self.V12Data['V2'].append(dvm_op)
 
         elif node == 'V3':
-            '''
+            """
             Just want one set of 20 timestamps -
             could have been either V1 or V2 instead.
-            '''
+            """
             self.Times.append(time.time())
             if devices.ROLES_INSTR['DVM3'].demo is True:
                 dvm_op = np.random.normal(self.v_out,
@@ -494,7 +494,7 @@ class AqnThread(Thread):
                 # V = float(filter(self.filt, dvm_op))
             self.V3Data.append(dvm_op)
             print('dvmOP =', dvm_op)
-            self.V3Data.append(dvm_op)
+
         if not (devices.ROLES_INSTR['DVM12'].demo and devices.ROLES_INSTR['DVM3'].demo):
             time.sleep(0.1)
         return 1
