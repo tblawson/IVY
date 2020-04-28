@@ -403,6 +403,8 @@ class SetupPage(wx.Panel):
         for r in self.INSTRUMENT_CHOICE.keys():
             d = self.INSTRUMENT_CHOICE[r]
             devices.ROLES_WIDGETS[r]['icb'].SetValue(d)  # Update instr. cbox
+            a = devices.INSTR_DATA[d]['str_addr']
+            devices.ROLES_WIDGETS[r]['acb'].SetValue(a)  # Update addr. cbox
             self.create_instr(d, r)
         if self.DUCName.GetValue() == u'DUC Name':
             self.DUCName.SetForegroundColour((255, 0, 0))  # red
