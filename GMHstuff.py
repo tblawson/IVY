@@ -114,7 +114,7 @@ class GMHSensor:
             self.error_code = c_rtn_code.value
             self.error_msg = self.rtncode_to_errmsg(c_rtn_code.value)
             assert self.error_code >= 0, 'GMHLIB.GMH_OpenCom() failed'
-        except AssertionError as msg:
+        except (AssertionError, ct.ArgumentError, TypeError) as msg:
             print('open_port()_except:', msg, '{} "{}"'.format(self.error_code, self.error_msg))
             pass
             print('port={}, type(port)={}'.format(self.port, type(self.port)))
