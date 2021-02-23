@@ -2,7 +2,7 @@
 """
 Created on Wed Jun 24 09:36:42 2015
 
-DEVELOPMENT VERSION
+PYTHON 3 DEVELOPMENT VERSION
 
 acquisition.py:
 Thread class that executes processing.
