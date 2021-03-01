@@ -15,7 +15,7 @@ import ctypes as ct
 gmhlibpath = 'G:\\Shared drives\\MSL - Electricity\\Ongoing\\OHM\\Temperature_PRTs\\GMHdll'
 os.environ['GMH_PATH'] = gmhlibpath
 GMHpath = os.getenv('GMH_PATH')
-print(GMHpath)
+print(f'GMHpath = {GMHpath}')
 GMHLIB = ct.windll.LoadLibrary(os.path.join(GMHpath, 'GMH3x32E'))  # (os.path.join(GMHpath, 'GMH3x32E'))
 
 # A (useful) subset of Transmit() function calls:

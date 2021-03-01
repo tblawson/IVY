@@ -18,17 +18,17 @@ Created on Fri Mar 17 13:52:15 2017
 """
 
 import os
-import visa
+import pyvisa as visa  # Deprecation warning - replace 'import visa' with: 'import pyvisa as visa'
 import logging
 import json
-import GMHstuff as GMH
+import GMHstuff.GMHstuff as GMH
 
 
 logger = logging.getLogger(__name__)
 
 """
 The following are generally-useful utility functions and code to
-ensure information about resitors and instruments are available:
+ensure information about resistors and instruments are available:
 """
 
 
@@ -61,7 +61,7 @@ INSTR_DATA = json.loads(I_str)
 
 def refresh_params(directory):
     """
-    Refreshes stat-of-knowledge of resistors and instruments.
+    Refreshes state-of-knowledge of resistors and instruments.
 
     Returns:
     RES_DATA: Dictionary of known resistance standards.
@@ -96,7 +96,8 @@ Only ONE VISA resource manager is required at any time -
 All comunications for all GPIB and RS232 instruments (except GMH)
 are handled by RM.
 """
-RM = visa.ResourceManager()
+RM = visa.ResourceManager()  # 'C:\\WINDOWS\\system32\\visa32.dll'
+print('Available visa resources:\n\t', RM.list_resources())
 
 # Switchbox
 IVBOX_CONFIGS = {'V1': '1', 'V2': '2', '1k': '3', '10k': '4', '100k': '5',
@@ -133,6 +134,7 @@ class GMHSensor(GMH.GMHSensor):
 
     def init(self):
         pass
+
 
 '''
 ###############################################################################
@@ -215,6 +217,7 @@ class Instrument(Device):
             self.is_open = 1
         except visa.VisaIOError:
             self.demo = True  # default to demo mode if can't open
+            self.instr = None
             red = (255, 0, 0)
             ROLES_WIDGETS[self.role]['lbl'].SetForegroundColour(red)
             ROLES_WIDGETS[self.role]['lbl'].Refresh()

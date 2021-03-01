@@ -986,6 +986,8 @@ __________________________________________
 ---------------------------
 '''
 DELTA = u'\N{GREEK CAPITAL LETTER DELTA}'
+PT_T_DEF_UNCERT = 0.5
+GMH_T_DEF_UNCERT = 0.5
 
 
 class CalcPage(wx.Panel):
@@ -1192,9 +1194,9 @@ class CalcPage(wx.Panel):
 
         """
         Pt sensor is a few cm away from input resistors, so assume a
-        fairly large type B Tdef of 0.1 deg C:
+        fairly large type B Tdef of 0.5 deg C:
         """
-        pt_t_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](0.1),
+        pt_t_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](PT_T_DEF_UNCERT),
                              3, label='Pt_T_def')
 
         pt_alpha = self.build_ureal(devices.RES_DATA['Pt 100r']['alpha'])
@@ -1204,9 +1206,9 @@ class CalcPage(wx.Panel):
 
         """
         GMH sensor is a few cm away from DUC which, itself, has a size of
-        several cm, so assume a fairly large type B Tdef of 0.1 deg C:
+        several cm, so assume a fairly large type B Tdef of 0.5 deg C:
         """
-        gmh_t_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](0.1),
+        gmh_t_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](GMH_T_DEF_UNCERT),
                               3, label='GMH_T_def')
 
         comment = this_run['Comment']
@@ -1535,7 +1537,7 @@ class CalcPage(wx.Panel):
             u_lg = 0
         else:
             u_lg = math.log10(u)
-        if v > u:
+        if abs(v) > u:
             return int(round(v_lg - u_lg)) + 2
         else:
             return 2
@@ -1546,10 +1548,10 @@ class CalcPage(wx.Panel):
         return runid[len(start): runid.find(end)]
 
     def get_mean_date(self):
-        '''
+        """
         Accept a list of times (as strings).
         Return a mean time (as a string).
-        '''
+        """
         time_fmt = '%d/%m/%Y %H:%M:%S'
         t_av = 0.0
         t_lst = self.run_data[self.run_ID]['Date_time']
@@ -1603,12 +1605,14 @@ class CalcPage(wx.Panel):
             nom_v = '0.5'
             nom_range = '1'
         elif abs(v) < 2.2:
-            nom_v = nom_range = '1'
+            nom_v = '1'
+            nom_range = '1'
         else:
             nom_v = nom_range = str(int(abs(round(v))))  # '1' or '10'
-        gain_param = 'Vgain_{0}r{1}'.format(nom_v, nom_range)
+        gain_param = f'Vgain_{nom_v}r{nom_range}'
         return gain_param
 
+    @staticmethod
     def R_to_T(self, alpha, beta, R, R0, T0):
         """
         Convert a resistive T-sensor reading from resistance to temperature.
