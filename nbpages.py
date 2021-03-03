@@ -1622,7 +1622,7 @@ class CalcPage(wx.Panel):
             T = GTC.result((R/R0 - 1)/alpha + T0)
         else:
             a = GTC.result(beta)
-            b = GTC.result(alpha - 2*beta*T0, True)
+            b = GTC.result(alpha - 2*beta*T0, True)  # Why is label set to True?
             c = GTC.result(1 - alpha*T0 + beta*T0**2 - (R/R0))
             T = GTC.result((-b + GTC.sqrt(b**2 - 4*a*c))/(2*a))
         return T
