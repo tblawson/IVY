@@ -1,7 +1,7 @@
 # analysis_tests.py
 
 import pytest
-import nbpages as pages
+from IVY.nbpages import nbpages as pages
 import GTC
 
 
