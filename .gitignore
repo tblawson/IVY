@@ -1,10 +1,10 @@
 *.xlsx
 *.pyc
-IVY_template.xlsx
+data/IVY_template.xlsx
 *.log
-IVY_template.xlsx
-IVY_template.xlsx
+data/IVY_template.xlsx
+data/IVY_template.xlsx
 *.xlsx
-IVY_template.xlsx
+data/IVY_template.xlsx
 *.xlsx
 *.json
