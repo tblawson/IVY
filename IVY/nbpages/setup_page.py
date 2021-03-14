@@ -296,41 +296,41 @@ class SetupPage(wx.Panel):
         self.SetSizerAndFit(gb_sizer)
 
         # Associate roles and corresponding comboboxes/test btns here:
-        devices.ROLES_WIDGETS = {'SRC': {'lbl': self.SrcLbl,
+        devices.ROLES_WIDGETS = {'SRC': {'lbl': SrcLbl,
                                          'icb': self.Sources,
                                          'acb': self.SrcAddr,
                                          'tbtn': self.STest}}
-        devices.ROLES_WIDGETS.update({'DVM12': {'lbl': self.IP_DVM_Lbl,
+        devices.ROLES_WIDGETS.update({'DVM12': {'lbl': IP_DVM_Lbl,
                                                 'icb': self.IP_Dvms,
                                                 'acb': self.IP_DvmAddr,
                                                 'tbtn': self.D12Test}})
-        devices.ROLES_WIDGETS.update({'DVM3': {'lbl': self.OP_DVM_Lbl,
+        devices.ROLES_WIDGETS.update({'DVM3': {'lbl': OP_DVM_Lbl,
                                                'icb': self.OP_Dvms,
                                                'acb': self.OP_DvmAddr,
                                                'tbtn': self.D3Test}})
-        devices.ROLES_WIDGETS.update({'DVMT': {'lbl': self.TDvmLbl,
+        devices.ROLES_WIDGETS.update({'DVMT': {'lbl': TDvmLbl,
                                                'icb': self.TDvms,
                                                'acb': self.TDvmAddr,
                                                'tbtn': self.DTTest}})
-        devices.ROLES_WIDGETS.update({'GMH': {'lbl': self.GMHLbl,
+        devices.ROLES_WIDGETS.update({'GMH': {'lbl': GMHLbl,
                                               'icb': self.GMHProbes,
                                               'acb': self.GMHPorts,
                                               'tbtn': self.GMHTest}})
-        devices.ROLES_WIDGETS.update({'GMHroom': {'lbl': self.GMHroomLbl,
+        devices.ROLES_WIDGETS.update({'GMHroom': {'lbl': GMHroomLbl,
                                                   'icb': self.GMHroomProbes,
                                                   'acb': self.GMHroomPorts,
                                                   'tbtn': self.GMHroomTest}})
-        devices.ROLES_WIDGETS.update({'IVbox': {'lbl': self.IVboxLbl,
+        devices.ROLES_WIDGETS.update({'IVbox': {'lbl': IVboxLbl,
                                                 'icb': self.IVbox,
                                                 'acb': self.IVboxAddr,
                                                 'tbtn': self.IVboxTest}})
 
-        # Create IV-box instrument once:
-        d = 'IV_box'  # Description
-        r = 'IVbox'  # Role
-        self.create_instr(d, r)
-
-        self.build_combo_choices()
+        # # Create IV-box instrument once:
+        # d = 'IV_box'  # Description
+        # r = 'IVbox'  # Role
+        # self.create_instr(d, r)
+        #
+        # self.build_combo_choices()
 
     def build_combo_choices(self):
         for d in devices.INSTR_DATA.keys():

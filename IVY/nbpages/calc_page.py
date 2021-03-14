@@ -33,7 +33,8 @@ class CalcPage(wx.Panel):
         wx.Panel.__init__(self, parent)
 
         self.version = self.GetTopLevelParent().version
-#        self.data_file = self.GetTopLevelParent().data_file
+        self.data_dir = self.GetTopLevelParent().directory
+        self.data_file = self.GetTopLevelParent().data_file
 #        self.results_file = os.path.join(os.path.dirname(self.data_file),
 #                                         'IVY_Results.json')
         self.Results = {}  # Accumulate run-analyses here
@@ -47,27 +48,27 @@ class CalcPage(wx.Panel):
         gb_sizer = wx.GridBagSizer()
 
         # Analysis set-up:
-        self.ListRuns = wx.Button(self, id=wx.ID_ANY, label='List run IDs')
-        self.ListRuns.Bind(wx.EVT_BUTTON, self.on_list_runs)
-        gb_sizer.Add(self.ListRuns, pos=(0, 0), span=(1, 1),
+        self.ListRuns_btn = wx.Button(self, id=wx.ID_ANY, label='List run IDs')
+        self.ListRuns_btn.Bind(wx.EVT_BUTTON, self.on_list_runs)
+        gb_sizer.Add(self.ListRuns_btn, pos=(0, 0), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
 
-        self.RunID = wx.ComboBox(self, id=wx.ID_ANY,
-                                 style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        self.RunID.Bind(wx.EVT_COMBOBOX, self.on_run_choice)
-        self.RunID.Bind(wx.EVT_TEXT, self.on_run_choice)
-        gb_sizer.Add(self.RunID, pos=(0, 1), span=(1, 6),
+        self.RunID_cb = wx.ComboBox(self, id=wx.ID_ANY,
+                                    style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.RunID_cb.Bind(wx.EVT_COMBOBOX, self.on_run_choice)
+        self.RunID_cb.Bind(wx.EVT_TEXT, self.on_run_choice)
+        gb_sizer.Add(self.RunID_cb, pos=(0, 1), span=(1, 6),
                      flag=wx.ALL | wx.EXPAND, border=5)
 
-        self.Analyze = wx.Button(self, id=wx.ID_ANY, label='Analyze')
-        self.Analyze.Bind(wx.EVT_BUTTON, self.on_analyze)
-        gb_sizer.Add(self.Analyze, pos=(0, 7), span=(1, 1),
+        self.Analyze_btn = wx.Button(self, id=wx.ID_ANY, label='Analyze')
+        self.Analyze_btn.Bind(wx.EVT_BUTTON, self.on_analyze)
+        gb_sizer.Add(self.Analyze_btn, pos=(0, 7), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)  #
 
         # -----------------------------------------------------------------
-        self.h_sep1 = wx.StaticLine(self, id=wx.ID_ANY, size=(720, 1),
+        h_sep1 = wx.StaticLine(self, id=wx.ID_ANY, size=(720, 1),
                                     style=wx.LI_HORIZONTAL)
-        gb_sizer.Add(self.h_sep1, pos=(1, 0), span=(1, 8),
+        gb_sizer.Add(h_sep1, pos=(1, 0), span=(1, 8),
                      flag=wx.ALL | wx.EXPAND, border=5)  #
         # -----------------------------------------------------------------
 
@@ -76,10 +77,10 @@ class CalcPage(wx.Panel):
         gb_sizer.Add(run_info_lbl, pos=(2, 0), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
 
-        self.RunInfo = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_MULTILINE |
-                                   wx.TE_READONLY | wx.HSCROLL,
-                                   size=(250, 1))
-        gb_sizer.Add(self.RunInfo, pos=(3, 0), span=(20, 2),
+        self.RunSummary_txtctrl = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_MULTILINE |
+                                                                        wx.TE_READONLY | wx.HSCROLL,
+                                              size=(250, 1))
+        gb_sizer.Add(self.RunSummary_txtctrl, pos=(3, 0), span=(20, 2),
                      flag=wx.ALL | wx.EXPAND, border=5)
 
         # Analysis results:
@@ -194,18 +195,20 @@ class CalcPage(wx.Panel):
         widget to the run ids (used as primary keys in self.run_data).
         """
         self.data_file = self.GetTopLevelParent().data_file
+        print(f'Attempting to open "{self.data_file}"')
         with open(self.data_file, 'r') as in_file:
             self.run_data = json.load(in_file)
             self.run_IDs = list(self.run_data.keys())
+            print(f'Found the following runs:\n{self.run_IDs}')
 
-        self.RunID.Clear()
-        self.RunID.AppendItems(self.run_IDs)
-        self.RunID.SetSelection(0)
+        self.RunID_cb.Clear()
+        self.RunID_cb.AppendItems(self.run_IDs)
+        self.RunID_cb.SetSelection(0)
 
     def on_run_choice(self, e):
         id = e.GetString()
         self.runstr = json.dumps(self.run_data[id], indent=4)
-        self.RunInfo.SetValue(self.runstr)
+        self.RunSummary_txtctrl.SetValue(self.runstr)
         self.PSummary.Clear()
         self.Pk.Clear()
         self.PExpU.Clear()
@@ -221,7 +224,7 @@ class CalcPage(wx.Panel):
         self.Budget.Clear()
 
     def on_analyze(self, e):
-        self.run_ID = self.RunID.GetValue()
+        self.run_ID = self.RunID_cb.GetValue()
         this_run = self.run_data[self.run_ID]
 
         logger.info('STARTING ANALYSIS...')
@@ -420,9 +423,9 @@ class CalcPage(wx.Panel):
             for n, R_raw in enumerate(this_run['Pt_DVM'][row:row+8]):
                 pt_r_cor.append(GTC.result(R_raw * (1 + dvmt_cor),
                                            label='Pt_Rcor'+str(n)))
-                t_rs.append(GTC.result(self.R_to_T(pt_alpha, pt_beta,
-                                                   pt_r_cor[n],
-                                                   pt_r0, pt_t_ref)))
+                t_rs.append(GTC.result(self.R_to_T(alpha=pt_alpha, beta=pt_beta,
+                                                   R=pt_r_cor[n],
+                                                   R0=pt_r0, T0=pt_t_ref)))
 
             av_t_rs = GTC.result(GTC.fn.mean(t_rs),
                                  label='av_T_Rs'+str(abs_nom_vout))
@@ -522,8 +525,7 @@ class CalcPage(wx.Panel):
         # <-- End of analysis loop for this run
 
         # Save analysis result
-        self.results_file = os.path.join(os.path.dirname(self.data_file),
-                                         '../../data/IVY_Results.json')
+        self.results_file = self.GetTopLevelParent().results_file
         with open(self.results_file, 'w') as results_fp:
             json.dump(self.Results, results_fp, indent=4)
 
@@ -651,7 +653,7 @@ class CalcPage(wx.Panel):
         return gain_param
 
     @staticmethod
-    def R_to_T(self, alpha, beta, R, R0, T0):
+    def R_to_T(alpha, beta, R, R0, T0):
         """
         Convert a resistive T-sensor reading from resistance to temperature.
         All arguments and return value are ureals.

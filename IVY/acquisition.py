@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jun 24 09:36:42 2015
-
 PYTHON 3 DEVELOPMENT VERSION
 
 acquisition.py:
@@ -22,8 +20,9 @@ import numpy as np
 import logging
 import json
 
-import IVY_events as evts
-import devices
+# import IVY_events as evts
+from IVY import devices, IVY_events as evts
+# import devices
 
 NREADS = 20
 TEST_V_OUT = [0.1, 1, 10]  # O/P test voltage selection
@@ -48,7 +47,7 @@ class AqnThread(Thread):
         self.PlotPage = self.RunPage.GetParent().GetPage(2)
         self.CalcPage = self.RunPage.GetParent().GetPage(3)
         self.TopLevel = self.RunPage.GetTopLevelParent()
-        self.Comment = self.RunPage.Comment.GetValue()
+        self.Comment = self.RunPage.comment.GetValue()
 
         self._want_abort = 0
 
@@ -288,8 +287,7 @@ class AqnThread(Thread):
                     if not (devices.ROLES_INSTR['DVM12'].demo and devices.ROLES_INSTR['DVM3'].demo):
                         time.sleep(30)  # 30
 
-                    stat_msg = 'Making {0:d} measurements each of {1:s} and'
-                    'V3 (V1_nom = {2:.2f} V)'.format(NREADS, node, self.v1_nom)
+                    stat_msg = f'Making {NREADS} measurements each of {node} and V3 (V1_nom = {self.v1_nom} V)'
                     print(stat_msg)
                     logger.info(stat_msg)
                     stat_ev = evts.StatusEvent(msg=stat_msg, field=1)
@@ -554,17 +552,17 @@ class AqnThread(Thread):
     def finish_run(self):
         # Run complete - leave system safe and final data-save
 
-        run_id = str(self.RunPage.run_id_txtctrl)
+        run_id = str(self.RunPage.run_id_txtctrl.GetValue())
         self.RunPage.master_run_dict.update({run_id: self.run_dict})
 
         data_file = self.TopLevel.data_file
-        correct_dir = self.TopLevel.directory
-        displayed_dir = self.SetupPage.WorkingDir.GetValue()
-        working_dir = os.path.dirname(data_file)
-        assert displayed_dir == correct_dir, 'Working Directory display error!'
-        assert working_dir == correct_dir, 'Working Directory error!'
+        # correct_dir = self.TopLevel.directory
+        # displayed_dir = self.SetupPage.WorkingDir.GetValue()
+        # working_dir = os.path.dirname(data_file)
+        # assert displayed_dir == working_dir, 'Working Directory display error!'
+        # assert working_dir == correct_dir, 'Working Directory error!'
         with open(data_file, 'w') as IVY_out:
-            msg = 'SAVING ALL RUN DATA to {:s}'.format(data_file)
+            msg = f'SAVING ALL RUN DATA to {data_file}'
             logger.info(msg)
             json.dump(self.RunPage.master_run_dict, IVY_out)
 

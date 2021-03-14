@@ -41,15 +41,19 @@ class GMHSensor:
         """
         Initiate a GMH sensor object.
 
-        :param port:
-            COM port number to which GMH device is attached (via 3100N cable)
-        :param demo:
-            Describes if this object is NOT capable of operating as a real GMH sensor (default is True) -
-            False - the COM port connecting to a real device is open AND that device is turned on and present,
-            True - the device is a combination of one or more of:
-            * not turned on OR
-            * not connected OR
-            * not associated with an open COM port.
+        :param port: COM port number to which GMH device is attached (via 3100N cable)
+
+        :param demo: Describes if this object is NOT capable of operating as a real GMH sensor (default is True)
+
+        False - the COM port connecting to a real device is open AND that device is turned on and present,
+
+        True - the device is a combination of one or more of:
+
+        * not turned on OR
+
+        * not connected OR
+
+        * not associated with an open COM port.
         """
         self.demo = demo
         self.port = port
@@ -136,6 +140,7 @@ class GMHSensor:
         Close open COM port (only one).
 
         Note that COM port could still be open even if object is in demo mode.
+
         :returns
             1 if successful, 0 if no action taken (port already closed), -1 otherwise.
         """
@@ -157,11 +162,13 @@ class GMHSensor:
         """
         A wrapper for the GMH general-purpose interrogation function GMH_Transmit().
 
-        Runs func on instrument channel chan and updates self.error_code.
+        Runs func_name on instrument channel chan and updates self.error_code.
         self.error_code is then used to update self.error_msg and self.status_msg.
+
         :argument
             chan: Measurement channel (int) of GMH device (0-99)
             func_name: Function-call name (unicode string) - see transmit_calls dict
+
         :returns
             1 for success (non-demo mode),
             -1 for GMHLIB.GMH_Transmit() failure

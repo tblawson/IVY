@@ -1,7 +1,7 @@
 # analysis_tests.py
 
 import pytest
-from IVY.nbpages import nbpages as pages
+from IVY.nbpages import calc_page as calc_p
 import GTC
 
 
@@ -26,7 +26,7 @@ def test_set_precision_neg_val(analysis_page, neg_val, unc):
 
 
 def test_set_precision_pos_val(pos_val, unc):
-    assert pages.CalcPage.set_precision(pos_val, unc) == 7
+    assert calc_p.CalcPage.set_precision(pos_val, unc) == 7
 
 
 @pytest.fixture()
@@ -36,9 +36,9 @@ def test_id():
 
 def test_get_duc_name_from_run_id(test_id):  # FAILS!
     print(type(test_id))
-    print(pages.CalcPage.get_duc_name_from_run_id(self=None, runid=test_id))
-    pages.CalcPage.version = '1.0'
-    assert pages.CalcPage.get_duc_name_from_run_id(runid=test_id) == 'CHANGE_THIS!'
+    print(calc_p.CalcPage.get_duc_name_from_run_id(self=None, runid=test_id))
+    calc_p.CalcPage.version = '1.0'
+    assert calc_p.CalcPage.get_duc_name_from_run_id(runid=test_id) == 'CHANGE_THIS!'
 
 
 @pytest.fixture()
@@ -50,7 +50,7 @@ def un_dict():
 
 
 def test_build_ureal(un_dict):
-    assert isinstance(pages.CalcPage.build_ureal(un_dict), GTC.lib.UncertainReal)
+    assert isinstance(calc_p.CalcPage.build_ureal(un_dict), GTC.lib.UncertainReal)
 
 
 @pytest.fixture()
@@ -84,13 +84,13 @@ def T0():
 
 
 def test_R_to_T_beta_zero(alpha, beta_zero, R, R0, T0):
-    T = pages.CalcPage.R_to_T(self=None, alpha=alpha, beta=beta_zero, R=R, R0=R0, T0=T0)
+    T = calc_p.CalcPage.R_to_T(self=None, alpha=alpha, beta=beta_zero, R=R, R0=R0, T0=T0)
     print(f'T={T.x}')
     assert round(T.x) == 70
 
 
 def test_R_to_T_beta_nonzero(alpha, beta_nonzero, R, R0, T0):
-    T = pages.CalcPage.R_to_T(self=None, alpha=alpha, beta=beta_nonzero, R=R, R0=R0, T0=T0)
+    T = calc_p.CalcPage.R_to_T(self=None, alpha=alpha, beta=beta_nonzero, R=R, R0=R0, T0=T0)
     print(f'T={T.x}')
     assert round(T.x) == 76
 
@@ -101,8 +101,8 @@ def lst():
 
 
 def test_add_if_unique_item_not_added(lst):
-    assert pages.CalcPage.add_if_unique('a', lst) == lst
+    assert calc_p.CalcPage.add_if_unique('a', lst) == lst
 
 
 def test_add_if_unique_item_added(lst):
-    assert pages.CalcPage.add_if_unique('d', lst) == ['a', 'b', 'c', 'd']
+    assert calc_p.CalcPage.add_if_unique('d', lst) == ['a', 'b', 'c', 'd']

@@ -88,9 +88,9 @@ class PlotPage(wx.Panel):
         msg_head = 'PlotPage.UpdatePlot(): {}'
         print(msg_head.format('len(t)={}'.format(len(e.t))))
         logger.info(msg_head.format('len(t)={}'.format(len(e.t))))
-        print(msg_head.format('{} len(V1)={}', 'len(V3)={}'.format(e.node_cb, len(e.V12), len(e.V3))))
-        logger.info(msg_head.format('{} len(V1)={}', 'len(V3)={}'.format(e.node_cb, len(e.V12), len(e.V3))))
-        if e.node_cb == 'V1':
+        print(msg_head.format('{} len(V1)={}', 'len(V3)={}'.format(e.node, len(e.V12), len(e.V3))))
+        logger.info(msg_head.format('{} len(V1)={}', 'len(V3)={}'.format(e.node, len(e.V12), len(e.V3))))
+        if e.node == 'V1':
             self.V1ax.plot_date(e.t, e.V12, 'bo')
         else:  # V2 data
             self.V2ax.plot_date(e.t, e.V12, 'go')

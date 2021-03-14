@@ -48,12 +48,12 @@ class RunPage(wx.Panel):
 
         # Comment widgets
         comment_lbl = wx.StaticText(self, id=wx.ID_ANY, label='Comment:')
-        comment = wx.TextCtrl(self, id=wx.ID_ANY, size=(600, 20))
+        self.comment = wx.TextCtrl(self, id=wx.ID_ANY, size=(600, 20))
 #        self.Comment.Bind(wx.EVT_TEXT, self.OnComment)
         comtip = 'Use this field to add remarks and observations that may not'\
                  ' be recorded automatically.'
         # self.Comment.SetToolTipString(comtip)
-        comment.SetToolTip(comtip)
+        self.comment.SetToolTip(comtip)
 
         self.new_run_id_btn = wx.Button(self, id=wx.ID_ANY,
                                         label='Create new run id')
@@ -122,7 +122,7 @@ class RunPage(wx.Panel):
         # Comment widgets
         gb_sizer.Add(comment_lbl, pos=(0, 0), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(comment, pos=(0, 1), span=(1, 5),
+        gb_sizer.Add(self.comment, pos=(0, 1), span=(1, 5),
                      flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.new_run_id_btn, pos=(1, 0), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)

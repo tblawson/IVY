@@ -7,7 +7,7 @@ Created on Mon Jul 31 12:00:00 2017
 
 @author: t.lawson
 
-IVY_main.py - Version 1.0
+IVY_main.py - Version 1.1
 
 A Python-3 version of the I-to-V TestPoint application.
 This app is intended to offer the same functionality as the original
@@ -18,16 +18,29 @@ with separate pages (tabs) dedicated to:
 * Plotting and
 * Analysis
 
-The same data input/output protocol as the original is used, i.e.
-initiation parameters are read from the same spreadsheet as the results
-are output to.
+The following file structure is assumed to be pre-existing before running
+the application and can be set by the File > Set Directory pull-down menu-item:
 
-NOTE: Because the 'Parameters' sheet of the Excel file is interogated twice -
-once for obtaining instrument control info (INSTR_DATA) and a second time to
-get calibration and uncertainty info (R_INFO and I_INFO), there is redundancy
-of information (especially for instruments). Bear in mind that data stored in
-INSTR_DATA is just plain numbers or strings, whereas R_INFO and I_INFO can
-also contain GTC.ureals.
+└─ <working directory> (defaults to the directory where IVY_main.py resides)
+
+  ├─ data
+
+  │  ├─ IVY_Instruments.json
+
+  │  └─ IVY_Resistors.json
+
+  └─ log
+
+The contents of the 'data' directory should initially consist of at least:
+
+* IVY_Instruments.json (a list of available instruments and external devices) and
+* IVY_Resistors.json (a list of resistors).
+
+'data' is also the destination for 'IVY_RunData.json' (after initial data acquisition)
+and 'IVY_Results.json' (after analysis).
+
+log files are written to the 'log' directory.
+
 """
 
 import os
@@ -37,36 +50,40 @@ import IVY.nbpages.setup_page as setup_p
 import IVY.nbpages.run_page as run_p
 import IVY.nbpages.plot_page as plot_p
 import IVY.nbpages.calc_page as calc_p
-import IVY_events as evts
-import devices
+from IVY import devices, IVY_events as evts  # import IVY_events as evts
 import time
 import datetime as dt
 import logging
 
-VERSION = "1.0"
+VERSION = "1.1"
 
 print('IVY', VERSION)
 
 # Start logging
 logname = 'IVYv'+VERSION+'_'+str(dt.date.today())+'.log'
-logfile = os.path.join(os.getcwd(), logname)
+log_dir = os.path.join(os.path.dirname(os.getcwd()), r'log')
+print(f'\nLog dir: {log_dir}\n')
+logfile = os.path.join(log_dir, logname)
+print(f'Log file: {logfile}\n')
 
 fmt = '%(asctime)s %(levelname)s %(name)s:%(funcName)s(L%(lineno)d): '\
       '%(message)s'
 datefmt = '%Y-%m-%d %H:%M:%S'
-logging.basicConfig(filename=logfile, format=fmt, datefmt=datefmt,
-                    level=logging.INFO)
-logger = logging.getLogger('IVY.main')
-logger.info('\n_____________START____________')
+# logging.basicConfig(filename=logfile, format=fmt, datefmt=datefmt,
+#                     level=logging.INFO)
+# logger = logging.getLogger(__name__)  # 'IVY/main'
+# logger.info('\n_____________START____________')
 
 
 class MainFrame(wx.Frame):
     """
-    MainFrame Definition: holds the MainPanel in which the appliction runs
+    MainFrame Definition: holds the MainPanel in which the application runs
     """
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, size=(900, 600), *args, **kwargs)
         self.data_file = ""
+        self.log_dir = ""
+        self.results_file = ""
         self.directory = os.getcwd()  # default value
         self.Center()
         self.version = VERSION
@@ -80,7 +97,8 @@ class MainFrame(wx.Frame):
         menu_bar = wx.MenuBar()
         file_menu = wx.Menu()
 
-        about = file_menu.Append(wx.ID_ABOUT, '&About', 'About HighResBridgeControl (HRBC)')
+        about = file_menu.Append(wx.ID_ABOUT, '&About',
+                                 'About IVY v1.1 (I-to-V converter calibration software)')
         self.Bind(wx.EVT_MENU, self.on_about, about)
 
         set_dir = file_menu.Append(wx.ID_OPEN, 'Set &Directory',
@@ -119,6 +137,7 @@ class MainFrame(wx.Frame):
         self.MainPanel.SetSizer(sizer)
 
     def update_status(self, e):
+        """An event handler for posting status messages to the status bar."""
         if e.field == 'b':
             self.sb.SetStatusText(e.msg, 0)
             self.sb.SetStatusText(e.msg, 1)
@@ -126,6 +145,7 @@ class MainFrame(wx.Frame):
             self.sb.SetStatusText(e.msg, e.field)
 
     def on_about(self, e):
+        """Self-evident 'about' dialog."""
         # A message dialog with 'OK' button. wx.OK is a standard wxWidgets ID.
         dlg_description = "IVY v"+VERSION+": A Python'd version of the TestPoint \
 I-to-V converter program for Light Standards."
@@ -135,22 +155,32 @@ I-to-V converter program for Light Standards."
         dlg.Destroy()  # Destroy when done.
 
     def on_set_dir(self, e):
+        """Set the working directory in which the sub-directories 'data' and 'log' can be found."""
         dlg = wx.DirDialog(self, message='Select working directory',
                            style=wx.DD_DEFAULT_STYLE | wx.DD_CHANGE_DIR)
         dlg.SetPath(os.getcwd())
         if dlg.ShowModal() == wx.ID_OK:
             self.directory = dlg.GetPath()
-            self.data_file = os.path.join(self.directory, '../data/IVY_RunData.json')
-            print(self.directory)
+            self.data_file = os.path.join(self.directory, 'data/IVY_RunData.json')
+            self.results_file = os.path.join(self.directory, 'data/IVY_Results.json')
+            print(f'Working directory: {self.directory}')
             # Get resistor and instrument data:
             devices.RES_DATA, devices.INSTR_DATA = devices.refresh_params(self.directory)
             # Ensure working directory is displayed on SetupPage:
             file_evt = evts.FilePathEvent(Dir=self.directory)
             wx.PostEvent(self.page1, file_evt)
+
+            # Create IV-box instrument once:
+            d = 'IV_box'  # Description
+            r = 'IVbox'  # Role
+            self.page1.create_instr(d, r)
+            self.page1.build_combo_choices()
+
         dlg.Destroy()
 
     @staticmethod
     def close_instr_sessions():
+        """Close all open instruments and external devices."""
         for r in devices.ROLES_INSTR.keys():
             devices.ROLES_INSTR[r].close()
             time.sleep(0.1)
@@ -158,6 +188,7 @@ I-to-V converter program for Light Standards."
         print('Main.close_instr_sessions(): closed VISA resource manager.')
 
     def on_quit(self, e):
+        """Exit IVY."""
         self.close_instr_sessions()
         time.sleep(0.1)
         print('Closing IVY...')

@@ -4,7 +4,7 @@ Created on Tue Jun 30 14:31:53 2015
 
 @author: t.lawson
 
-HighRes_events.py
+IVY_events.py
 Definitions of event types - since the GUI makes use of events to monitor
 the status of widgets (buttons, displays,etc.), use of events is a natural
 fit and guarantees a thread-safe means of passing information from the

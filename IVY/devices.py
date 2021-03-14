@@ -21,10 +21,24 @@ import os
 import pyvisa as visa  # Deprecation warning - replace 'import visa' with: 'import pyvisa as visa'
 import logging
 import json
-import GMHstuff.GMHstuff as GMH
-
+from IVY.GMHstuff import GMHstuff as GMH
 
 logger = logging.getLogger(__name__)
+
+ROLES_WIDGETS = {}
+"""Dictionary of GUI widgets keyed by role."""
+
+ROLES_INSTR = {}
+"""Dictionary of GMH_sensor or Instrument objects, keyed by role."""
+
+RES_DATA = {}
+"""Dictionary of known resistance standards."""
+
+INSTR_DATA = {}
+"""Dictionary of instrument parameter dictionaries."""
+
+RED = (255, 0, 0)
+GREEN = (0, 127, 0)
 
 """
 The following are generally-useful utility functions and code to
@@ -48,15 +62,17 @@ def strip_chars(oldstr, charlist=''):
 
 
 #  Load default resistor and instrument info:
-resistor_file = '../data/IVY_Resistors.json'
-with open(resistor_file, 'r') as resistor_fp:
-    R_str = strip_chars(resistor_fp.read(), '\t\n')
-RES_DATA = json.loads(R_str)
-
-instrument_file = '../data/IVY_Instruments.json'
-with open(instrument_file, 'r') as instrument_fp:
-    I_str = strip_chars(instrument_fp.read(), '\t\n')
-INSTR_DATA = json.loads(I_str)
+# cwd = os.getcwd()
+# par_of_cwd = os.path.dirname(cwd)
+# resistor_file = os.path.join(par_of_cwd, r'data\IVY_Resistors.json')
+# with open(resistor_file, 'r') as resistor_fp:
+#     R_str = strip_chars(resistor_fp.read(), '\t\n')
+# RES_DATA = json.loads(R_str)
+#
+# instrument_file = os.path.join(par_of_cwd, r'data\IVY_Instruments.json')
+# with open(instrument_file, 'r') as instrument_fp:
+#     I_str = strip_chars(instrument_fp.read(), '\t\n')
+# INSTR_DATA = json.loads(I_str)
 
 
 def refresh_params(directory):
@@ -64,14 +80,18 @@ def refresh_params(directory):
     Refreshes state-of-knowledge of resistors and instruments.
 
     Returns:
-    RES_DATA: Dictionary of known resistance standards.
-    INSTR_DATA: Dictionary of instrument parameter dictionaries,
-    both keyed by description.
+    res_data: Dictionary of known resistance standards.
+    instr_data: Dictionary of instrument parameter dictionaries.
+
+    Both are keyed by description and used to update global dictionaries
+    RES_DATA and INSTR_DATA.
     """
+    resistor_file = r'data\IVY_Resistors.json'
     with open(os.path.join(directory, resistor_file), 'r') as new_resistor_fp:
         resistor_str = strip_chars(new_resistor_fp.read(), '\t\n')  # Remove tabs & newlines
     res_data = json.loads(resistor_str)
 
+    instrument_file = r'data\IVY_Instruments.json'
     with open(os.path.join(directory, instrument_file), 'r') as new_instr_fp:
         instr_str = strip_chars(new_instr_fp.read(), '\t\n')
     instr_data = json.loads(instr_str)
@@ -80,20 +100,9 @@ def refresh_params(directory):
 
 
 """
-ROLES_WIDGETS: Dictionary of GUI widgets keyed by role.
-ROLES_INSTR: Dictionary of GMH_sensor or Instrument objects,
-keyed by role.
-"""
-ROLES_WIDGETS = {}
-ROLES_INSTR = {}
-
-RED = (255, 0, 0)
-GREEN = (0, 127, 0)
-
-"""
 VISA-specific stuff:
 Only ONE VISA resource manager is required at any time -
-All comunications for all GPIB and RS232 instruments (except GMH)
+Communications for all GPIB and RS232 instruments (except GMH)
 are handled by RM.
 """
 RM = visa.ResourceManager()  # 'C:\\WINDOWS\\system32\\visa32.dll'
