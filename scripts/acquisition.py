@@ -21,7 +21,7 @@ import logging
 import json
 
 # import IVY_events as evts
-from IVY import devices, IVY_events as evts
+from scripts import devices, IVY_events as evts
 # import devices
 
 NREADS = 20

@@ -1,7 +1,7 @@
 # devices_tests.py
 
 import pytest
-from IVY import devices as dev
+from scripts import devices as dev
 
 
 # Register marks:

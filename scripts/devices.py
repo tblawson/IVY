@@ -21,7 +21,7 @@ import os
 import pyvisa as visa  # Deprecation warning - replace 'import visa' with: 'import pyvisa as visa'
 import logging
 import json
-from IVY.GMHstuff import GMHstuff as GMH
+from scripts.GMHstuff import GMHstuff as GMH
 
 logger = logging.getLogger(__name__)
 

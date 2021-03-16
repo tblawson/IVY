@@ -19,7 +19,7 @@ import json
 import GTC
 import os
 
-from IVY import devices
+from scripts import devices
 
 DELTA = u'\N{GREEK CAPITAL LETTER DELTA}'
 PT_T_DEF_UNCERT = 0.5
@@ -583,7 +583,7 @@ class CalcPage(wx.Panel):
             return 2
 
     def get_duc_name_from_run_id(self, runid):
-        start = 'IVY.v{} '.format(self.version)
+        start = 'scripts.v{} '.format(self.version)
         end = ' (Gain='
         return runid[len(start): runid.find(end)]
 

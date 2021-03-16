@@ -12,7 +12,7 @@ Created on Fri Mar 5 15:44:30 2021
 
 import logging
 import wx
-from IVY import IVY_events as Evts
+from scripts import IVY_events as Evts
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt

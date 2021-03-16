@@ -1,7 +1,7 @@
 # analysis_tests.py
 
 import pytest
-from IVY.nbpages import calc_page as calc_p
+from scripts.nbpages import calc_page as calc_p
 import GTC
 
 
@@ -31,7 +31,7 @@ def test_set_precision_pos_val(pos_val, unc):
 
 @pytest.fixture()
 def test_id():
-    return 'IVY.v1.0 CHANGE_THIS! (Gain=; Rs=) 26/02/2021 09:02:43'
+    return 'scripts.v1.0 CHANGE_THIS! (Gain=; Rs=) 26/02/2021 09:02:43'
 
 
 def test_get_duc_name_from_run_id(test_id):  # FAILS!

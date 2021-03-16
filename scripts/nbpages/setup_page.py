@@ -13,7 +13,7 @@ Created on Fri Mar 5 13:38:16 2021
 import wx
 from wx.lib.masked import NumCtrl
 import logging
-from IVY import devices, IVY_events as Evts
+from scripts import devices, IVY_events as Evts
 
 logger = logging.getLogger(__name__)
 
@@ -497,7 +497,7 @@ class SetupPage(wx.Panel):
         self.Response.SetValue(str(devices.ROLES_INSTR[r].test(test)))
         self.status.SetStatusText('Testing %s with cmd %s' % (d, test), 0)
 
-    def on_IV_box_test(self):
+    def on_IV_box_test(self, e):
         # NOTE: config is the configuration description NOT the test string:
         config = devices.ROLES_WIDGETS['IVbox']['icb'].GetValue()
         test = self.IVBOX_COMBO_CHOICE[config]

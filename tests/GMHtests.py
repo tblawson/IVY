@@ -1,6 +1,6 @@
 # GMHtests.py
 
-from IVY import GMHstuff as Gmh
+from scripts import GMHstuff as Gmh
 import pytest
 
 

@@ -16,7 +16,7 @@ import logging
 import time
 import datetime as dt
 import math
-from IVY import acquisition as acq, devices, IVY_events as Evts
+from scripts import acquisition as acq, devices, IVY_events as Evts
 
 logger = logging.getLogger(__name__)
 
