@@ -1,0 +1,357 @@
+{
+	"Pt 100r":{
+		"R0_LV":{
+			"value": 100.0118,
+			"uncert": 0.001,
+			"dof": 8,
+			"label": "Pt100_R0",
+			"Reference_comment": "u and dof are guesses!"
+		},
+		"TRef_LV": {
+			"value": 0,
+			"uncert": 0.001,
+			"dof": 8,
+			"label": "Pt100_TRef_LV",
+			"Reference_comment": "u and dof are guesses!"
+		},
+		"alpha":{
+			"value": 3.91e-3,
+			"uncert": 1.0e-6,
+			"dof": 8,
+			"label": "Pt100_alpha",
+			"Reference_comment": "u and dof are guesses!"
+		},
+		"beta": {
+			"value": -5.93e-7,
+			"uncert": 1.0e-8,
+			"dof": 8,
+			"label": "Pt100_beta",
+			"Reference_comment": "u and dof are guesses!"
+		},
+		"date": "1/01/1970",
+		"T_sensor": null
+	},
+	"SR104t 10k": {
+		"R0_LV":{
+			"value": 1.0e4,
+			"uncert": 0.0,
+			"dof": "inf",
+			"label": "SR104t_R0_LV",
+			"Reference_comment": "u and dof are guesses!"
+		},
+		"TRef_LV": {
+			"value": 23,
+			"uncert": 0.0,
+			"dof": "inf",
+			"label": "SR104t_TRef_LV",
+			"Reference_comment": "u and dof are guesses!"
+		},
+		"alpha":{
+			"value": 1.0e-3,
+			"uncert": 0.0,
+			"dof": "inf",
+			"label": "SR104t_alpha",
+			"Reference_comment": "u and dof are guesses!"
+		},
+		"beta": {
+			"value": 0.0,
+			"uncert": 0.0,
+			"dof": "inf",
+			"label": "SR104t_beta",
+			"Reference_comment": "u and dof are guesses!"
+		},
+		"date": "1/01/1970",
+		"T_sensor": null
+	},
+	"SR104r 10k": {
+		"R0_LV": {
+			"value": 9999.99926,
+			"uncert": 0.00033,
+			"dof": 16,
+			"label": "SR104r_R0_LV",
+			"Reference_comment": ""
+		},
+		"TRef_LV": {
+			"value": 20,
+			"uncert": 0.0,
+			"dof": "inf",
+			"label": "SR104r_TRef_LV",
+			"Reference_comment": ""
+		},
+		"VRef_LV": {
+			"value": 5.0,
+			"uncert": 0.0,
+			"dof": "inf",
+			"label": "SR104r_VRef_LV",
+			"Reference_comment": ""
+		},
+		"R0_HV":{
+			"value": 9999.99926,
+			"uncert": 0.00033,
+			"dof": 16,
+			"label": "SR104r_R0_HV",
+			"Reference_comment": ""
+		},
+		"TRef_HV": {
+			"value": 20,
+			"uncert": 0.0,
+			"dof": "inf",
+			"label": "SR104r_TRef_HV",
+			"Reference_comment": ""
+		},
+		"VRef_HV": {
+			"value": 5.0,
+			"uncert": 0.0,
+			"dof": "inf",
+			"label": "SR104r_VRef_HV",
+			"Reference_comment": ""
+		},
+		"alpha": {
+			"value": 3.42e-7,
+			"uncert": 1.9e-8,
+			"dof": 8,
+			"label": "SR104r_alpha",
+			"Reference_comment": ""
+		},
+		"beta": {
+			"value": -2.7e-8,
+			"uncert": 5.0e-9,
+			"dof": 8,
+			"label": "SR104r_beta",
+			"Reference_comment": ""
+			},
+		"gamma": {
+			"value": 0.0,
+			"uncert": 0.0,
+			"dof": "inf",
+			"label": "SR104r_gamma",
+			"Reference_comment": ""
+		},
+		"date": "1/06/2016",
+		"T_sensor": "SR104t 10k"
+	},
+	"IV1k 1k": {
+		"R0_LV": {
+			"value": 999.9830,
+			"uncert": 0.0044,
+			"dof": 57,
+			"label": "IV1k_R0_LV",
+			"Reference_comment": "High-Res_History.xlsx"
+		},
+		"TRef_LV": {
+			"value": 20,
+			"uncert": 0.0,
+			"dof": "inf",
+			"label": "IV1k_TRef_LV",
+			"Reference_comment": "High-Res_History.xlsx"
+		},
+		"alpha": {
+			"value": -2.47e-6,
+			"uncert": 1.7e-7,
+			"dof": 36,
+			"label": "IV1k_alpha",
+			"Reference_comment": "High-Res_History.xlsx"
+		},
+		"beta": {
+			"value": 0,
+			"uncert": 0,
+			"dof": "inf",
+			"label": "IV1k_beta",
+			"Reference_comment": ""
+			},
+		"date": "13/02/2019",
+		"T_sensor": null
+	},
+	"IV10k 10k": {
+		"R0_LV": {
+			"value": 9999.83,
+			"uncert": 0.18,
+			"dof": 41,
+			"label": "IV10k_R0_LV",
+			"Reference_comment": "High-Res_History.xlsx"
+		},
+		"TRef_LV": {
+			"value": 20,
+			"uncert": 0.0,
+			"dof": "inf",
+			"label": "IV10k_TRef_LV",
+			"Reference_comment": "High-Res_History.xlsx"
+		},
+		"alpha": {
+			"value": -5.31e-6,
+			"uncert": 1.3e-6,
+			"dof": 12,
+			"label": "IV10k_alpha",
+			"Reference_comment": "High-Res_History.xlsx"
+		},
+		"beta": {
+			"value": 0,
+			"uncert": 0,
+			"dof": "inf",
+			"label": "IV10k_beta",
+			"Reference_comment": ""
+			},
+		"date": "15/02/2019",
+		"T_sensor": null
+	},
+	"IV100k 100k": {
+		"R0_LV": {
+			"value": 100001.98,
+			"uncert": 0.89,
+			"dof": 54,
+			"label": "IV100k_R0_LV",
+			"Reference_comment": "High-Res_History.xlsx"
+		},
+		"TRef_LV": {
+			"value": 20,
+			"uncert": 0.0,
+			"dof": "inf",
+			"label": "IV100k_TRef_LV",
+			"Reference_comment": "High-Res_History.xlsx"
+		},
+		"alpha": {
+			"value": -3.37e-6,
+			"uncert": 3.6e-7,
+			"dof": 23,
+			"label": "IV100k_alpha",
+			"Reference_comment": "High-Res_History.xlsx"
+		},
+		"beta": {
+			"value": 0,
+			"uncert": 0,
+			"dof": "inf",
+			"label": "IV100k_beta",
+			"Reference_comment": ""
+			},
+		"date": "15/02/2019",
+		"T_sensor": null
+	},
+	"IV1M 1M": {
+		"R0_LV": {
+			"value": 999985.5,
+			"uncert": 6.9,
+			"dof": 19,
+			"label": "IV1M_R0_LV",
+			"Reference_comment": "High-Res_History.xlsx"
+		},
+		"TRef_LV": {
+			"value": 20,
+			"uncert": 0.0,
+			"dof": "inf",
+			"label": "IV1M_TRef_LV",
+			"Reference_comment": "High-Res_History.xlsx"
+		},
+		"alpha": {
+			"value": -4.45e-6,
+			"uncert": 3.7e-7,
+			"dof": 15,
+			"label": "IV1M_alpha",
+			"Reference_comment": "High-Res_History.xlsx"
+		},
+		"beta": {
+			"value": 0,
+			"uncert": 0,
+			"dof": "inf",
+			"label": "IV1M_beta",
+			"Reference_comment": ""
+			},
+		"date": "15/02/2019",
+		"T_sensor": null
+	},
+	"IV10M 10M": {
+		"R0_LV": {
+			"value": 10001569,
+			"uncert": 19,
+			"dof": 21,
+			"label": "IV10M_R0_LV",
+			"Reference_comment": "High-Res_History.xlsx"
+		},
+		"TRef_LV": {
+			"value": 20,
+			"uncert": 0.0,
+			"dof": "inf",
+			"label": "IV10M_TRef_LV",
+			"Reference_comment": "High-Res_History.xlsx"
+		},
+		"alpha": {
+			"value": 1.3e-7,
+			"uncert": 1.5e-7,
+			"dof": 18,
+			"label": "IV10M_alpha",
+			"Reference_comment": "High-Res_History.xlsx"
+		},
+		"beta": {
+			"value": 0,
+			"uncert": 0,
+			"dof": "inf",
+			"label": "IV10M_beta",
+			"Reference_comment": ""
+			},
+		"date": "15/02/2019",
+		"T_sensor": null
+	},
+	"IV100M 100M": {
+		"R0_LV": {
+			"value": 100013143,
+			"uncert": 258,
+			"dof": 16,
+			"label": "IV100M_R0_LV",
+			"Reference_comment": "High-Res_History.xlsx"
+		},
+		"TRef_LV": {
+			"value": 20,
+			"uncert": 0.0,
+			"dof": "inf",
+			"label": "IV100M_TRef_LV",
+			"Reference_comment": "High-Res_History.xlsx"
+		},
+		"alpha": {
+			"value": 9.51e-6,
+			"uncert": 3.3e-7,
+			"dof": 12,
+			"label": "IV100M_alpha",
+			"Reference_comment": "High-Res_History.xlsx"
+		},
+		"beta": {
+			"value": 0,
+			"uncert": 0,
+			"dof": "inf",
+			"label": "IV100M_beta",
+			"Reference_comment": ""
+			},
+		"date": "15/02/2019",
+		"T_sensor": null
+	},
+	"IV1G 1G": {
+		"R0_LV": {
+			"value": 1000124415,
+			"uncert": 13458,
+			"dof": 26,
+			"label": "IV1G_R0_LV",
+			"Reference_comment": "High-Res_History.xlsx"
+		},
+		"TRef_LV": {
+			"value": 20,
+			"uncert": 0.0,
+			"dof": "inf",
+			"label": "IV1G_TRef_LV",
+			"Reference_comment": "High-Res_History.xlsx"
+		},
+		"alpha": {
+			"value": 1.13e-5,
+			"uncert": 1.4e-6,
+			"dof": 20,
+			"label": "IV1G_alpha",
+			"Reference_comment": "High-Res_History.xlsx"
+		},
+		"beta": {
+			"value": 0,
+			"uncert": 0,
+			"dof": "inf",
+			"label": "IV1G_beta",
+			"Reference_comment": ""
+			},
+		"date": "15/02/2019",
+		"T_sensor": null
+	}
+}
