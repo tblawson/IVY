@@ -264,7 +264,7 @@ class AqnThread(Thread):
                         self.abort_run()
                         return
                     if not devices.ROLES_INSTR['SRC'].demo:
-                        time.sleep(30)  # wait after applying V and OPER mode.
+                        time.sleep(180)  # wait after applying V and OPER mode.
 
                     # Prepare DVMs...
                     stat_ev = evts.StatusEvent(msg='Preparing DVMs...',

@@ -38,7 +38,7 @@ The contents of the 'data' directory should initially consist of at least:
 * IVY_Instruments.json (a list of available instruments and external devices) and
 * IVY_Resistors.json (a list of resistors).
 
-Example json files can be found in `<project root-directory>\IVY\scripts\data\`.
+Example json files can be found in `<project root-directory>\IVY\data\`.
 
 `data` is also the destination for `IVY_RunData.json` (after initial data acquisition)
 and `IVY_Results.json` (after analysis).
