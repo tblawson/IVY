@@ -55,6 +55,7 @@ class RunPage(wx.Panel):
         # self.Comment.SetToolTipString(comtip)
         self.comment.SetToolTip(comtip)
 
+        run_id_lbl = wx.StaticText(self, id=wx.ID_ANY, label='Run ID:')
         self.new_run_id_btn = wx.Button(self, id=wx.ID_ANY,
                                         label='Create new run id')
         idcomtip = 'Create new id to uniquely identify this set of '\
@@ -77,7 +78,7 @@ class RunPage(wx.Panel):
                                  style=wx.CB_DROPDOWN)
         self.Rs_cb.Bind(wx.EVT_COMBOBOX, self.on_Rs)
         settle_del_lbl = wx.StaticText(self, id=wx.ID_ANY, label='Settle delay:')
-        self.settle_del_spinctrl = wx.SpinCtrl(self, id=wx.ID_ANY, value='0',
+        self.settle_del_spinctrl = wx.SpinCtrl(self, id=wx.ID_ANY, value='1800',
                                                min=0, max=3600)
         src_lbl = wx.StaticText(self, id=wx.ID_ANY, style=wx.ALIGN_LEFT,
                                 label='V1 Setting:')
@@ -124,7 +125,9 @@ class RunPage(wx.Panel):
                      flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.comment, pos=(0, 1), span=(1, 5),
                      flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(self.new_run_id_btn, pos=(1, 0), span=(1, 1),
+        gb_sizer.Add(run_id_lbl, pos=(1, 0), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.new_run_id_btn, pos=(3, 5), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.run_id_txtctrl, pos=(1, 1), span=(1, 5),
                      flag=wx.ALL | wx.EXPAND, border=5)
@@ -283,7 +286,7 @@ class RunPage(wx.Panel):
         self.status.SetStatusText('Starting run', 0)
         if self.RunThread is None:
             self.stop_btn.Enable(True)  # Enable Stop button
-            self.stop_btn.Enable(False)  # Disable Start button
+            self.start_btn.Enable(False)  # Disable Start button
             # start acquisition thread here
             self.RunThread = acq.AqnThread(self)
 
