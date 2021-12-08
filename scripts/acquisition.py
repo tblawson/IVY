@@ -546,6 +546,10 @@ class AqnThread(Thread):
 
         self.RunPage.start_btn.Enable(True)
         self.RunPage.stop_btn.Enable(False)
+        stat_ev = evts.StatusEvent(msg='RUN ABORTED', field=0)
+        wx.PostEvent(self.TopLevel, stat_ev)
+        stat_ev = evts.StatusEvent(msg='', field=1)
+        wx.PostEvent(self.TopLevel, stat_ev)
         print('\nRun aborted.')
         logger.info('Run aborted.')
 
