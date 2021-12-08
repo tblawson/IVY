@@ -177,7 +177,7 @@ class SetupPage(wx.Panel):
         self.VisaList.Bind(wx.EVT_BUTTON, self.on_visa_list)
         self.ResList = wx.TextCtrl(self, id=wx.ID_ANY,
                                    value='Available Visa resources',
-                                   style=wx.TE_READONLY | wx.TE_MULTILINE)
+                                   style=wx.TE_READONLY | wx.TE_MULTILINE)  # | wx.TE_MULTILINE
 
         self.STest = wx.Button(self, id=wx.ID_ANY, label='Test')
         self.STest.Bind(wx.EVT_BUTTON, self.on_test)
@@ -280,17 +280,17 @@ class SetupPage(wx.Panel):
         gb_sizer.Add(self.IVboxTest, pos=(6, 3), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
 
-        gb_sizer.Add(response_lbl, pos=(3, 4), span=(1, 1),
+        gb_sizer.Add(response_lbl, pos=(4, 4), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(self.Response, pos=(4, 4), span=(1, 3),
+        gb_sizer.Add(self.Response, pos=(5, 4), span=(1, 3),
                      flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.VisaList, pos=(0, 5), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(self.ResList, pos=(0, 4), span=(3, 1),
+        gb_sizer.Add(self.ResList, pos=(0, 4), span=(4, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
 
         # Autopopulate btn
-        gb_sizer.Add(self.AutoPop, pos=(2, 5), span=(1, 1),
+        gb_sizer.Add(self.AutoPop, pos=(1, 5), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
 
         self.SetSizerAndFit(gb_sizer)
