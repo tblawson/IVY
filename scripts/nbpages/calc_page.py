@@ -218,6 +218,7 @@ class CalcPage(wx.Panel):
         self.TGMHSummary.Clear()
         self.TGMHk.Clear()
         self.TGMHExpU.Clear()
+        self.NomVout.Clear()  # Added recently.
         self.IinSummary.Clear()
         self.Iink.Clear()
         self.IinExpU.Clear()
