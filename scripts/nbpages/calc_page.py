@@ -24,6 +24,7 @@ from scripts import devices
 DELTA = u'\N{GREEK CAPITAL LETTER DELTA}'
 PT_T_DEF_UNCERT = 0.5
 GMH_T_DEF_UNCERT = 0.5
+DUC_T_DEF_UNCERT = 1
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +45,15 @@ class CalcPage(wx.Panel):
                          'IV100k 100k', 'IV1M 1M', 'IV10M 10M',
                          'IV100M 100M', 'IV1G 1G']
         self.Rs_VAL_NAME = dict(zip(self.Rs_VALUES, self.Rs_NAMES))
+
+        # Typical Tco for Rf at each decade of resistance:
+        self.Rf_VAL_ALPHA = {1000: 0.3e-6,
+                             1e4: 1e-6,
+                             1e5: 2e-6,
+                             1e6: 2e-6,
+                             1e7: 5e-6,
+                             1e8: 5e-6,
+                             1e9: 5e-6}
 
         gb_sizer = wx.GridBagSizer()
 
@@ -405,13 +415,34 @@ class CalcPage(wx.Panel):
             for g in gains:
                 print('{} +/- {}, dof={}'.format(g.x, g.u, g.df))
 
-            # Offset-adjustment
+            # Offset-adjustment and DUC correction
+            """
+            The gain of the I-V converter is directly proportional to the
+            feedback resistor, Rf, which (over a limited range) is proportional
+            to the operating temperature, via Rf's temperature coefficient. A typical
+            Tco is assumed for each DUC gain setting, based on manufacturer's specs for
+            a each nominal decade value.
+            
+            A type-B temperature uncertainty of +/- 1 deg C is included
+            to account for the difference between calibration and operating
+            temperatures."""
+
+            duc_T_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](DUC_T_DEF_UNCERT),
+                                  3, label='DUC_T_def')
+            Vin = this_run['IP_V'][2]
+            Vout = this_run['Nom_Vout'][2]
+            Rf_val = abs(this_run['Rs']*(Vout/Vin))
+            Rf_nom_val = 10**(round(math.log10(Rf_val)))  # Round Rf to nearest decade
+            alpha_Rf = 0  # Need to derive this from specs and Rf nom value - stored in Resistors.json?
+
+            V3_T_cor = duc_T_def*alpha_Rf
+
             v1_pos = GTC.result(v1s[2] - (v1s[0] + v1s[3]) / 2)
             v1_neg = GTC.result(v1s[1] - (v1s[0] + v1s[3]) / 2)
             v2_pos = GTC.result(v2s[2] - (v2s[0] + v2s[3]) / 2)
             v2_neg = GTC.result(v2s[1] - (v2s[0] + v2s[3]) / 2)
-            v3_pos = GTC.result(v3s[2] - (v3s[0] + v3s[3]) / 2)
-            v3_neg = GTC.result(v3s[1] - (v3s[0] + v3s[3]) / 2)
+            v3_pos = GTC.result(v3s[2] - (v3s[0] + v3s[3]) / 2)*(1 + V3_T_cor)
+            v3_neg = GTC.result(v3s[1] - (v3s[0] + v3s[3]) / 2)*(1 + V3_T_cor)
 
             # V-drop across Rs
             v_rs_pos = GTC.result(v1_pos - v2_pos)
