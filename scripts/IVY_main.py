@@ -115,7 +115,7 @@ import logging
 
 VERSION = "1.1"
 
-print('scripts', VERSION)
+print('IVY', VERSION)
 
 # Start logging
 logname = 'IVYv'+VERSION+'_'+str(dt.date.today())+'.log'
@@ -205,9 +205,9 @@ class MainFrame(wx.Frame):
     def on_about(self, e):
         """Self-evident 'about' dialog."""
         # A message dialog with 'OK' button. wx.OK is a standard wxWidgets ID.
-        dlg_description = "scripts v"+VERSION+": A Python'd version of the TestPoint \
+        dlg_description = "IVY v"+VERSION+": A Python'd version of the TestPoint \
 I-to-V converter program for Light Standards."
-        dlg_title = "About scripts"
+        dlg_title = "About IVY"
         dlg = wx.MessageDialog(self, dlg_description, dlg_title, wx.OK)
         dlg.ShowModal()  # Show dialog.
         dlg.Destroy()  # Destroy when done.
@@ -246,7 +246,7 @@ I-to-V converter program for Light Standards."
         print('Main.close_instr_sessions(): closed VISA resource manager.')
 
     def on_quit(self, e):
-        """Exit scripts."""
+        """Exit IVY."""
         self.close_instr_sessions()
         time.sleep(0.1)
         print('Closing scripts...')
@@ -273,7 +273,7 @@ class MainApp(wx.App):
         frame = MainFrame(None, wx.ID_ANY)  # was self.frame...
         frame.Show(True)  # was self.frame...
         self.SetTopWindow(frame)  # was ...(self.frame)
-        frame.SetTitle("scripts v"+VERSION)  # was self.frame...
+        frame.SetTitle("IVY v"+VERSION)  # was self.frame...
         return True
 
 
