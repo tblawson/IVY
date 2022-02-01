@@ -140,17 +140,17 @@
 		},
 		"TRef_LV": {
 			"value": 20,
-			"uncert": 0.0,
+			"uncert": 0.01,
 			"dof": "inf",
 			"label": "IV1k_TRef_LV",
 			"Reference_comment": "High-Res_History.xlsx"
 		},
 		"alpha": {
-			"value": -2.47e-6,
-			"uncert": 1.7e-7,
+			"value": 0,
+			"uncert": 0.15e-6,
 			"dof": 36,
 			"label": "IV1k_alpha",
-			"Reference_comment": "High-Res_History.xlsx"
+			"Reference_comment": "Manf. spec/2"
 		},
 		"beta": {
 			"value": 0,
@@ -172,17 +172,17 @@
 		},
 		"TRef_LV": {
 			"value": 20,
-			"uncert": 0.0,
+			"uncert": 0.01,
 			"dof": "inf",
 			"label": "IV10k_TRef_LV",
 			"Reference_comment": "High-Res_History.xlsx"
 		},
 		"alpha": {
-			"value": -5.31e-6,
-			"uncert": 1.3e-6,
+			"value": 0,
+			"uncert": 0.5e-6,
 			"dof": 12,
 			"label": "IV10k_alpha",
-			"Reference_comment": "High-Res_History.xlsx"
+			"Reference_comment": "Manf. spec/2"
 		},
 		"beta": {
 			"value": 0,
@@ -204,17 +204,17 @@
 		},
 		"TRef_LV": {
 			"value": 20,
-			"uncert": 0.0,
+			"uncert": 0.01,
 			"dof": "inf",
 			"label": "IV100k_TRef_LV",
 			"Reference_comment": "High-Res_History.xlsx"
 		},
 		"alpha": {
-			"value": -3.37e-6,
-			"uncert": 3.6e-7,
+			"value": -0,
+			"uncert": 1e-6,
 			"dof": 23,
 			"label": "IV100k_alpha",
-			"Reference_comment": "High-Res_History.xlsx"
+			"Reference_comment": "Manf. spec/2"
 		},
 		"beta": {
 			"value": 0,
@@ -236,17 +236,17 @@
 		},
 		"TRef_LV": {
 			"value": 20,
-			"uncert": 0.0,
+			"uncert": 0.01,
 			"dof": "inf",
 			"label": "IV1M_TRef_LV",
 			"Reference_comment": "High-Res_History.xlsx"
 		},
 		"alpha": {
-			"value": -4.45e-6,
-			"uncert": 3.7e-7,
+			"value": 0,
+			"uncert": 1e-6,
 			"dof": 15,
 			"label": "IV1M_alpha",
-			"Reference_comment": "High-Res_History.xlsx"
+			"Reference_comment": "Manf. spec/2"
 		},
 		"beta": {
 			"value": 0,
@@ -268,17 +268,17 @@
 		},
 		"TRef_LV": {
 			"value": 20,
-			"uncert": 0.0,
+			"uncert": 0.01,
 			"dof": "inf",
 			"label": "IV10M_TRef_LV",
 			"Reference_comment": "High-Res_History.xlsx"
 		},
 		"alpha": {
-			"value": 1.3e-7,
-			"uncert": 1.5e-7,
+			"value": 0,
+			"uncert": 2.5e-6,
 			"dof": 18,
 			"label": "IV10M_alpha",
-			"Reference_comment": "High-Res_History.xlsx"
+			"Reference_comment": "Manf. spec/2"
 		},
 		"beta": {
 			"value": 0,
@@ -300,17 +300,17 @@
 		},
 		"TRef_LV": {
 			"value": 20,
-			"uncert": 0.0,
+			"uncert": 0.01,
 			"dof": "inf",
 			"label": "IV100M_TRef_LV",
 			"Reference_comment": "High-Res_History.xlsx"
 		},
 		"alpha": {
-			"value": 9.51e-6,
-			"uncert": 3.3e-7,
+			"value": 0,
+			"uncert": 2.5e-6,
 			"dof": 12,
 			"label": "IV100M_alpha",
-			"Reference_comment": "High-Res_History.xlsx"
+			"Reference_comment": "Manf. spec/2"
 		},
 		"beta": {
 			"value": 0,
@@ -332,17 +332,17 @@
 		},
 		"TRef_LV": {
 			"value": 20,
-			"uncert": 0.0,
+			"uncert": 0.01,
 			"dof": "inf",
 			"label": "IV1G_TRef_LV",
 			"Reference_comment": "High-Res_History.xlsx"
 		},
 		"alpha": {
-			"value": 1.13e-5,
-			"uncert": 1.4e-6,
+			"value": 0,
+			"uncert": 2.5e-6,
 			"dof": 20,
 			"label": "IV1G_alpha",
-			"Reference_comment": "High-Res_History.xlsx"
+			"Reference_comment": "Manf. spec/2"
 		},
 		"beta": {
 			"value": 0,
@@ -353,5 +353,853 @@
 			},
 		"date": "15/02/2019",
 		"T_sensor": null
+	},
+	"Rf_1k": {
+		"PA1039-09": {
+			"alpha": {
+				"value": 0,
+				"uncert": 1.25e-6,
+				"dof": 8,
+				"label": "PA1039-09_1k_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1039-09_1k_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1039-01": {
+			"alpha": {
+				"value": 0,
+				"uncert": 1.25e-6,
+				"dof": 8,
+				"label": "PA1039-01_1k_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1039-01_1k_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1039-02": {
+			"alpha": {
+				"value": 0,
+				"uncert": 1.25e-6,
+				"dof": 8,
+				"label": "PA1039-02_1k_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1039-02_1k_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1039-03": {
+			"alpha": {
+				"value": 0,
+				"uncert": 1.25e-6,
+				"dof": 8,
+				"label": "PA1039-03_1k_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1039-03_1k_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		}
+	},
+	"Rf_10k": {
+		"PA1039-09": {
+			"alpha": {
+				"value": 0,
+				"uncert": 1.25e-6,
+				"dof": 8,
+				"label": "PA1039-09_10k_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1039-09_10k_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1039-01": {
+			"alpha": {
+				"value": 0,
+				"uncert": 1.25e-6,
+				"dof": 8,
+				"label": "PA1039-01_10k_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1039-01_10k_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1039-02": {
+			"alpha": {
+				"value": 0,
+				"uncert": 1.25e-6,
+				"dof": 8,
+				"label": "PA1039-02_10k_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1039-02_10k_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1039-03": {
+			"alpha": {
+				"value": 0,
+				"uncert": 1.25e-6,
+				"dof": 8,
+				"label": "PA1039-03_10k_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1039-03_10k_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1048-01": {
+			"alpha": {
+				"value": 0,
+				"uncert": 1.25e-6,
+				"dof": 8,
+				"label": "PA1048-01_10k_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1048-01_10k_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1048-02": {
+			"alpha": {
+				"value": 0,
+				"uncert": 1.25e-6,
+				"dof": 8,
+				"label": "PA1048-02_10k_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1048-02_10k_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1048-03": {
+			"alpha": {
+				"value": 0,
+				"uncert": 1.25e-6,
+				"dof": 8,
+				"label": "PA1048-03_10k_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1048-03_10k_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		}
+	},
+	"Rf_100k": {
+		"PA1039-09": {
+			"alpha": {
+				"value": 0,
+				"uncert": 1.25e-6,
+				"dof": 8,
+				"label": "PA1039-09_100k_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1039-09_100k_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1039-01": {
+			"alpha": {
+				"value": 0,
+				"uncert": 1.25e-6,
+				"dof": 8,
+				"label": "PA1039-01_100k_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1039-01_100k_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1039-02": {
+			"alpha": {
+				"value": 0,
+				"uncert": 1.25e-6,
+				"dof": 8,
+				"label": "PA1039-02_100k_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1039-02_100k_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1039-03": {
+			"alpha": {
+				"value": 1.25e-6,
+				"uncert": 1.25e-6,
+				"dof": 8,
+				"label": "PA1039-03_100k_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1039-03_100k_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1048-01": {
+			"alpha": {
+				"value": 0,
+				"uncert": 1.25e-6,
+				"dof": 8,
+				"label": "PA1048-01_100k_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1048-01_100k_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1048-02": {
+			"alpha": {
+				"value": 0,
+				"uncert": 1.25e-6,
+				"dof": 8,
+				"label": "PA1048-02_100k_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1048-02_100k_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1048-03": {
+			"alpha": {
+				"value": 0,
+				"uncert": 1.25e-6,
+				"dof": 8,
+				"label": "PA1048-03_100k_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1048-03_100k_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"SN1058": {
+			"alpha": {
+				"value": 0,
+				"uncert": 1.25e-6,
+				"dof": 8,
+				"label": "SN1058_100k_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "SN1058_100k_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		}
+	},
+	"Rf_1M": {
+		"PA1039-09": {
+			"alpha": {
+				"value": 0,
+				"uncert": 0.75e-6,
+				"dof": 8,
+				"label": "PA1039-09_1M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1039-09_1M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1039-01": {
+			"alpha": {
+				"value": 0,
+				"uncert": 0.75e-6,
+				"dof": 8,
+				"label": "PA1039-01_1M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1039-01_1M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1039-02": {
+			"alpha": {
+				"value": 0,
+				"uncert": 0.75e-6,
+				"dof": 8,
+				"label": "PA1039-02_1M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1039-02_1M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1039-03": {
+			"alpha": {
+				"value": 0,
+				"uncert": 0.75e-6,
+				"dof": 8,
+				"label": "PA1039-03_1M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1039-03_1M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1048-01": {
+			"alpha": {
+				"value": 0,
+				"uncert": 0.75e-6,
+				"dof": 8,
+				"label": "PA1048-01_1M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1048-01_1M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1048-02": {
+			"alpha": {
+				"value": 0,
+				"uncert": 0.75e-6,
+				"dof": 8,
+				"label": "PA1048-02_1M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1048-02_1M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1048-03": {
+			"alpha": {
+				"value": 0,
+				"uncert": 0.75e-6,
+				"dof": 8,
+				"label": "PA1048-03_1M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "PA1048-03_1M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"SN1069": {
+			"alpha": {
+				"value": 0,
+				"uncert": 1.25e-6,
+				"dof": 8,
+				"label": "SN1069_1M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "SN1069_1M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"SN1058": {
+			"alpha": {
+				"value": 0,
+				"uncert": 0.75e-6,
+				"dof": 8,
+				"label": "SN1058_1M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 0.5e-6,
+				"dof": 8,
+				"label": "SN1058_1M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		}
+	},
+	"Rf_10M": {
+		"PA1039-09": {
+			"alpha": {
+				"value": 0,
+				"uncert": 7.5e-6,
+				"dof": 8,
+				"label": "PA1039-09_10M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "PA1039-09_10M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1039-01": {
+			"alpha": {
+				"value": 0,
+				"uncert": 7.5e-6,
+				"dof": 8,
+				"label": "PA1039-01_10M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "PA1039-01_10M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1039-02": {
+			"alpha": {
+				"value": 0,
+				"uncert": 7.5e-6,
+				"dof": 8,
+				"label": "PA1039-02_10M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "PA1039-02_10M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1039-03": {
+			"alpha": {
+				"value": 0,
+				"uncert": 7.5e-6,
+				"dof": 8,
+				"label": "PA1039-03_10M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "PA1039-03_10M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1048-01": {
+			"alpha": {
+				"value": 0,
+				"uncert": 2.5e-6,
+				"dof": 8,
+				"label": "PA1048-01_10M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "PA1048-01_10M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1048-02": {
+			"alpha": {
+				"value": 0,
+				"uncert": 2.5e-6,
+				"dof": 8,
+				"label": "PA1048-02_10M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "PA1048-02_10M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1048-03": {
+			"alpha": {
+				"value": 0,
+				"uncert": 2.5e-6,
+				"dof": 8,
+				"label": "PA1048-03_10M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "PA1048-03_10M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"SN1069": {
+			"alpha": {
+				"value": 0,
+				"uncert": 1.5e-6,
+				"dof": 8,
+				"label": "SN1069_10M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "SN1069_10M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"SN1058": {
+			"alpha": {
+				"value": 0,
+				"uncert": 2.5e-6,
+				"dof": 8,
+				"label": "SN1058_10M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "SN1058_10M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		}
+	},
+	"Rf_100M": {
+		"PA1039-09": {
+			"alpha": {
+				"value": 0,
+				"uncert": 7.5e-6,
+				"dof": 8,
+				"label": "PA1039-09_100M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "PA1039-09_100M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1039-01": {
+			"alpha": {
+				"value": 0,
+				"uncert": 7.5e-6,
+				"dof": 8,
+				"label": "PA1039-01_100M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "PA1039-01_100M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1039-02": {
+			"alpha": {
+				"value": 0,
+				"uncert": 7.5e-6,
+				"dof": 8,
+				"label": "PA1039-02_100M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "PA1039-02_100M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1039-03": {
+			"alpha": {
+				"value": 0,
+				"uncert": 7.5e-6,
+				"dof": 8,
+				"label": "PA1039-03_100M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "PA1039-03_100M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1048-01": {
+			"alpha": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "PA1048-01_100M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "PA1048-01_100M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1048-02": {
+			"alpha": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "PA1048-02_100M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "PA1048-02_100M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1048-03": {
+			"alpha": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "PA1048-03_100M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "PA1048-03_100M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"SN1069": {
+			"alpha": {
+				"value": 0,
+				"uncert": 2.5e-6,
+				"dof": 8,
+				"label": "SN1069_100M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "SN1069_100M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"SN1058": {
+			"alpha": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "SN1058_100M_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "SN1058_100M_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		}
+	},
+	"Rf_1G": {
+		"PA1039-09": {
+			"alpha": {
+				"value": 0,
+				"uncert": 40e-6,
+				"dof": 8,
+				"label": "PA1039-09_1G_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 10e-6,
+				"dof": 8,
+				"label": "PA1039-09_1G_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1039-01": {
+			"alpha": {
+				"value": 0,
+				"uncert": 40e-6,
+				"dof": 8,
+				"label": "PA1039-01_1G_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 10e-6,
+				"dof": 8,
+				"label": "PA1039-01_1G_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1039-02": {
+			"alpha": {
+				"value": 0,
+				"uncert": 40e-6,
+				"dof": 8,
+				"label": "PA1039-02_1G_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 10e-6,
+				"dof": 8,
+				"label": "PA1039-02_1G_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"PA1039-03": {
+			"alpha": {
+				"value": 0,
+				"uncert": 40e-6,
+				"dof": 8,
+				"label": "PA1039-03_1G_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 10e-6,
+				"dof": 8,
+				"label": "PA1039-03_1G_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		},
+		"SN1069": {
+			"alpha": {
+				"value": 0,
+				"uncert": 40e-6,
+				"dof": 8,
+				"label": "SN1069_1G_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 10e-6,
+				"dof": 8,
+				"label": "SN1069_1G_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		}
+	},
+	"Rf_10G": {
+		"PH1048-02": {
+			"alpha": {
+				"value": 0,
+				"uncert": 25e-6,
+				"dof": 8,
+				"label": "PH1048-02_10G_alpha",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			},
+			"stab": {
+				"value": 0,
+				"uncert": 5e-6,
+				"dof": 8,
+				"label": "PH1048-02_10G_stab",
+				"Reference_comment": ".../Commercial/Working/IV Converters for Light/2016 Reports/Final report/Last_single-range_unit Laurie checking.xlsx"
+			}
+		}
 	}
 }
