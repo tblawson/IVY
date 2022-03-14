@@ -11,6 +11,8 @@ Created on Fri Mar 5 16:03:30 2021
 """
 
 import logging
+
+import GTC.function
 import wx
 import time
 import datetime as dt
@@ -46,14 +48,15 @@ class CalcPage(wx.Panel):
                          'IV100M 100M', 'IV1G 1G']
         self.Rs_VAL_NAME = dict(zip(self.Rs_VALUES, self.Rs_NAMES))
 
-        # Typical Tco for Rf at each decade of resistance:
-        self.Rf_VAL_ALPHA = {1000: 0.3e-6,
-                             1e4: 1e-6,
-                             1e5: 2e-6,
-                             1e6: 2e-6,
-                             1e7: 5e-6,
-                             1e8: 5e-6,
-                             1e9: 5e-6}
+        # Rf name at each resistance decade:
+        self.Rf_VAL_NAME = {1000: 'Rf_1k',
+                             1e4: 'Rf_10k',
+                             1e5: 'Rf_100k',
+                             1e6: 'Rf_1M',
+                             1e7: 'Rf_10M',
+                             1e8: 'Rf_100M',
+                             1e9: 'Rf_1G',
+                            1e10: 'Rf_10G'}
 
         gb_sizer = wx.GridBagSizer()
 
@@ -351,7 +354,7 @@ class CalcPage(wx.Panel):
         self.TGMHk.SetValue('{0:.1f}'.format(t_gmh_k))
         self.TGMHExpU.SetValue('{0:.2f}'.format(t_gmh_eu))
 
-        influencies = []
+        influences = []
         v1s = []
         v2s = []
         v3s = []
@@ -408,20 +411,23 @@ class CalcPage(wx.Panel):
                 v3_raw = GTC.ureal(v3_v, v3_u, v3_dof, label=v3_label)
                 v3s.append(GTC.result(v3_raw/gain))
 
-                influencies.extend([v1_raw, v2_raw, v3_raw])
+                influences.extend([v1_raw, v2_raw, v3_raw])
 
-            influencies.extend(gains)  # List of unique gain corrections.
+            influences.extend(gains)  # List of unique gain corrections.
             print('list of gains:')
             for g in gains:
                 print('{} +/- {}, dof={}'.format(g.x, g.u, g.df))
 
-            # Offset-adjustment and DUC correction
+            # Offset-adjustment and DUC correction (due to Rf)
             """
             The gain of the I-V converter is directly proportional to the
             feedback resistor, Rf, which (over a limited range) is proportional
-            to the operating temperature, via Rf's temperature coefficient. A typical
-            Tco is assumed for each DUC gain setting, based on manufacturer's specs for
-            a each nominal decade value.
+            to the operating temperature, via Rf's temperature coefficient and is
+            also subject to a possible drift in value.
+            
+            A Tco and 1-yr stability figure is obtained for each DUC gain setting,
+            based on manufacturer's specs. (This info, for each gain setting of each I-to-V
+            converter is stored in IVY_Resistors.json.)
             
             A type-B temperature uncertainty of +/- 1 deg C is included
             to account for the difference between calibration and operating
@@ -429,20 +435,26 @@ class CalcPage(wx.Panel):
 
             duc_T_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](DUC_T_DEF_UNCERT),
                                   3, label='DUC_T_def')
-            Vin = this_run['IP_V'][2]
+            Vin = this_run['IP_V']['val'][2]  # Typical value of input voltage.
             Vout = this_run['Nom_Vout'][2]
             Rf_val = abs(this_run['Rs']*(Vout/Vin))
             Rf_nom_val = 10**(round(math.log10(Rf_val)))  # Round Rf to nearest decade
-            alpha_Rf = 0  # Need to derive this from specs and Rf nom value - stored in Resistors.json?
+            Rf_name = self.Rf_VAL_NAME[Rf_nom_val]
 
-            V3_T_cor = duc_T_def*alpha_Rf
+            # Get Rf alpha and 1-yr stability from resistor data (as GTC.ureals):
+            alpha_Rf = self.build_ureal(devices.RES_DATA[Rf_name][duc_name]['alpha'])
+            Rf_stability = self.build_ureal(devices.RES_DATA[Rf_name][duc_name]['stab'])
+            # We also have access to >> duc_gain [A/V]<<.
+            DUC_cor = GTC.function.mul2(duc_T_def, alpha_Rf) + Rf_stability  # Multiplying two 0-valued ureals here!
+
+            influences.extend([alpha_Rf, Rf_stability])
 
             v1_pos = GTC.result(v1s[2] - (v1s[0] + v1s[3]) / 2)
             v1_neg = GTC.result(v1s[1] - (v1s[0] + v1s[3]) / 2)
             v2_pos = GTC.result(v2s[2] - (v2s[0] + v2s[3]) / 2)
             v2_neg = GTC.result(v2s[1] - (v2s[0] + v2s[3]) / 2)
-            v3_pos = GTC.result(v3s[2] - (v3s[0] + v3s[3]) / 2)*(1 + V3_T_cor)
-            v3_neg = GTC.result(v3s[1] - (v3s[0] + v3s[3]) / 2)*(1 + V3_T_cor)
+            v3_pos = GTC.result(v3s[2] - (v3s[0] + v3s[3]) / 2)*(1 + DUC_cor)
+            v3_neg = GTC.result(v3s[1] - (v3s[0] + v3s[3]) / 2)*(1 + DUC_cor)
 
             # V-drop across Rs
             v_rs_pos = GTC.result(v1_pos - v2_pos)
@@ -461,15 +473,15 @@ class CalcPage(wx.Panel):
 
             av_t_rs = GTC.result(GTC.fn.mean(t_rs),
                                  label='av_T_Rs'+str(abs_nom_vout))
-            influencies.extend(pt_r_cor)
-            influencies.extend([pt_alpha, pt_beta, pt_r0, pt_t_ref,
+            influences.extend(pt_r_cor)
+            influences.extend([pt_alpha, pt_beta, pt_r0, pt_t_ref,
                                 dvmt_cor, pt_t_def])  # av_T_Rs
-            assert pt_alpha in influencies, 'Influencies missing Pt_alpha!'
-            assert pt_beta in influencies, 'Influencies missing Pt_beta!'
-            assert pt_r0 in influencies, 'Influencies missing Pt_R0!'
-            assert pt_t_ref in influencies, 'Influencies missing Pt_TRef!'
-            assert dvmt_cor in influencies, 'Influencies missing DVMT_cor!'
-            assert pt_t_def in influencies, 'Influencies missing Pt_T_def!'
+            assert pt_alpha in influences, 'Influencies missing Pt_alpha!'
+            assert pt_beta in influences, 'Influencies missing Pt_beta!'
+            assert pt_r0 in influences, 'Influencies missing Pt_R0!'
+            assert pt_t_ref in influences, 'Influencies missing Pt_TRef!'
+            assert dvmt_cor in influences, 'Influencies missing DVMT_cor!'
+            assert pt_t_def in influences, 'Influencies missing Pt_T_def!'
 
             # Value of Rs
             nom_Rs = this_run['Rs']
@@ -485,9 +497,9 @@ class CalcPage(wx.Panel):
 
             # Correct Rs value for temperature
             delta_t = GTC.result(av_t_rs - rs_t_ref + pt_t_def)
-            rs = GTC.result(rs_0 * (1 + rs_alpha * delta_t + rs_beta * delta_t ** 2))
+            rs = GTC.result(rs_0 * (1 + GTC.function.mul2(rs_alpha, delta_t) + rs_beta * delta_t ** 2))
 
-            influencies.extend([rs_0, rs_alpha, rs_beta, rs_t_ref])
+            influences.extend([rs_0, rs_alpha, rs_beta, rs_t_ref])
 
             '''
             Finally, calculate current-change in,
@@ -506,18 +518,21 @@ class CalcPage(wx.Panel):
 
             this_result = {'pos': i_pos, 'neg': i_neg}
 
+            Rs_Tref_comp = GTC.component(i_pos, rs_t_ref)/rs_t_ref.u
+            print(f'################# i_pos sens. to -\n\trs_t_ref :{Rs_Tref_comp}')
+
             # build uncertainty budget table
             budget_table = {'pos': [], 'neg': []}
-            for i in influencies:
+            for i in influences:
                 print('Working through influence variables: {}.'.format(i.label))
                 logger.info('Working through influence variables: {}.'.format(i.label))
-                if i.u == 0:
+                if i.u == 0:  # Deal with zero-uncert 'guessed' influences.
                     sensitivity = {'pos': 0, 'neg': 0}
                 else:
                     sensitivity = {'pos': GTC.component(i_pos, i)/i.u,
                                    'neg': GTC.component(i_neg, i)/i.u}
 
-                # Only include non-zero influencies:
+                # Only include non-zero influences:
                 if abs(GTC.component(i_pos, i)) > 0:
                     print('Included component of I+: {}'.format(GTC.component(i_pos, i)))
                     logger.info('Included component of I+: {}'.format(GTC.component(i_pos, i)))
@@ -538,7 +553,6 @@ class CalcPage(wx.Panel):
                     print('ZERO COMPONENT of I-')
                     logger.info('ZERO COMPONENT of I-')
 
-            # self.budget_table_sorted = {'pos': [], 'neg': []}
             self.budget_table_sorted['pos'] = sorted(budget_table['pos'],
                                                      key=self.by_u_cont,
                                                      reverse=True)
@@ -550,7 +564,7 @@ class CalcPage(wx.Panel):
             self.result_row = self.write_this_result(this_result)
             time.sleep(0.1)
             row += 8
-            del influencies[:]
+            del influences[:]
             del v1s[:]
             del v2s[:]
             del v3s[:]
@@ -615,7 +629,7 @@ class CalcPage(wx.Panel):
             return 2
 
     def get_duc_name_from_run_id(self, runid):
-        start = 'scripts.v{} '.format(self.version)
+        start = 'IVY.v{} '.format(self.version)  # Was 'scripts.v{}'
         end = ' (Gain='
         return runid[len(start): runid.find(end)]
 
