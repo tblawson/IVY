@@ -248,7 +248,7 @@ class AqnThread(Thread):
                     Set DVM ranges to suit voltages that they're
                     about to be exposed to:
                     '''
-                    devices.ROLES_INSTR['DVM12'].send_cmd('DCV AUTO')
+                    devices.ROLES_INSTR['DVM12'].send_cmd(f'DCV {abs(self.v1_set)}V')
                     devices.ROLES_INSTR['DVM3'].send_cmd('DCV AUTO')
                     if not (devices.ROLES_INSTR['DVM12'].demo and devices.ROLES_INSTR['DVM3'].demo):
                         time.sleep(0.5)  # Settle after setting range
