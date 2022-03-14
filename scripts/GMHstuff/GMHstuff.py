@@ -12,7 +12,7 @@ import ctypes as ct
 
 # os.path.join('C:', 'Users', 't.lawson', 'PycharmProjects', 'GMHstuff2')
 # Change PATH to wherever you keep GMH3x32E.dll:
-gmhlibpath = 'G:\\Shared drives\\MSL - Electricity\\Ongoing\\OHM\\Temperature_PRTs\\GMHdll'
+gmhlibpath = '..\\scripts\\GMHstuff\\GMHdll'  # G:\\Shared drives\\MSL - Electricity\\Ongoing\\OHM\\Temperature_PRTs\\GMHdll'
 os.environ['GMH_PATH'] = gmhlibpath
 GMHpath = os.getenv('GMH_PATH')
 print(f'GMHpath = {GMHpath}')
