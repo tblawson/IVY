@@ -65,46 +65,46 @@
 	},
 	"SR104r 10k": {
 		"R0_LV": {
-			"value": 9999.99926,
-			"uncert": 0.00033,
-			"dof": 16,
+			"value": 10000.00135,
+			"uncert": 0.00208,
+			"dof": 28,
 			"label": "SR104r_R0_LV",
-			"Reference_comment": ""
+			"Reference_comment": "ResistorHistory.xls"
 		},
 		"TRef_LV": {
-			"value": 20,
-			"uncert": 0.0,
+			"value": 20.01,
+			"uncert": 0.00998,
 			"dof": "inf",
 			"label": "SR104r_TRef_LV",
-			"Reference_comment": ""
+			"Reference_comment": "Buildup2021.xls"
 		},
 		"VRef_LV": {
 			"value": 5.0,
 			"uncert": 0.0,
 			"dof": "inf",
 			"label": "SR104r_VRef_LV",
-			"Reference_comment": ""
+			"Reference_comment": "ResistorHistory.xls"
 		},
 		"R0_HV":{
-			"value": 9999.99926,
-			"uncert": 0.00033,
-			"dof": 16,
+			"value": 10000.00135,
+			"uncert": 0.00208,
+			"dof": 28,
 			"label": "SR104r_R0_HV",
-			"Reference_comment": ""
+			"Reference_comment": "ResistorHistory.xls"
 		},
 		"TRef_HV": {
-			"value": 20,
-			"uncert": 0.0,
+			"value": 20.01,
+			"uncert": 0.00998,
 			"dof": "inf",
 			"label": "SR104r_TRef_HV",
-			"Reference_comment": ""
+			"Reference_comment": "Buildup2021.xls"
 		},
 		"VRef_HV": {
 			"value": 5.0,
 			"uncert": 0.0,
 			"dof": "inf",
 			"label": "SR104r_VRef_HV",
-			"Reference_comment": ""
+			"Reference_comment": "ResistorHistory.xls"
 		},
 		"alpha": {
 			"value": 3.42e-7,
@@ -127,7 +127,7 @@
 			"label": "SR104r_gamma",
 			"Reference_comment": ""
 		},
-		"date": "1/06/2016",
+		"date": "28/02/2022",
 		"T_sensor": "SR104t 10k"
 	},
 	"IV1k 1k": {
