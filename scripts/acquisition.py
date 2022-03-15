@@ -332,7 +332,9 @@ class AqnThread(Thread):
 
                     update_ev = evts.DataEvent(ud=update)
                     wx.PostEvent(self.RunPage, update_ev)
+                    # input range should be fixed at abs. nom. value.:
                     input_range = devices.ROLES_INSTR['DVM12'].send_cmd('RANGE?')
+                    print(f'input_range = {input_range}')
                     if not isinstance(input_range, float):
                         input_range = 0.0
                     self.input_range = input_range

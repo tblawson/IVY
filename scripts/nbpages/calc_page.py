@@ -321,7 +321,8 @@ class CalcPage(wx.Panel):
                                 'T_GMH': {},
                                 'RH': {},
                                 'P': {},
-                                'Nom_dV': {}})
+                                'Nom_dV': {},
+                                'IP_rng': {}})
 
         self.ThisResult['T_GMH'].update({'value': t_gmh.x,
                                          'uncert': t_gmh.u,
@@ -380,7 +381,7 @@ class CalcPage(wx.Panel):
                 v1_label = 'OP' + str(abs_nom_vout) + '_' + label_suffix_1
 
                 d1 = this_run['Instruments']['DVM12']
-                gain_param = self.get_gain_err_param(v1_v)
+                gain_param = self.get_gain_err_param(v1_v, this_run['IP_range'][n])
                 print(devices.INSTR_DATA[d1].keys())
                 gain = self.build_ureal(devices.INSTR_DATA[d1][gain_param])
                 gains = self.add_if_unique(gain, gains)  # gains.add(gain)
@@ -393,7 +394,7 @@ class CalcPage(wx.Panel):
                 v2_label = 'OP' + str(abs_nom_vout) + '_' + label_suffix_2
 
                 d2 = d1  # Same DVM
-                gain_param = self.get_gain_err_param(v2_v)
+                gain_param = self.get_gain_err_param(v2_v, this_run['IP_range'][n])
                 gain = self.build_ureal(devices.INSTR_DATA[d2][gain_param])
                 gains = self.add_if_unique(gain, gains)  # gains.add(gain)
                 v2_raw = GTC.ureal(v2_v, v2_u, v2_dof, label=v2_label)
@@ -405,7 +406,7 @@ class CalcPage(wx.Panel):
                 v3_label = 'OP' + str(abs_nom_vout) + '_' + label_suffix_3
 
                 d3 = this_run['Instruments']['DVM3']
-                gain_param = self.get_gain_err_param(v3_v)
+                gain_param = self.get_gain_err_param(v3_v, abs_nom_vout)
                 gain = self.build_ureal(devices.INSTR_DATA[d3][gain_param])
                 gains = self.add_if_unique(gain, gains)  # gains.add(gain)
                 v3_raw = GTC.ureal(v3_v, v3_u, v3_dof, label=v3_label)
@@ -670,31 +671,34 @@ class CalcPage(wx.Panel):
             return 0
 
     @staticmethod
-    def get_gain_err_param(v):
+    def get_gain_err_param(v, rng):
         """
         Return the key (a string) identifying the correct gain parameter
         for V (and appropriate range).
+        v: measured voltage
+        rng: DVM range
         """
+        nom_range = rng  # 0.1, 1.0 or 10.0
         if abs(v) < 0.001:
             nom_v = '0.0001'
-            nom_range = '0.1'
+            # nom_range = '0.1'
         elif abs(v) < 0.022:
             nom_v = '0.01'
-            nom_range = '0.1'
+            # nom_range = '0.1'
         elif abs(v) < 0.071:
             nom_v = '0.05'
-            nom_range = '0.1'
+            # nom_range = '0.1'
         elif abs(v) < 0.22:
             nom_v = '0.1'
-            nom_range = '0.1'
+            # nom_range = '0.1'
         elif abs(v) < 0.71:
             nom_v = '0.5'
-            nom_range = '1'
+            # nom_range = '1'
         elif abs(v) < 2.2:
             nom_v = '1'
-            nom_range = '1'
+            # nom_range = '1'
         else:
-            nom_v = nom_range = str(int(abs(round(v))))  # '1' or '10'
+            nom_v = str(int(abs(round(v))))  # '1' or '10' # = nom_range
         gain_param = f'Vgain_{nom_v}r{nom_range}'
         return gain_param
 
