@@ -234,7 +234,70 @@
 		"test": "ID?",
 		"init_str": "DCV",
 		"demo": true,
-		"role": null
+		"role": null,
+		"Vgain_0.0001r0.1": {
+			"value": 1.00000,
+			"uncert": 8.8e-4,
+			"dof": 121,
+			"label": "3458A_382_Vgain_0.0001r0.1",
+			"Reference_comment": "2018/S22022"
+		},
+		"Vgain_0.01r0.1": {
+			"value": 1.000015,
+			"uncert": 9.5e-4,
+			"dof": 121,
+			"label": "3458A_382_Vgain_0.01r0.1",
+			"Reference_comment": "2018/S22022"
+		},
+		"Vgain_0.1r0.1": {
+			"value": 1.0000025,
+			"uncert": 1.4e-6,
+			"dof": 121,
+			"label": "3458A_382_Vgain_0.1r0.1",
+			"Reference_comment": "2018/S22022"
+		},
+		"Vgain_0.0001r1": {
+			"value": 1.0000012,
+			"uncert": 1.1e-6,
+			"dof": 121,
+			"label": "3458A_382_Vgain_0.0001r1",
+			"Reference_comment": "GUESS - Extrapolated (2018/S22022)"
+		},
+		"Vgain_1r1": {
+			"value": 1.0000012,
+			"uncert": 7.1e-7,
+			"dof": 121,
+			"label": "3458A_382_Vgain_1r1",
+			"Reference_comment": "2018/S22022"
+		},
+		"Vgain_0.0001r10": {
+			"value": 1.0000013,
+			"uncert": 9.3e-7,
+			"dof": 121,
+			"label": "3458A_382_Vgain_0.0001r10",
+			"Reference_comment": "GUESS - Extrapolated (2018/S22022)"
+		},
+		"Vgain_10r10": {
+			"value": 1.0000014,
+			"uncert": 2.5e-7,
+			"dof": 121,
+			"label": "3458A_382_Vgain_10r10",
+			"Reference_comment": "2018/S22022"
+		},
+		"linearity_pert": {
+			"value": 0,
+			"uncert": 1.4e-8,
+			"dof": 18,
+			"label": "3458A_382_Vlin_gain",
+			"Reference_comment": "2018/S22022"
+		},
+		"linearity_Vdav": {
+			"value": 0,
+			"uncert": 1.4e-8,
+			"dof": 18,
+			"label": "3458A_382_Vlin_Vd",
+			"Reference_comment": "2018/S22022"
+		}
 	},
 	"DVM_3458A:s/n452": {
 		"addr": 23,
@@ -242,7 +305,70 @@
 		"test": "ID?",
 		"init_str": "DCV",
 		"demo": true,
-		"role": null
+		"role": null,
+		"Vgain_0.0001r0.1": {
+			"value": 1.0000,
+			"uncert": 3.7e-3,
+			"dof": 121,
+			"label": "3458A_452_Vgain_0.0001r0.1",
+			"Reference_comment": "2018/S22027"
+		},
+		"Vgain_0.01r0.1": {
+			"value": 1.000000,
+			"uncert": 3.8e-5,
+			"dof": 121,
+			"label": "3458A_452_Vgain_0.01r0.1",
+			"Reference_comment": "2018/S22027"
+		},
+		"Vgain_0.1r0.1": {
+			"value": 1.0000005,
+			"uncert": 5.7e-6,
+			"dof": 121,
+			"label": "3458A_452_Vgain_0.1r0.1",
+			"Reference_comment": "2018/S22027"
+		},
+		"Vgain_0.0001r1": {
+			"value": 1.0000008,
+			"uncert": 4.6e-6,
+			"dof": 121,
+			"label": "3458A_452_Vgain_0.0001r1",
+			"Reference_comment": "GUESS - Extrapolated (2018/S22027)"
+		},
+		"Vgain_1r1": {
+			"value": 1.0000004,
+			"uncert": 2.8e-6,
+			"dof": 121,
+			"label": "3458A_452_Vgain_1r1",
+			"Reference_comment": "2018/S22027"
+		},
+		"Vgain_0.0001r10": {
+			"value": 1.00000025,
+			"uncert": 3.8e-6,
+			"dof": 121,
+			"label": "3458A_452_Vgain_0.0001r10",
+			"Reference_comment": "GUESS - Extrapolated (2018/S22027)"
+		},
+		"Vgain_10r10": {
+			"value": 1.0000005,
+			"uncert": 9.9e-7,
+			"dof": 121,
+			"label": "3458A_452_Vgain_10r10",
+			"Reference_comment": "2018/S22027"
+		},
+		"linearity_pert": {
+			"value": 0,
+			"uncert": 6.4e-8,
+			"dof": 18,
+			"label": "3458A_452_Vlin_gain",
+			"Reference_comment": "2018/S22027"
+		},
+		"linearity_Vdav": {
+			"value": 0,
+			"uncert": 6.4e-8,
+			"dof": 18,
+			"label": "3458A_452_Vlin_Vd",
+			"Reference_comment": "2018/S22027"
+		}
 	},
 	"DVM_3458A:s/n518": {
 		"addr": 24,
