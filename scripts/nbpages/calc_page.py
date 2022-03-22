@@ -50,12 +50,13 @@ class CalcPage(wx.Panel):
 
         # Rf name at each resistance decade:
         self.Rf_VAL_NAME = {1000: 'Rf_1k',
-                             1e4: 'Rf_10k',
-                             1e5: 'Rf_100k',
-                             1e6: 'Rf_1M',
-                             1e7: 'Rf_10M',
-                             1e8: 'Rf_100M',
-                             1e9: 'Rf_1G',
+                            5e3: 'Rf_5k',  # For validation.
+                            1e4: 'Rf_10k',
+                            1e5: 'Rf_100k',
+                            1e6: 'Rf_1M',
+                            1e7: 'Rf_10M',
+                            1e8: 'Rf_100M',
+                            1e9: 'Rf_1G',
                             1e10: 'Rf_10G'}
 
         gb_sizer = wx.GridBagSizer()
@@ -381,8 +382,9 @@ class CalcPage(wx.Panel):
                 v1_label = 'OP' + str(abs_nom_vout) + '_' + label_suffix_1
 
                 d1 = this_run['Instruments']['DVM12']
-                gain_param = self.get_gain_err_param(v1_v, this_run['IP_range'][n])
-                print(devices.INSTR_DATA[d1].keys())
+                # print(f"Constructing gain parameter for {d1}: v1 = {v1_v}, range = {this_run['IPrange'][n]}")
+                gain_param = self.get_gain_err_param(abs(v1_v), this_run['IPrange'][n])
+                # print(devices.INSTR_DATA[d1].keys())
                 gain = self.build_ureal(devices.INSTR_DATA[d1][gain_param])
                 gains = self.add_if_unique(gain, gains)  # gains.add(gain)
                 v1_raw = GTC.ureal(v1_v, v1_u, v1_dof, label=v1_label)
@@ -394,7 +396,7 @@ class CalcPage(wx.Panel):
                 v2_label = 'OP' + str(abs_nom_vout) + '_' + label_suffix_2
 
                 d2 = d1  # Same DVM
-                gain_param = self.get_gain_err_param(v2_v, this_run['IP_range'][n])
+                gain_param = self.get_gain_err_param(v2_v, this_run['IPrange'][n])
                 gain = self.build_ureal(devices.INSTR_DATA[d2][gain_param])
                 gains = self.add_if_unique(gain, gains)  # gains.add(gain)
                 v2_raw = GTC.ureal(v2_v, v2_u, v2_dof, label=v2_label)
@@ -415,9 +417,9 @@ class CalcPage(wx.Panel):
                 influences.extend([v1_raw, v2_raw, v3_raw])
 
             influences.extend(gains)  # List of unique gain corrections.
-            print('list of gains:')
-            for g in gains:
-                print('{} +/- {}, dof={}'.format(g.x, g.u, g.df))
+            # print('list of gains:')
+            # for g in gains:
+            #     print('{} +/- {}, dof={}'.format(g.x, g.u, g.df))
 
             # Offset-adjustment and DUC correction (due to Rf)
             """
@@ -439,7 +441,9 @@ class CalcPage(wx.Panel):
             Vin = this_run['IP_V']['val'][2]  # Typical value of input voltage.
             Vout = this_run['Nom_Vout'][2]
             Rf_val = abs(this_run['Rs']*(Vout/Vin))
-            Rf_nom_val = 10**(round(math.log10(Rf_val)))  # Round Rf to nearest decade
+            # Rf_nom_val = 10**(round(math.log10(Rf_val)))  # Round Rf to nearest decade
+            Rf_nom_val = round(Rf_val, -2)  # Round Rf to nearest 100
+            # print(f'\nRf_nom value = {Rf_nom_val}.')
             Rf_name = self.Rf_VAL_NAME[Rf_nom_val]
 
             # Get Rf alpha and 1-yr stability from resistor data (as GTC.ureals):
@@ -456,11 +460,14 @@ class CalcPage(wx.Panel):
             v2_neg = GTC.result(v2s[1] - (v2s[0] + v2s[3]) / 2)
             v3_pos = GTC.result(v3s[2] - (v3s[0] + v3s[3]) / 2)*(1 + DUC_cor)
             v3_neg = GTC.result(v3s[1] - (v3s[0] + v3s[3]) / 2)*(1 + DUC_cor)
+            # print(f'\n V3+ = {v3_pos.x}.\tV3- = {v3_neg.x}.\n')
+            # print(f'\nDUC correction = *{1 + DUC_cor}')
 
             # V-drop across Rs
             v_rs_pos = GTC.result(v1_pos - v2_pos)
             v_rs_neg = GTC.result(v1_neg - v2_neg)
             assert v_rs_pos.x * v_rs_neg.x < 0, 'V_Rs polarity error!'
+            # print(f'\nV_Rs+ value = {v_rs_pos.x}.\tV_Rs- value = {v_rs_neg.x}.\n')
 
             # Rs Temperature
             t_rs = []
@@ -486,9 +493,8 @@ class CalcPage(wx.Panel):
 
             # Value of Rs
             nom_Rs = this_run['Rs']
-            msg = 'Nominal Rs value: {0}, '\
-                  'Abs. Nom. Vout: {1:.1f}'.format(nom_Rs, abs_nom_vout)
-            print( '\n', msg, '\n')
+            msg = f'Nominal Rs value: {nom_Rs}, Abs. Nom. Vout: {abs_nom_vout}'
+            print('\n', msg, '\n')
             logger.info(msg)
             rs_name = self.Rs_VAL_NAME[nom_Rs]
             rs_0 = self.build_ureal(devices.RES_DATA[rs_name]['R0_LV'])
@@ -499,7 +505,7 @@ class CalcPage(wx.Panel):
             # Correct Rs value for temperature
             delta_t = GTC.result(av_t_rs - rs_t_ref + pt_t_def)
             rs = GTC.result(rs_0 * (1 + GTC.function.mul2(rs_alpha, delta_t) + rs_beta * delta_t ** 2))
-
+            print(f'\nCorrected Rs value = {rs.x}\n')
             influences.extend([rs_0, rs_alpha, rs_beta, rs_t_ref])
 
             '''
@@ -511,22 +517,30 @@ class CalcPage(wx.Panel):
             i_in_pos = GTC.result(v_rs_pos / rs)
             i_in_neg = GTC.result(v_rs_neg / rs)
             assert i_in_pos.x * i_in_neg.x < 0, 'Iin polarity error!'
+            # print(f'\n***************\n'
+            #       f'Applied I+ = {i_in_pos.x}(Vout={self.nom_Vout["pos"]}).'
+            #       f'\tApplied I- = {i_in_neg.x}(Vout={self.nom_Vout["neg"]}).\n'
+            #       f'*****************\n')
 
             # Calculate I_in that would produce nominal Vout:
             i_pos = GTC.result(i_in_pos * self.nom_Vout['pos'] / v3_pos)
             i_neg = GTC.result(i_in_neg * self.nom_Vout['neg'] / v3_neg)
             assert i_pos.x * i_neg.x < 0, 'I polarity error!'
+            # print(f'\nVnom+/v3_pos = {self.nom_Vout["pos"] / v3_pos.x}')
+            # print(f'\nVnom-/v3_neg = {self.nom_Vout["neg"] / v3_neg.x}')
+            # print(f'\nV3_pos = {v3_pos.x}.\tV3_neg = {v3_neg.x}.')
 
             this_result = {'pos': i_pos, 'neg': i_neg}
 
             Rs_Tref_comp = GTC.component(i_pos, rs_t_ref)/rs_t_ref.u
-            print(f'################# i_pos sens. to -\n\trs_t_ref :{Rs_Tref_comp}')
+            # print(f'################# i_pos sens. to -\n\trs_t_ref :{Rs_Tref_comp}')
+            # print(f'\nNom_I+ = {i_pos.x}.\t Nom_I- = {i_neg.x}.\n')
 
             # build uncertainty budget table
             budget_table = {'pos': [], 'neg': []}
             for i in influences:
-                print('Working through influence variables: {}.'.format(i.label))
-                logger.info('Working through influence variables: {}.'.format(i.label))
+                print(f'Working through influence variables: {i.label}.')
+                logger.info(f'Working through influence variables: {i.label}.')
                 if i.u == 0:  # Deal with zero-uncert 'guessed' influences.
                     sensitivity = {'pos': 0, 'neg': 0}
                 else:
@@ -535,8 +549,8 @@ class CalcPage(wx.Panel):
 
                 # Only include non-zero influences:
                 if abs(GTC.component(i_pos, i)) > 0:
-                    print('Included component of I+: {}'.format(GTC.component(i_pos, i)))
-                    logger.info('Included component of I+: {}'.format(GTC.component(i_pos, i)))
+                    print(f'Included component of I+: {GTC.component(i_pos, i)}')
+                    logger.info(f'Included component of I+: {GTC.component(i_pos, i)}')
                     budget_table['pos'].append([i.label, i.x, i.u, i.df,
                                                 sensitivity['pos'],
                                                 GTC.component(i_pos, i)])
@@ -545,8 +559,8 @@ class CalcPage(wx.Panel):
                     logger.info('ZERO COMPONENT of I+')
 
                 if abs(GTC.component(i_neg, i)) > 0:
-                    print('Included component of I-: {}'.format(GTC.component(i_neg, i)))
-                    logger.info('Included component of I-: {}'.format(GTC.component(i_neg, i)))
+                    print(f'Included component of I-: {GTC.component(i_neg, i)}')
+                    logger.info(f'Included component of I-: {GTC.component(i_neg, i)}')
                     budget_table['neg'].append([i.label, i.x, i.u, i.df,
                                                 sensitivity['neg'],
                                                 GTC.component(i_neg, i)])
@@ -667,7 +681,7 @@ class CalcPage(wx.Panel):
                              str(d['label']))
         except (AssertionError, KeyError) as msg:
             # raise TypeError('Non-ureal input')
-            print('build_ureal():', msg)
+            # print('build_ureal():', msg)
             return 0
 
     @staticmethod
@@ -679,6 +693,8 @@ class CalcPage(wx.Panel):
         rng: DVM range
         """
         nom_range = rng  # 0.1, 1.0 or 10.0
+        if rng >= 1:
+            nom_range = int(rng)  # rng = 0.1, 1 or 10
         if abs(v) < 0.001:
             nom_v = '0.0001'
             # nom_range = '0.1'
@@ -698,8 +714,9 @@ class CalcPage(wx.Panel):
             nom_v = '1'
             # nom_range = '1'
         else:
-            nom_v = str(int(abs(round(v))))  # '1' or '10' # = nom_range
+            nom_v = str(int(abs(round(v))))  # e.g. '1' or '10' # = nom_range
         gain_param = f'Vgain_{nom_v}r{nom_range}'
+        # print(f'get_gain_err_param(): gain_param = "{gain_param}"')
         return gain_param
 
     @staticmethod
