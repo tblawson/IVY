@@ -38,10 +38,10 @@ class SetupPage(wx.Panel):
                                    'Rs=10^5': '5',
                                    'Rs=10^6': '6'}  # '': None
         self.INSTRUMENT_CHOICE = {'SRC': 'SRC_F5520A',
-                                  'DVM12': 'DVM_3458A:s/n518',
-                                  'DVM3': 'DVM_3458A:s/n066',
+                                  'DVM12': 'DVM_3458A:s/n382',
+                                  'DVM3': 'DVM_3458A:s/n452',
                                   'DVMT': 'DVM_34401A:s/n976',
-                                  'GMH': 'GMH:s/n627',
+                                  'GMH': 'GMH:s/n530',
                                   'GMHroom': 'GMH:s/n367'}
         self.T_SENSOR_CHOICE = devices.T_Sensors  # 'none', 'Pt', 'SR104t', 'thermistor'
         self.cbox_addr_COM = []
