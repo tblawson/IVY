@@ -492,7 +492,7 @@
 		"str_addr": "GPIB0::4::INSTR",
 		"test": "*IDN?",
 		"init_str": null,
-		"setV_str": ["OUT", "V,0Hz"],
+		"setV_str": ["OUT ", "V,0Hz"],
 		"oper_str": "OPER",
 		"stby_str": "STBY",
 		"demo": true,
