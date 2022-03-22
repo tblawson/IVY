@@ -227,27 +227,27 @@ class RunPage(wx.Panel):
 
     def on_Rs(self, e):
         self.Rs_val = self.Rs_choice_to_val[e.GetString()]  # an INT
-        print(f'\nRunPage.OnRs(): Rs ={self.Rs_val}')
+        # print(f'\nRunPage.OnRs(): Rs ={self.Rs_val}')
         logger.info(f'Rs = {self.Rs_val}')
         if e.GetString() in self.Rs_SWITCHABLE:  # a STRING
             s = str(int(math.log10(self.Rs_val)))  # '3','4','5' or '6'
             msg = f'\nSwitching Rs - Sending "{s}" to IVbox.'
-            print(msg)
+            # print(msg)
             logger.info(msg)
             devices.ROLES_INSTR['IVbox'].send_cmd(s)
 
     @staticmethod
     def on_node(e):
         node = e.GetString()  # 'V1', 'V2', or 'V3'
-        print('\nRunPage.OnNode():', node)
+        # print('\nRunPage.OnNode():', node)
         logger.info('\nRunPage.OnNode(): {}'.format(node))
         s = node[1]
         if s in ('1', '2'):
-            print('\nRunPage.OnNode():Sending IVbox "{}".'.format(s))
+            # print('\nRunPage.OnNode():Sending IVbox "{}".'.format(s))
             logger.info('\nRunPage.OnNode():Sending IVbox "{}"'.format(s))
             devices.ROLES_INSTR['IVbox'].send_cmd(s)
         else:  # '3'
-            print('\nRunPage.OnNode():IGNORING IVbox cmd "{}".'.format(s))
+            # print('\nRunPage.OnNode():IGNORING IVbox cmd "{}".'.format(s))
             logger.info('IGNORING IVbox cmd "{}".'.format(s))
 
     @staticmethod
@@ -255,7 +255,7 @@ class RunPage(wx.Panel):
         # Called by change in value (manually OR by software!)
         v1 = e.GetValue()
         msg = 'V1 = {}'.format(v1)
-        print('RunPage.OnV1Set(): ', msg)
+        # print('RunPage.OnV1Set(): ', msg)
         logger.info(msg)
         src = devices.ROLES_INSTR['SRC']
         src.set_v(v1)
@@ -270,13 +270,13 @@ class RunPage(wx.Panel):
         # V1:
         src = devices.ROLES_INSTR['SRC']
         if self.V1_set_numctrl.GetValue() == 0:
-            print('RunPage.OnZeroVolts(): Zero/Stby directly')
+            # print('RunPage.OnZeroVolts(): Zero/Stby directly')
             logger.info('RunPage.OnZeroVolts(): Zero/Stby directly.')
             src.set_v(0)
             src.stby()
         else:
             self.V1_set_numctrl.SetValue('0')  # Calls OnV1Set() ONLY IF VAL CHANGES
-            print('RunPage.OnZeroVolts():  Zero/Stby via V1 display')
+            # print('RunPage.OnZeroVolts():  Zero/Stby via V1 display')
             logger.info('RunPage.OnZeroVolts():  Zero/Stby via V1 display.')
 
     def on_start(self, e):
@@ -290,7 +290,7 @@ class RunPage(wx.Panel):
             # start acquisition thread here
             self.RunThread = acq.AqnThread(self)
 
-    def on_abort(self):
+    def on_abort(self, e):
         self.start_btn.Enable(True)
         self.stop_btn.Enable(False)  # Disable Stop button
         self.RunThread._want_abort = 1  # .abort
