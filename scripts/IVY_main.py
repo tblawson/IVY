@@ -117,20 +117,19 @@ VERSION = "1.1"
 
 print('IVY', VERSION)
 
-# Start logging
+# # Start logging
+LOG_FMT = '%(asctime)s %(levelname)s %(name)s:%(funcName)s(L%(lineno)d): '\
+      '%(message)s'
+LOG_DATE_FMT = '%Y-%m-%d %H:%M:%S'
 logname = 'IVYv'+VERSION+'_'+str(dt.date.today())+'.log'
 log_dir = os.path.join(os.path.dirname(os.getcwd()), r'log')
 print(f'\nLog dir: {log_dir}\n')
 logfile = os.path.join(log_dir, logname)
 print(f'Log file: {logfile}\n')
-
-fmt = '%(asctime)s %(levelname)s %(name)s:%(funcName)s(L%(lineno)d): '\
-      '%(message)s'
-datefmt = '%Y-%m-%d %H:%M:%S'
-# logging.basicConfig(filename=logfile, format=fmt, datefmt=datefmt,
-#                     level=logging.INFO)
-# logger = logging.getLogger(__name__)  # 'scripts/main'
-# logger.info('\n_____________START____________')
+logging.basicConfig(filename=logfile, format=LOG_FMT, datefmt=LOG_DATE_FMT,
+                    level=logging.INFO)
+logger = logging.getLogger(__name__)  # 'scripts/main'
+logger.info('\n_____________APPLICATION START____________')
 
 
 class MainFrame(wx.Frame):
@@ -139,12 +138,24 @@ class MainFrame(wx.Frame):
     """
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, size=(900, 600), *args, **kwargs)
-        self.data_file = ""
-        self.log_dir = ""
-        self.results_file = ""
         self.directory = os.getcwd()  # default value
         self.Center()
         self.version = VERSION
+
+        self.data_file = ""
+        self.log_dir = ""
+        self.log_name = ""
+        self.logfile = ""
+        self.results_file = ""
+
+        # Logging
+        # self.logname = 'IVYv' + VERSION + '_' + str(dt.date.today()) + '.log'
+        # self.log_dir = os.path.join(self.directory, r'log')  # default log dir
+        # self.logfile = os.path.join(self.log_dir, self.logname)
+        # logging.basicConfig(filename=self.logfile, format=LOG_FMT,
+        #                     datefmt=LOG_DATE_FMT,level=logging.INFO)
+        # self.logger = logging.getLogger(__name__)  # 'scripts/main'
+        # self.logger.info('\n_____________APPLICATION-LOG: START____________')
 
         # Event bindings
         self.Bind(evts.EVT_STAT, self.update_status)
@@ -213,15 +224,27 @@ I-to-V converter program for Light Standards."
         dlg.Destroy()  # Destroy when done.
 
     def on_set_dir(self, e):
-        """Set the working directory in which the sub-directories 'data' and 'log' can be found."""
+        """Set the working directory in which the sub-directories 'data' and 'log' can be found.
+        Also, set the logging directory and start logging."""
+
         dlg = wx.DirDialog(self, message='Select working directory',
                            style=wx.DD_DEFAULT_STYLE | wx.DD_CHANGE_DIR)
         dlg.SetPath(os.getcwd())
         if dlg.ShowModal() == wx.ID_OK:
+            # Data files...
             self.directory = dlg.GetPath()
             self.data_file = os.path.join(self.directory, 'data/IVY_RunData.json')
             self.results_file = os.path.join(self.directory, 'data/IVY_Results.json')
             print(f'Working directory: {self.directory}')
+
+            # # log file...
+            # logname = 'IVYv' + VERSION + '_' + str(dt.date.today()) + '.log'
+            # self.log_dir = os.path.join(self.directory, r'log')
+            # print(f'\nLog dir updated to: {self.log_dir}\n')
+            # self.logfile = os.path.join(self.log_dir, logname)
+            # print(f'Log file updated to: {self.logfile}\n')
+            # self.logger.info('\n____________USER INTERACTION LOG: START____________')
+
             # Get resistor and instrument data:
             devices.RES_DATA, devices.INSTR_DATA = devices.refresh_params(self.directory)
             # Ensure working directory is displayed on SetupPage:
