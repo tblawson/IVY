@@ -61,20 +61,6 @@ def strip_chars(oldstr, charlist=''):
     return newstr
 
 
-#  Load default resistor and instrument info:
-# cwd = os.getcwd()
-# par_of_cwd = os.path.dirname(cwd)
-# resistor_file = os.path.join(par_of_cwd, r'data\IVY_Resistors.json')
-# with open(resistor_file, 'r') as resistor_fp:
-#     R_str = strip_chars(resistor_fp.read(), '\t\n')
-# RES_DATA = json.loads(R_str)
-#
-# instrument_file = os.path.join(par_of_cwd, r'data\IVY_Instruments.json')
-# with open(instrument_file, 'r') as instrument_fp:
-#     I_str = strip_chars(instrument_fp.read(), '\t\n')
-# INSTR_DATA = json.loads(I_str)
-
-
 def refresh_params(directory):
     """
     Refreshes state-of-knowledge of resistors and instruments.
@@ -134,7 +120,7 @@ class GMHSensor(GMH.GMHSensor):
             'T', 'P', 'RH', 'T_dew', 't_wb', 'H_atm' or 'H_abs'.
         :returns measurement tuple: (<value>, <unit string>)
         """
-        print('\ndevices.GMH_Sensor.Test()...')
+        # print('\ndevices.GMH_Sensor.Test()...')
         self.open_port()
         reply = self.measure(meas)
         self.set_power_off_time(120)  # Ensure sensor stays on during whole run.
@@ -222,8 +208,8 @@ class Instrument(Device):
             self.demo = False  # A real instrument ONLY on Open() success
             green = (0, 255, 0)
             ROLES_WIDGETS[self.role]['lbl'].SetBackgroundColour(green)
-            # print(msg_head, '{} session handle={}.'.format(self.descr, self.instr.session))
-            logger.info(msg_head.format('{} session handle={}.'.format(self.descr, self.instr.session)))
+            # print(msg_head.format(f'{self.descr} session handle={self.instr.session}.'))
+            logger.info(msg_head.format(f'{self.descr} session handle={self.instr.session}.'))
             self.is_open = 1
         except visa.VisaIOError:
             self.demo = True  # default to demo mode if can't open
@@ -232,23 +218,23 @@ class Instrument(Device):
             ROLES_WIDGETS[self.role]['lbl'].SetForegroundColour(red)
             ROLES_WIDGETS[self.role]['lbl'].Refresh()
             INSTR_DATA[self.descr]['demo'] = True
-            print(msg_head, 'failed: {} opened in demo mode'.format(self.descr))
-            logger.warning(msg_head.format('failed: {} opened in demo mode'.format(self.descr)))
+            print(msg_head.format(f'failed: {self.descr} opened in demo mode'))
+            logger.warning(msg_head.format(f'failed: {self.descr} opened in demo mode'))
         return self.instr
 
     def close(self):
         # Close comms with instrument
         msg_head = 'devices.instrument.Close(): {}'
         if self.demo is True:
-            # print(msg_head, '{} in demo mode - nothing to close.'.format(self.descr))
-            logger.info(msg_head.format('{} in demo mode - nothing to close.'.format(self.descr)))
+            # print(msg_head.format(f'{self.descr} in demo mode - nothing to close.'))
+            logger.info(msg_head.format(f'{self.descr} in demo mode - nothing to close.'))
         elif self.instr is not None:
-            # print(msg_head, 'Closing {} (session handle={})'.format(self.descr, self.instr.session))
-            logger.info(msg_head.format('Closing {} (session handle={})'.format(self.descr, self.instr.session)))
+            # print(msg_head.format(f'Closing {self.descr} (session handle={self.instr.session})'))
+            logger.info(msg_head.format(f'Closing {self.descr} (session handle={self.instr.session})'))
             self.instr.close()
         else:
-            # print(msg_head, '{} is "None" or already closed.'.format(self.descr))
-            logger.info(msg_head.format('{} is "None" or already closed.'.format(self.descr)))
+            # print(msg_head.format(f'{self.descr} is "None" or already closed.'))
+            logger.info(msg_head.format(f'{self.descr} is "None" or already closed.'))
         self.is_open = 0
 
     def init(self):
@@ -256,7 +242,7 @@ class Instrument(Device):
         msg_head = 'devices.instrument.init(): {}'
         s = self.InitStr
         if self.demo is True:
-            # print(msg_head, '{} in demo mode - no initiation necessary.'.format(self.descr))
+            # print(msg_head.format(f'{self.descr} in demo mode - no initiation necessary.'))
             logger.info(msg_head.format(f'{self.descr} in demo mode - no initiation necessary.'))
             return 0
         else:
@@ -264,14 +250,14 @@ class Instrument(Device):
                 try:
                     self.instr.write(s)
                 except visa.VisaIOError:
-                    # print(msg_head, f'Failed to write {s} to {self.descr}')
+                    # print(msg_head.format(f'Failed to write {s} to {self.descr}'))
                     logger.warning(msg_head.format(f'Failed to write {s} to {self.descr}'))
                     return -1
             else:
-                # print(msg_head, '{} has no initiation string.'.format(self.descr))
+                # print(msg_head.format(f'{self.descr} has no initiation string.'))
                 logger.warning(msg_head.format(f'{self.descr} has no initiation string.'))
                 return 1
-            print(msg_head, f'{self.descr} initiated with cmd:"{s}".')
+            print(msg_head.format(f'{self.descr} initiated with cmd:"{s}".'))
             logger.info(msg_head.format(f'{self.descr} initiated with cmd:"{s}".'))
         return 1
 
@@ -285,17 +271,15 @@ class Instrument(Device):
         elif 'SRC_' in self.descr:
             # Set voltage-source to V
             s = str(v).join(self.VStr)
-            # print(msg_head, f'{self.descr}: V = {v}; s = "{s}"')
-            logging.info(msg_head.format('{}: V = {}; s = "{}"'.format(self.descr, v, s)))
+            # print(msg_head.format(f'{self.descr}: V = {v}; s = "{s}"'))
+            logging.info(msg_head.format(f'{self.descr}: V = {v}; s = "{s}"'))
             try:
                 self.instr.write(s)
             except visa.VisaIOError:
-                print(msg_head, 'Failed to write "{}" to {}, via handle {}'.format(s,
-                                                                                   self.descr,
-                                                                                   self.instr.session))
-                logger.warning(msg_head.format('Failed to write "{}" to {}, via handle {}'.format(s,
-                                                                                                  self.descr,
-                                                                                                  self.instr.session)))
+                print(msg_head.format(f'Failed to write "{s}" to {self.descr},'
+                                               f'via handle {self.instr.session}'))
+                logger.warning(msg_head.format(f'Failed to write "{s}" to {self.descr},'
+                                               f'via handle {self.instr.session}'))
                 return -1
             return 1
         elif 'DVM_' in self.descr:
@@ -305,8 +289,8 @@ class Instrument(Device):
             # print(s)
             return 1
         else:  # 'none' in self.Descr, (or something odd has happened)
-            print(msg_head, 'Invalid function for instrument {}'.format(self.descr))
-            logger.warning(msg_head.format('Invalid function for instrument {}'.format(self.descr)))
+            print(msg_head.format(f'Invalid function for instrument {self.descr}'))
+            logger.warning(msg_head.format(f'Invalid function for instrument {self.descr}'))
             return -1
 
     def set_fn(self):
@@ -318,12 +302,12 @@ class Instrument(Device):
             s = self.SetFnStr
             if s != '':
                 self.instr.write(s)
-            # print(msg_head, '{} - OK.'.format(self.descr))
-            logger.info(msg_head.format('{} - OK.'.format(self.descr)))
+            # print(msg_head.format(f'{self.descr} - OK.'))
+            logger.info(msg_head.format(f'{self.descr} - OK.'))
             return 1
         else:
-            print(msg_head, 'Invalid function for {}'.format(self.descr))
-            logger.warning(msg_head.format('Invalid function for {}'.format(self.descr)))
+            print(msg_head.format(f'Invalid function for {self.descr}'))
+            logger.warning(msg_head.format(f'Invalid function for {self.descr}'))
             return -1
 
     def oper(self):
@@ -338,15 +322,15 @@ class Instrument(Device):
                 try:
                     self.instr.write(s)
                 except visa.VisaIOError:
-                    print(msg_head, f'Failed to write "{s}" to {self.descr}')
-                    logger.warning(msg_head.format('Failed to write "{}" to {}'.format(s, self.descr)))
+                    print(msg_head.format(f'Failed to write "{s}" to {self.descr}'))
+                    logger.warning(msg_head.format(f'Failed to write "{s}" to {self.descr}'))
                     return -1
-            # print(msg_head, f'{self.descr} output ENABLED.')
-            logger.info(msg_head.format('{} output ENABLED.'.format(self.descr)))
+            # print(msg_head.format(f'{self.descr} output ENABLED.'))
+            logger.info(msg_head.format(f'{self.descr} output ENABLED.'))
             return 1
         else:
-            print(msg_head, f'Invalid function for {self.descr}')
-            logger.warning(msg_head.format('Invalid function for {}'.format(self.descr)))
+            print(msg_head.format(f'Invalid function for {self.descr}'))
+            logger.warning(msg_head.format(f'Invalid function for {self.descr}'))
             return -1
 
     def stby(self):
@@ -359,12 +343,12 @@ class Instrument(Device):
             s = self.StbyStr
             if s != '':
                 self.instr.write(s)  # was: query(s)
-            # print(msg_head, '{} output DISABLED.'.format(self.descr))
-            logger.info(msg_head.format('{} output DISABLED.'.format(self.descr)))
+            # print(msg_head.format(f'{self.descr} output DISABLED.'))
+            logger.info(msg_head.format(f'{self.descr} output DISABLED.'))
             return 1
         else:
-            print(msg_head, 'Invalid function for {}.'.format(self.descr))
-            logger.warning(msg_head.format('Invalid function for {}.'.format(self.descr)))
+            print(msg_head.format(f'Invalid function for {self.descr}.'))
+            logger.warning(msg_head.format(f'Invalid function for {self.descr}.'))
             return -1
 
     def check_err(self):
@@ -381,12 +365,12 @@ class Instrument(Device):
                 self.instr.write(s[1])  # clear registers
             return reply
         else:
-            print(msg_head.format('Invalid function for {}'.format(self.descr)))
-            logger.warning(msg_head.format('Invalid function for {}'.format(self.descr)))
+            print(msg_head.format(f'Invalid function for {self.descr}'))
+            logger.warning(msg_head.format(f'Invalid function for {self.descr}'))
             return '-1'
 
     def send_cmd(self, s):
-        demo_reply = '{} - DEMO resp. to {}.'.format(self.descr, s)
+        demo_reply = f'{self.descr} - DEMO resp. to {s}.'
         reply = ''
         if self.role == 'IVbox':  # update icb
             pass  # may need an event here...
@@ -405,6 +389,7 @@ class Instrument(Device):
         else:
             self.instr.write(s)
             # print(f'sending "{s}" to {self.descr}')
+            logger.info(f'sending "{s}" to {self.descr}')
             return reply
 
     def read(self):
@@ -415,18 +400,18 @@ class Instrument(Device):
             return demo_reply
         if 'DVM' in self.descr:
             # print(msg_head, f'from {self.descr}')
-            logger.info(msg_head.format('from {}'.format(self.descr)))
+            logger.info(msg_head.format(f'from {self.descr}'))
             if '3458A' in self.descr:
                 reply = self.instr.read()
                 # print(reply)
-                logger.info(msg_head.format('Reply = {}'.format(reply)))
+                logger.info(msg_head.format(f'Reply = {reply}'))
                 return reply
             else:
                 reply = self.instr.query('READ?')
                 return reply
         else:
             print(msg_head, f'Invalid function for {self.descr}.')
-            logger.warning(msg_head.format('Invalid function for {}.'.format(self.descr)))
+            logger.warning(msg_head, f'Invalid function for {self.descr}.')
             return reply
 
     def test(self, s):
