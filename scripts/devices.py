@@ -185,10 +185,10 @@ class Instrument(Device):
         self.role = role
 
         if 'init_str' in INSTR_DATA[self.descr]:
-            self.InitStr = INSTR_DATA[self.descr]['init_str']
+            self.InitStr = INSTR_DATA[self.descr]['init_str']  # a str
             print(f'{self.descr} - init_str: "{self.InitStr}"')
         else:
-            self.InitStr = ''  # an empty string
+            self.InitStr = ''  # empty string
         if 'setfn_str' in INSTR_DATA[self.descr]:
             self.SetFnStr = INSTR_DATA[self.descr]['setfn_str']
         else:
@@ -257,22 +257,22 @@ class Instrument(Device):
         s = self.InitStr
         if self.demo is True:
             # print(msg_head, '{} in demo mode - no initiation necessary.'.format(self.descr))
-            logger.info(msg_head.format('{} in demo mode - no initiation necessary.'.format(self.descr)))
+            logger.info(msg_head.format(f'{self.descr} in demo mode - no initiation necessary.'))
             return 0
         else:
             if s != '':  # instrument has an initiation string
                 try:
                     self.instr.write(s)
                 except visa.VisaIOError:
-                    # print(msg_head, 'Failed to write {} to {}'.format(s, self.descr))
-                    logger.warning(msg_head.format('Failed to write {} to {}'.format(s, self.descr)))
+                    # print(msg_head, f'Failed to write {s} to {self.descr}')
+                    logger.warning(msg_head.format(f'Failed to write {s} to {self.descr}'))
                     return -1
             else:
                 # print(msg_head, '{} has no initiation string.'.format(self.descr))
-                logger.warning(msg_head.format('{} has no initiation string.'.format(self.descr)))
+                logger.warning(msg_head.format(f'{self.descr} has no initiation string.'))
                 return 1
-            print(msg_head, '{} initiated with cmd:"{}".'.format(self.descr, s))
-            logger.info(msg_head.format('{} initiated with cmd:"{}".'.format(self.descr, s)))
+            print(msg_head, f'{self.descr} initiated with cmd:"{s}".')
+            logger.info(msg_head.format(f'{self.descr} initiated with cmd:"{s}".'))
         return 1
 
     def set_v(self, v):
