@@ -293,5 +293,7 @@ class RunPage(wx.Panel):
     def on_abort(self, e):
         self.start_btn.Enable(True)
         self.stop_btn.Enable(False)  # Disable Stop button
-        self.RunThread._want_abort = 1  # .abort
+        if self.RunThread:
+            self.RunThread.abort()
+        # self.RunThread._want_abort = 1  # .abort
 
