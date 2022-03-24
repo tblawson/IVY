@@ -7,10 +7,10 @@ Gathers together all info required to use external instruments.
 All device data is collected in a 'dictionary of dictionaries' - INSTR_DATA
 Each piece of information is accessed as:
 INSTR_DATA[<instrument description>][<parameter>].
-E.g. the 'set function' string for the HP3458(s/n518) is:
-INSTR_DATA['DVM_3458A:s/n518']['init_str'],
-which retrieves the string 'FUNC OHMF;OCOMP ON'.
-Note that some of the strings are LISTS of strings (i.e. multiple commands)
+E.g. the initiation string for the HP3458(s/n452) is:
+INSTR_DATA['DVM_3458A:s/n452']['init_str'],
+which retrieves the string 'DCV AUTO; NPLC 20'.
+Note that some parameters are LISTS of strings (i.e. multiple commands)
 
 Created on Fri Mar 17 13:52:15 2017
 
