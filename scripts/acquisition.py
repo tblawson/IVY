@@ -24,7 +24,7 @@ import json
 from scripts import devices, IVY_events as evts
 # import devices
 
-VSETDELAY = 1  # 180s - Delay after applying new voltage.
+VSETDELAY = 180  # 180s - Delay after applying new voltage.
 AZERODELAY = 5  # 5 - Delay after AZERO.
 NREADS = 20
 TEST_V_OUT = [0.1, 1, 10]  # O/P test voltage selection
@@ -69,6 +69,11 @@ class AqnThread(Thread):
         self.run_dict = {'Comment': self.Comment,
                          'Rs': self.RunPage.Rs_val,
                          'DUC_G': float(self.RunPage.DUCgain_cb.GetValue()),
+                         'Settle_delay': self.RunPage.settle_del_spinctrl.GetValue(),
+                         'Vset_delay': VSETDELAY,
+                         'Azero_delay': AZERODELAY,
+                         'DVM12_init': devices.ROLES_INSTR['DVM12'].InitStr,
+                         'DVM3_init': devices.ROLES_INSTR['DVM3'].InitStr,
                          'Instruments': {},
                          'Nreads': NREADS,
                          'Date_time': [],
@@ -180,7 +185,7 @@ class AqnThread(Thread):
             self.v1_nom = self.Rs * abs_V3 / self.duc_gain  # Nominal non-zero input
             # print(f'\n________________|V3| loop_______________________'
             #       f'\n acquisition.py, L181: abs_V3 = {abs_V3}, v1_nom = {self.v1_nom}\n')
-            logger.info('\nV3: {} V'.format(abs_V3))
+            logger.info('V3: {} V'.format(abs_V3))
 
             self.i_nom = self.v1_nom / self.Rs
             if abs(self.i_nom) <= I_MIN or abs(self.i_nom) >= I_MAX:
@@ -201,8 +206,8 @@ class AqnThread(Thread):
 
             if abs(self.v1_nom) < V1_MIN or abs(self.v1_nom) > V1_MAX:
                 v_nom_str = '(%.1g V)' % self.v1_nom
-                warning = '\nNom. I/P test-V outside scope! '+v_nom_str
-                print(warning)
+                warning = 'Nom. I/P test-V outside scope! '+v_nom_str
+                print(f'\n{warning}')
                 logger.warning(warning)
                 stat_ev = evts.StatusEvent(msg=warning, field=1)
                 wx.PostEvent(self.TopLevel, stat_ev)
@@ -360,6 +365,8 @@ class AqnThread(Thread):
                     time.sleep(2)  # Give user time to read vals before update
 
                     msg = 'Number of V3 readings != {0:d}!'.format(NREADS)
+                    print(msg)
+                    logger.info(msg)
                     assert len(self.V3Data) == NREADS, msg + '(got {} instead)'.format(len(self.V3Data))
                     self.V3m = float(np.mean(self.V3Data))
                     self.V3sd = float(np.std(self.V3Data, ddof=1))
@@ -579,7 +586,9 @@ class AqnThread(Thread):
         # Run complete - leave system safe and final data-save
 
         run_id = str(self.RunPage.run_id_txtctrl.GetValue())
-        print(f'Adding run "{run_id}" to master run dict.')
+        msg = f'Adding run "{run_id}" to master run dict.'
+        print(msg)
+        logger.info(msg)
         self.RunPage.master_run_dict.update({run_id: self.run_dict})
 
         data_file = self.TopLevel.data_file
@@ -599,10 +608,13 @@ class AqnThread(Thread):
         stop_ev = evts.DataEvent(ud=update)
         wx.PostEvent(self.RunPage, stop_ev)
 
-        stat_ev = evts.StatusEvent(msg='RUN COMPLETED', field=0)
+        msg = '_________RUN COMPLETED_________'
+        stat_ev = evts.StatusEvent(msg=msg, field=0)
         wx.PostEvent(self.TopLevel, stat_ev)
         stat_ev = evts.StatusEvent(msg='', field=1)
         wx.PostEvent(self.TopLevel, stat_ev)
+        logger.info(f'\n{msg}\n')
+
 
     def standby(self):
         # Set sources to 0V and disable outputs
