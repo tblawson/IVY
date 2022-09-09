@@ -273,6 +273,7 @@ class CalcPage(wx.Panel):
         mean_date = self.get_mean_date()
         processed_date = dt.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
 
+        print('\n#############\n\tANALYSING...\n#############')
         print('Comment:', comment)
         print('Run_Id:', self.run_ID)
         print('gain ={}'.format(duc_gain))
@@ -363,7 +364,7 @@ class CalcPage(wx.Panel):
 
         num_rows = len(this_run['Nom_Vout'])
         for row in range(0, num_rows, 8):  # 0, [8, [16]]
-            gains = []  # gains = set()
+            gains = []  # gains = {'pos': [],'neg': []}
             # 'neg' and 'pos' refer to polarity of OUTPUT VOLTAGE, not
             # input current! nom_Vout = +/-( 0.1,[1,[10]] ):
             self.nom_Vout = {'pos': this_run['Nom_Vout'][row+2],
@@ -383,10 +384,11 @@ class CalcPage(wx.Panel):
 
                 d1 = this_run['Instruments']['DVM12']
                 # print(f"Constructing gain parameter for {d1}: v1 = {v1_v}, range = {this_run['IPrange'][n]}")
-                gain_param = self.get_gain_err_param(abs(v1_v), this_run['IPrange'][n])
+                gain_param = self.get_gain_err_param(abs(v1_v), this_run['IPrange'][n], devices.INSTR_DATA[d1])
                 # print(devices.INSTR_DATA[d1].keys())
                 gain = self.build_ureal(devices.INSTR_DATA[d1][gain_param])
-                gains = self.add_if_unique(gain, gains)  # gains.add(gain)
+                print(f"{v1_label}. Using gain: {gain.label} ({this_run['Nom_Vout'][row+n]} V)")
+                gains.append(gain)  # gains = self.add_if_unique(gain, gains)  # gains.add(gain)
                 v1_raw = GTC.ureal(v1_v, v1_u, v1_dof, label=v1_label)
                 v1s.append(GTC.result(v1_raw/gain))
 
@@ -396,9 +398,10 @@ class CalcPage(wx.Panel):
                 v2_label = 'OP' + str(abs_nom_vout) + '_' + label_suffix_2
 
                 d2 = d1  # Same DVM
-                gain_param = self.get_gain_err_param(v2_v, this_run['IPrange'][n])
+                gain_param = self.get_gain_err_param(abs(v2_v), this_run['IPrange'][n], devices.INSTR_DATA[d2])
                 gain = self.build_ureal(devices.INSTR_DATA[d2][gain_param])
-                gains = self.add_if_unique(gain, gains)  # gains.add(gain)
+                print(f"{v2_label}. Using gain: {gain.label} ({this_run['Nom_Vout'][row+n]} V)")
+                gains.append(gain)  # gains = self.add_if_unique(gain, gains)  # gains.add(gain)
                 v2_raw = GTC.ureal(v2_v, v2_u, v2_dof, label=v2_label)
                 v2s.append(GTC.result(v2_raw/gain))
 
@@ -408,18 +411,19 @@ class CalcPage(wx.Panel):
                 v3_label = 'OP' + str(abs_nom_vout) + '_' + label_suffix_3
 
                 d3 = this_run['Instruments']['DVM3']
-                gain_param = self.get_gain_err_param(v3_v, abs_nom_vout)
+                gain_param = self.get_gain_err_param(abs(v3_v), abs_nom_vout, devices.INSTR_DATA[d3])
                 gain = self.build_ureal(devices.INSTR_DATA[d3][gain_param])
-                gains = self.add_if_unique(gain, gains)  # gains.add(gain)
+                print(f"{v3_label}. Using gain: {gain.label} ({this_run['Nom_Vout'][row+n]} V)")
+                gains.append(gain)  # gains = self.add_if_unique(gain, gains)  # gains.add(gain)
                 v3_raw = GTC.ureal(v3_v, v3_u, v3_dof, label=v3_label)
                 v3s.append(GTC.result(v3_raw/gain))
 
                 influences.extend([v1_raw, v2_raw, v3_raw])
 
             influences.extend(gains)  # List of unique gain corrections.
-            # print('list of gains:')
-            # for g in gains:
-            #     print('{} +/- {}, dof={}'.format(g.x, g.u, g.df))
+            print('\nlist of gains:')
+            for g in gains:
+                print(f'{g.label}')
 
             # Offset-adjustment and DUC correction (due to Rf)
             """
@@ -539,7 +543,7 @@ class CalcPage(wx.Panel):
             # build uncertainty budget table
             budget_table = {'pos': [], 'neg': []}
             for i in influences:
-                print(f'Working through influence variables: {i.label}.')
+                print(f'Working through influence variables: \n\t{i.label}.')
                 logger.info(f'Working through influence variables: {i.label}.')
                 if i.u == 0:  # Deal with zero-uncert 'guessed' influences.
                     sensitivity = {'pos': 0, 'neg': 0}
@@ -685,37 +689,65 @@ class CalcPage(wx.Panel):
             return 0
 
     @staticmethod
-    def get_gain_err_param(v, rng):
+    def get_gain_err_param(v_meas, rng, DVM_keys):
         """
         Return the key (a string) identifying the correct gain parameter
         for V (and appropriate range).
-        v: measured voltage
-        rng: DVM range
+        v: measured voltage - should always be >= 0
+        rng: DVM range (always positive)
+        DVM_keys: list of keys in DVM dict
         """
-        nom_range = rng  # 0.1, 1.0 or 10.0
+        assert v_meas >= 0, f'get_gain_err_param(): v must be >= 0! (v = {v_meas})'
+
+        # Populate range-voltage matrix with info from the DVM's gain entries in the Instruments file:
+        rng_v_matrix = {0.1: [],
+                        1: [],
+                        10: [],
+                        100: []}  # V-choices, keyed by range.
+        for k in DVM_keys:
+            if 'Vgain' in k:
+                numeric_part = k.split('_')[1]
+                v, r = numeric_part.split('r')
+                rng_v_matrix[float(r)].append(float(v))
+        # print(f'get_gain_err_param(): {rng_v_matrix}')
+
+        nom_range = rng  # 0.1, 1.0 or 10.0 (or 100.0)
         if rng >= 1:
-            nom_range = int(rng)  # rng = 0.1, 1 or 10
-        if abs(v) < 0.001:
-            nom_v = '0.0001'
-            # nom_range = '0.1'
-        elif abs(v) < 0.022:
-            nom_v = '0.01'
-            # nom_range = '0.1'
-        elif abs(v) < 0.071:
-            nom_v = '0.05'
-            # nom_range = '0.1'
-        elif abs(v) < 0.22:
-            nom_v = '0.1'
-            # nom_range = '0.1'
-        elif abs(v) < 0.71:
-            nom_v = '0.5'
-            # nom_range = '1'
-        elif abs(v) < 2.2:
-            nom_v = '1'
-            # nom_range = '1'
-        else:
-            nom_v = str(int(abs(round(v))))  # e.g. '1' or '10' # = nom_range
-        gain_param = f'Vgain_{nom_v}r{nom_range}'
+            nom_range = int(rng)  # 1 or 10 (or 100)
+        # nom_range = 0.1, 1 or 10 (or 100)
+
+        v_diff = 100
+        v_selection = 0
+        for v_opt in rng_v_matrix[rng]:
+            v_diff_next = abs(v_opt - v_meas)
+            if v_diff_next == 0:
+                v_selection = v_opt
+                break
+            else:
+                if v_diff_next < v_diff:
+                    v_diff = v_diff_next
+                    v_selection = v_opt
+                    continue
+
+        # Ensure voltages >=1 are expressed as int, not float:
+        if v_selection >= 1:
+            v_selection = int(v_selection)
+
+        # if abs(v) < 0.001:
+        #     nom_v = '0.0001'  # nom_range = '0.1'
+        # elif abs(v) < 0.022:
+        #     nom_v = '0.01'  # nom_range = '0.1'
+        # elif abs(v) < 0.071:
+        #     nom_v = '0.05'  # nom_range = '0.1'
+        # elif abs(v) < 0.22:
+        #     nom_v = '0.1'  # nom_range = '0.1'
+        # elif abs(v) < 0.71:
+        #     nom_v = '0.5'  # nom_range = '1'
+        # elif abs(v) < 2.2:
+        #     nom_v = '1'  # nom_range = '1'
+        # else:
+        #     nom_v = str(int(abs(round(v))))  # e.g. '1' or '10' # = nom_range
+        gain_param = f'Vgain_{v_selection}r{nom_range}'
         # print(f'get_gain_err_param(): gain_param = "{gain_param}"')
         return gain_param
 
@@ -788,7 +820,14 @@ class CalcPage(wx.Panel):
     def add_if_unique(item, lst):
         """
         Append 'item' to 'lst' only if it is not already present.
+        - We use this for ureals only!
+        NOTE: Can't use a set as ureals are mutable.
         """
-        if item not in lst:
+        # uniqueness check fails on ureals so apply uniqueness check to the ids instead.
+        ids = [id(i) for i in lst]  # list of gain ids
+        if id(item) not in ids:
+            print(f'\tadd_if_unique(): Adding {item.label}')
             lst.append(item)
+        else:
+            print(f'\t{item.label} NOT added')
         return lst
