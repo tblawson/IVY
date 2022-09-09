@@ -407,7 +407,7 @@ class SetupPage(wx.Panel):
         """
         msg_head = 'CreateInstr(): {}'
         print('\nCreateInstr({},{})...'.format(d, r))
-        logger.info('\nCreateInstr({0:s},{1:s})...'.format(d, r))
+        logger.info('CreateInstr({0:s},{1:s})...'.format(d, r))
         if 'GMH' in r:  # Changed from d to r
             # create and open a GMH instrument instance
             msg = 'Creating GMH device ({0:s} -> {1:s})'.format(d, r)
