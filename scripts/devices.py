@@ -172,7 +172,7 @@ class Instrument(Device):
 
         if 'init_str' in INSTR_DATA[self.descr]:
             self.InitStr = INSTR_DATA[self.descr]['init_str']  # a str
-            print(f'{self.descr} - init_str: "{self.InitStr}"')
+            # print(f'{self.descr} - init_str: "{self.InitStr}"')
         else:
             self.InitStr = ''  # empty string
         if 'setfn_str' in INSTR_DATA[self.descr]:
@@ -344,7 +344,7 @@ class Instrument(Device):
             if s != '':
                 self.instr.write(s)  # was: query(s)
             # print(msg_head.format(f'{self.descr} output DISABLED.'))
-            logger.info(msg_head.format(f'{self.descr} output DISABLED.'))
+            logger.debug(msg_head.format(f'{self.descr} output DISABLED.'))
             return 1
         else:
             print(msg_head.format(f'Invalid function for {self.descr}.'))
@@ -400,11 +400,11 @@ class Instrument(Device):
             return demo_reply
         if 'DVM' in self.descr:
             # print(msg_head, f'from {self.descr}')
-            logger.info(msg_head.format(f'from {self.descr}'))
+            logger.debug(msg_head.format(f'from {self.descr}'))
             if '3458A' in self.descr:
                 reply = self.instr.read()
                 # print(reply)
-                logger.info(msg_head.format(f'Reply = {reply}'))
+                logger.debug(msg_head.format(f'Reply = {reply}'))
                 return reply
             else:
                 reply = self.instr.query('READ?')
