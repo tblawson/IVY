@@ -226,28 +226,28 @@ class RunPage(wx.Panel):
             self.start_btn.Enable(True)
 
     def on_Rs(self, e):
-        self.Rs_val = self.Rs_choice_to_val[e.GetString()]  # an INT
+        self.Rs_val = int(self.Rs_choice_to_val[e.GetString()])  # an INT
         # print(f'\nRunPage.OnRs(): Rs ={self.Rs_val}')
         logger.info(f'Rs = {self.Rs_val}')
         if e.GetString() in self.Rs_SWITCHABLE:  # a STRING
             s = str(int(math.log10(self.Rs_val)))  # '3','4','5' or '6'
-            msg = f'\nSwitching Rs - Sending "{s}" to IVbox.'
-            # print(msg)
+            msg = f'Switching Rs - Sending "{s}" to IVbox.'
+            print(msg)
             logger.info(msg)
             devices.ROLES_INSTR['IVbox'].send_cmd(s)
 
     @staticmethod
     def on_node(e):
-        node = e.GetString()  # 'V1', 'V2', or 'V3'
+        node_lbl = e.GetString()  # 'V1', 'V2', or 'V3'
         # print('\nRunPage.OnNode():', node)
-        logger.info('\nRunPage.OnNode(): {}'.format(node))
-        s = node[1]
+        logger.info('\nRunPage.OnNode(): {}'.format(node_lbl))
+        s = node_lbl[1]  # 'eg: 'V1' -> '1'
         if s in ('1', '2'):
-            # print('\nRunPage.OnNode():Sending IVbox "{}".'.format(s))
+            print('\nRunPage.OnNode():Sending IVbox "{}".'.format(s))
             logger.info('\nRunPage.OnNode():Sending IVbox "{}"'.format(s))
             devices.ROLES_INSTR['IVbox'].send_cmd(s)
-        else:  # '3'
-            # print('\nRunPage.OnNode():IGNORING IVbox cmd "{}".'.format(s))
+        else:  # 'V3'
+            print('\nRunPage.OnNode():IGNORING IVbox cmd "{}".'.format(s))
             logger.info('IGNORING IVbox cmd "{}".'.format(s))
 
     @staticmethod
