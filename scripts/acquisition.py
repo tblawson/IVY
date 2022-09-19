@@ -265,12 +265,12 @@ class AqnThread(Thread):
                     cmd12 = f'DCV {self.v1_nom}'
                     # print(f'DVM12 command = "{cmd12}" - RANGE-LOCKING DVM12 TO {self.v1_nom}...')
                     devices.ROLES_INSTR['DVM12'].send_cmd(cmd12)
-                    rng12 = float(devices.ROLES_INSTR['DVM12'].send_cmd('RANGE?'))
+                    # rng12 = float(devices.ROLES_INSTR['DVM12'].send_cmd('RANGE?'))
                     # print(f'(acqn.L263) SANITY CHECK: IP-range = {rng12}.')
 
                     # print(f'RANGE-LOCKING DVM3 TO {abs_V3}...')
                     devices.ROLES_INSTR['DVM3'].send_cmd(f'DCV {abs_V3}')
-                    rng3 = float(devices.ROLES_INSTR['DVM3'].send_cmd('RANGE?'))
+                    # rng3 = float(devices.ROLES_INSTR['DVM3'].send_cmd('RANGE?'))
                     # print(f'(acqn.L268) SANITY CHECK: OP-range={rng3}')
 
                     if not (devices.ROLES_INSTR['DVM12'].demo and devices.ROLES_INSTR['DVM3'].demo):
@@ -356,11 +356,12 @@ class AqnThread(Thread):
                     update_ev = evts.DataEvent(ud=update)
                     wx.PostEvent(self.RunPage, update_ev)
                     # input range should be fixed at abs. nom. value.:
-                    input_range = float(devices.ROLES_INSTR['DVM12'].send_cmd('RANGE?'))
-                    assert input_range >= self.v1_nom, f'Input range wrong!: range={input_range}, V1_nom={self.v1_nom}'
-                    if not isinstance(input_range, float):
-                        input_range = 0.0
-                    self.input_range = input_range
+                    if not devices.ROLES_INSTR['DVM12'].demo:
+                        input_range = float(devices.ROLES_INSTR['DVM12'].send_cmd('RANGE?'))
+                        assert input_range >= self.v1_nom, f'Input range wrong!: range={input_range}, V1_nom={self.v1_nom}'
+                        if not isinstance(input_range, float):
+                            input_range = 0.0
+                        self.input_range = input_range
 
                     time.sleep(2)  # Give user time to read vals before update
 
@@ -371,12 +372,13 @@ class AqnThread(Thread):
                     self.V3m = float(np.mean(self.V3Data))
                     self.V3sd = float(np.std(self.V3Data, ddof=1))
                     self.T = devices.ROLES_INSTR['GMH'].measure('T')
-                    output_range = float(devices.ROLES_INSTR['DVM3'].send_cmd('RANGE?'))
-                    assert output_range >= abs_V3, f'Output range wrong!: range={output_range}, V3_nom={abs_V3}'
+                    if not devices.ROLES_INSTR['DVM3'].demo:
+                        output_range = float(devices.ROLES_INSTR['DVM3'].send_cmd('RANGE?'))
+                        assert output_range >= abs_V3, f'Output range wrong!: range={output_range}, V3_nom={abs_V3}'
 
-                    # if not isinstance(output_range, float):
-                    #     output_range = 0.0
-                    self.output_range = output_range
+                        # if not isinstance(output_range, float):
+                        #     output_range = 0.0
+                        self.output_range = output_range
 
                     self.set_node('V3')
                     update = {'node': 'V3', 'Vm': self.V3m, 'Vsd': self.V3sd,
