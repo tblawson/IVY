@@ -10,7 +10,7 @@ Created on Fri Mar 5 16:03:30 2021
 @author: t.lawson
 """
 
-import logging
+# import logging
 
 import GTC.function
 import wx
@@ -28,7 +28,7 @@ PT_T_DEF_UNCERT = 0.5
 GMH_T_DEF_UNCERT = 0.5
 DUC_T_DEF_UNCERT = 1
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 
 class CalcPage(wx.Panel):
@@ -242,7 +242,7 @@ class CalcPage(wx.Panel):
         self.run_ID = self.RunID_cb.GetValue()
         this_run = self.run_data[self.run_ID]
 
-        logger.info('STARTING ANALYSIS...')
+        # logger.info('STARTING ANALYSIS...')
 
         # Correction for Pt-100 sensor DVM:
         dvmt = this_run['Instruments']['DVMT']
@@ -278,8 +278,8 @@ class CalcPage(wx.Panel):
         print('Run_Id:', self.run_ID)
         print('gain ={}'.format(duc_gain))
         print('Mean_date:', mean_date)
-        logger.info('Comment: %s\nRun_ID: %s\ngain = %s\nMean_date: %s',
-                    comment, self.run_ID, duc_gain, mean_date)
+        # logger.info('Comment: %s\nRun_ID: %s\ngain = %s\nMean_date: %s',
+        #             comment, self.run_ID, duc_gain, mean_date)
 
         # Determine mean env. conditions
         gmh_temps = []
@@ -499,7 +499,7 @@ class CalcPage(wx.Panel):
             nom_Rs = this_run['Rs']
             msg = f'Nominal Rs value: {nom_Rs}, Abs. Nom. Vout: {abs_nom_vout}'
             print('\n', msg, '\n')
-            logger.info(msg)
+            # logger.info(msg)
             rs_name = self.Rs_VAL_NAME[nom_Rs]
             rs_0 = self.build_ureal(devices.RES_DATA[rs_name]['R0_LV'])
             rs_t_ref = self.build_ureal(devices.RES_DATA[rs_name]['TRef_LV'])
@@ -544,7 +544,7 @@ class CalcPage(wx.Panel):
             budget_table = {'pos': [], 'neg': []}
             for i in influences:
                 print(f'Working through influence variables: \n\t{i.label}.')
-                logger.info(f'Working through influence variables: {i.label}.')
+                # logger.info(f'Working through influence variables: {i.label}.')
                 if i.u == 0:  # Deal with zero-uncert 'guessed' influences.
                     sensitivity = {'pos': 0, 'neg': 0}
                 else:
@@ -554,23 +554,23 @@ class CalcPage(wx.Panel):
                 # Only include non-zero influences:
                 if abs(GTC.component(i_pos, i)) > 0:
                     print(f'Included component of I+: {GTC.component(i_pos, i)}')
-                    logger.info(f'Included component of I+: {GTC.component(i_pos, i)}')
+                    # logger.info(f'Included component of I+: {GTC.component(i_pos, i)}')
                     budget_table['pos'].append([i.label, i.x, i.u, i.df,
                                                 sensitivity['pos'],
                                                 GTC.component(i_pos, i)])
                 else:
                     print('ZERO COMPONENT of I+')
-                    logger.info('ZERO COMPONENT of I+')
+                    # logger.info('ZERO COMPONENT of I+')
 
                 if abs(GTC.component(i_neg, i)) > 0:
                     print(f'Included component of I-: {GTC.component(i_neg, i)}')
-                    logger.info(f'Included component of I-: {GTC.component(i_neg, i)}')
+                    # logger.info(f'Included component of I-: {GTC.component(i_neg, i)}')
                     budget_table['neg'].append([i.label, i.x, i.u, i.df,
                                                 sensitivity['neg'],
                                                 GTC.component(i_neg, i)])
                 else:
                     print('ZERO COMPONENT of I-')
-                    logger.info('ZERO COMPONENT of I-')
+                    # logger.info('ZERO COMPONENT of I-')
 
             self.budget_table_sorted['pos'] = sorted(budget_table['pos'],
                                                      key=self.by_u_cont,

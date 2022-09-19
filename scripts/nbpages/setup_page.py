@@ -12,10 +12,10 @@ Created on Fri Mar 5 13:38:16 2021
 
 import wx
 from wx.lib.masked import NumCtrl
-import logging
+# import logging
 from scripts import devices, IVY_events as Evts
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 
 class SetupPage(wx.Panel):
@@ -407,18 +407,18 @@ class SetupPage(wx.Panel):
         """
         msg_head = 'CreateInstr(): {}'
         print('\nCreateInstr({},{})...'.format(d, r))
-        logger.info('CreateInstr({0:s},{1:s})...'.format(d, r))
+        # logger.info('CreateInstr({0:s},{1:s})...'.format(d, r))
         if 'GMH' in r:  # Changed from d to r
             # create and open a GMH instrument instance
             msg = 'Creating GMH device ({0:s} -> {1:s})'.format(d, r)
             print('\n', msg_head.format(msg))
-            logger.info(msg_head.format(msg))
+            # logger.info(msg_head.format(msg))
             devices.ROLES_INSTR.update({r: devices.GMHSensor(d, r)})
         else:
             # create a visa instrument instance
             msg = 'Creating VISA device ({0:s} -> {1:s}).'.format(d, r)
             print('\n', msg_head.format(msg))
-            logger.info(msg_head.format(msg))
+            # logger.info(msg_head.format(msg))
             devices.ROLES_INSTR.update({r: devices.Instrument(d, r)})
             devices.ROLES_INSTR[r].open()
         self.set_instr(d, r)
@@ -440,7 +440,7 @@ class SetupPage(wx.Panel):
         a_cb = devices.ROLES_WIDGETS[r]['acb']
         msg = 'Address = {}'.format(devices.INSTR_DATA[d]['str_addr'])
         print(msg_head.format(msg))
-        logger.info(msg_head.format(msg))
+        # logger.info(msg_head.format(msg))
         a_cb.SetValue((devices.INSTR_DATA[d]['str_addr']))
         if d == 'none':
             devices.ROLES_WIDGETS[r]['tbtn'].Enable(False)
@@ -475,7 +475,7 @@ class SetupPage(wx.Panel):
         msg = '{0:s} using {1:s} set to '\
               'addr {2:d} ({3:s})'.format(r, d, addr, a)
         print(msg_head.format(msg))
-        logger.info(msg_head.format(msg))
+        # logger.info(msg_head.format(msg))
         self.create_instr(d, r)
 
     def on_test(self, e):
@@ -488,12 +488,12 @@ class SetupPage(wx.Panel):
                 d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
                 break  # stop looking when we've found right instr descr
         print('\n', msg_head.format(d))
-        logger.info(msg_head.format(d))
+        # logger.info(msg_head.format(d))
         assert_msg = '{} has no "test" parameter'.format(d)
         assert 'test' in devices.INSTR_DATA[d], assert_msg
         test = devices.INSTR_DATA[d]['test']  # test string
         print('\tTest string:', test)
-        logger.info('Test string: {}'.format(test))
+        # logger.info('Test string: {}'.format(test))
         self.Response.SetValue(str(devices.ROLES_INSTR[r].test(test)))
         self.status.SetStatusText('Testing %s with cmd %s' % (d, test), 0)
 

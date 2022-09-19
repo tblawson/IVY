@@ -111,25 +111,25 @@ import scripts.nbpages.calc_page as calc_p
 from scripts import devices, IVY_events as evts  # import IVY_events as evts
 import time
 import datetime as dt
-import logging
+# import logging
 
 VERSION = "1.1"
 
 print('IVY', VERSION)
 
 # # Start logging
-LOG_FMT = '%(asctime)s %(levelname)s %(name)s:%(funcName)s(L%(lineno)d): '\
-      '%(message)s'
-LOG_DATE_FMT = '%Y-%m-%d %H:%M:%S'
-logname = 'IVYv'+VERSION+'_'+str(dt.date.today())+'.log'
-log_dir = os.path.join(os.path.dirname(os.getcwd()), r'log')
-print(f'\nLog dir: {log_dir}\n')
-logfile = os.path.join(log_dir, logname)
-print(f'Log file: {logfile}\n')
-logging.basicConfig(filename=logfile, format=LOG_FMT, datefmt=LOG_DATE_FMT,
-                    level=logging.INFO)
-logger = logging.getLogger(__name__)  # 'scripts/main'
-logger.info('\n_____________APPLICATION START____________')
+# LOG_FMT = '%(asctime)s %(levelname)s %(name)s:%(funcName)s(L%(lineno)d): '\
+#       '%(message)s'
+# LOG_DATE_FMT = '%Y-%m-%d %H:%M:%S'
+# logname = 'IVYv'+VERSION+'_'+str(dt.date.today())+'.log'
+# log_dir = os.path.join(os.path.dirname(os.getcwd()), r'log')
+# print(f'\nLog dir: {log_dir}\n')
+# logfile = os.path.join(log_dir, logname)
+# print(f'Log file: {logfile}\n')
+# logging.basicConfig(filename=logfile, format=LOG_FMT, datefmt=LOG_DATE_FMT,
+#                     level=logging.INFO)
+# logger = logging.getLogger(__name__)  # 'scripts/main'
+# logger.info('\n_____________APPLICATION START____________')
 
 
 class MainFrame(wx.Frame):

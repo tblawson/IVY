@@ -10,7 +10,7 @@ Created on Fri Mar 5 15:44:30 2021
 @author: t.lawson
 """
 
-import logging
+# import logging
 import wx
 from scripts import IVY_events as Evts
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
@@ -22,7 +22,7 @@ import matplotlib
 matplotlib.use('WXAgg')  # Agg renderer for drawing on a wx canvas
 matplotlib.rc('lines', linewidth=1, color='blue')
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 
 class PlotPage(wx.Panel):
@@ -87,9 +87,9 @@ class PlotPage(wx.Panel):
     def update_plot(self, e):
         msg_head = 'PlotPage.UpdatePlot(): {}'
         # print(msg_head.format('len(t)={}'.format(len(e.t))))
-        logger.info(msg_head.format('len(t)={}'.format(len(e.t))))
+        # logger.info(msg_head.format('len(t)={}'.format(len(e.t))))
         # print(msg_head.format('{} len(V1)={}', 'len(V3)={}'.format(e.node, len(e.V12), len(e.V3))))
-        logger.info(msg_head.format('{} len(V1)={}', 'len(V3)={}'.format(e.node, len(e.V12), len(e.V3))))
+        # logger.info(msg_head.format('{} len(V1)={}', 'len(V3)={}'.format(e.node, len(e.V12), len(e.V3))))
         if e.node == 'V1':
             self.V1ax.plot_date(e.t, e.V12, 'bo')
         else:  # V2 data

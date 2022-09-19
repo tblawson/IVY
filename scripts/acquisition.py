@@ -17,7 +17,7 @@ from threading import Thread
 import datetime as dt
 import time
 import numpy as np
-import logging
+# import logging
 import json
 
 # import IVY_events as evts
@@ -36,7 +36,7 @@ V1_MIN = 0.01  # 10 mV (S/N issues, noise limit)
 V1_MAX = 10  # 10 V (Opamp output limit)
 P_MAX = 480  # Maximum progress (20 measurement-cycles * 24 rows)
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 
 class AqnThread(Thread):
@@ -90,7 +90,7 @@ class AqnThread(Thread):
 
         print('Role -> Instrument:')
         print('------------------------------')
-        logger.info('Role -> Instrument:')
+        # logger.info('Role -> Instrument:')
         # Print all device objects
         for r in devices.ROLES_INSTR.keys():
             if r == 'IVbox':
@@ -100,7 +100,7 @@ class AqnThread(Thread):
             sub_dict = {r: d}
             self.run_dict['Instruments'].update(sub_dict)
             print(f'{devices.INSTR_DATA[d]["role"]} \t-> {d}')
-            logger.info(f'{devices.INSTR_DATA[d]["role"]} \t-> {d}')
+            # logger.info(f'{devices.INSTR_DATA[d]["role"]} \t-> {d}')
 
         self.settle_time = self.RunPage.settle_del_spinctrl.GetValue()
 
@@ -127,7 +127,7 @@ class AqnThread(Thread):
         This is where all the important stuff goes, in a repeated cycle.
         """
         print('\nRUN START...\n')
-        logger.info('RUN START...')
+        # logger.info('RUN START...')
 
         # Set button availability
         self.RunPage.stop_btn.Enable(True)
@@ -185,14 +185,14 @@ class AqnThread(Thread):
             self.v1_nom = self.Rs * abs_V3 / self.duc_gain  # Nominal non-zero input
             # print(f'\n________________|V3| loop_______________________'
             #       f'\n acquisition.py, L181: abs_V3 = {abs_V3}, v1_nom = {self.v1_nom}\n')
-            logger.info('V3: {} V'.format(abs_V3))
+            # logger.info('V3: {} V'.format(abs_V3))
 
             self.i_nom = self.v1_nom / self.Rs
             if abs(self.i_nom) <= I_MIN or abs(self.i_nom) >= I_MAX:
                 i_nom_str = '(%.1g A)' % self.i_nom
                 warning = '\nNominal I/P test-I outside scope! ' + i_nom_str
                 print(warning)
-                logger.warning(warning)
+                # logger.warning(warning)
                 stat_ev = evts.StatusEvent(msg=warning, field=1)
                 wx.PostEvent(self.TopLevel, stat_ev)
                 pbar += 160
@@ -208,7 +208,7 @@ class AqnThread(Thread):
                 v_nom_str = '(%.1g V)' % self.v1_nom
                 warning = 'Nom. I/P test-V outside scope! '+v_nom_str
                 print(f'\n{warning}')
-                logger.warning(warning)
+                # logger.warning(warning)
                 stat_ev = evts.StatusEvent(msg=warning, field=1)
                 wx.PostEvent(self.TopLevel, stat_ev)
                 pbar += 160
@@ -240,8 +240,8 @@ class AqnThread(Thread):
                     if abs(self.v1_set) == 0:
                         self.v1_set = 0.0
                     # print('I/P test-V = %f \tO/P test-V = %f' % (self.v1_set, self.v_out))
-                    logger.info('I/P test-V = %f \tO/P test-V = %f',
-                                self.v1_set, self.v_out)
+                    # logger.info('I/P test-V = %f \tO/P test-V = %f',
+                    #             self.v1_set, self.v_out)
 
                     stat_ev = evts.StatusEvent(msg='AqnThread.run():', field=0)
                     wx.PostEvent(self.TopLevel, stat_ev)
@@ -277,7 +277,7 @@ class AqnThread(Thread):
                         time.sleep(0.5)  # Settle after setting range
 
                     # print('Aqn_thread.run(): masked V1_set = {}'.format(self.v1_set))
-                    logger.info('masked V1_set = %f', self.v1_set)
+                    # logger.info('masked V1_set = %f', self.v1_set)
                     self.RunPage.V1_set_numctrl.SetValue(str(self.v1_set))
                     if not devices.ROLES_INSTR['SRC'].demo:
                         time.sleep(0.5)  # Settle after setting V
@@ -312,7 +312,7 @@ class AqnThread(Thread):
 
                     stat_msg = f'Making {NREADS} measurements each of {node} and V3 (V1_nom = {self.v1_nom} V)'
                     print(stat_msg)
-                    logger.info(stat_msg)
+                    # logger.info(stat_msg)
                     stat_ev = evts.StatusEvent(msg=stat_msg, field=1)
                     wx.PostEvent(self.TopLevel, stat_ev)
 
@@ -346,7 +346,7 @@ class AqnThread(Thread):
                     msg = 'V12m[{0:s}] = {1:.6f}'.format(node, self.V12m[node])
 
                     print(msg)
-                    logger.info(msg)
+                    # logger.info(msg)
                     self.set_node(node)
                     update = {'node': node, 'Vm': self.V12m[node],
                               'Vsd': self.V12sd[node], 'time': self.tm,
@@ -367,7 +367,7 @@ class AqnThread(Thread):
 
                     msg = 'Number of V3 readings != {0:d}!'.format(NREADS)
                     print(msg)
-                    logger.info(msg)
+                    # logger.info(msg)
                     assert len(self.V3Data) == NREADS, msg + '(got {} instead)'.format(len(self.V3Data))
                     self.V3m = float(np.mean(self.V3Data))
                     self.V3sd = float(np.std(self.V3Data, ddof=1))
@@ -416,18 +416,18 @@ class AqnThread(Thread):
         Update Node ComboBox and Change I/P node relays in IV-box
         """
         # print('AqnThread.SetNode(): ', node)
-        logger.info('Node = %s', node)
+        # logger.info('Node = %s', node)
         self.RunPage.node_cb.SetValue(node)  # Update widget value
         s = node[1]
         if s in ('1', '2'):
             msg = 'Sending IVbox "{:s}"'.format(s)
             # print('AqnThread.SetNode():', msg)
-            logger.info(msg)
+            # logger.info(msg)
             devices.ROLES_INSTR['IVbox'].send_cmd(s)
         else:  # '3'
             msg = 'IGNORING IVbox cmd "{:s}"'.format(s)
             # print('AqnThread.SetNode():', msg)
-            logger.info(msg)
+            # logger.info(msg)
         if not devices.ROLES_INSTR['IVbox'].demo:
             time.sleep(1)
 
@@ -458,12 +458,12 @@ class AqnThread(Thread):
             if 'GMH' not in devices.ROLES_INSTR[r].descr:
                 msg = 'Opening {:s}'.format(d)
                 # print('AqnThread.initialise():', msg)
-                logger.info(msg)
+                # logger.info(msg)
                 devices.ROLES_INSTR[r].open()
             else:
                 msg = '{:s} already open'.format(d)
                 # print('AqnThread.initialise():', msg)
-                logger.info(msg)
+                # logger.info(msg)
 
             stat_ev = evts.StatusEvent(msg=d, field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
@@ -479,7 +479,7 @@ class AqnThread(Thread):
             err = devices.ROLES_INSTR['SRC'].check_err()  # 'ERR?','*CLS'
             msg = 'Cleared F5520A error: "{}"'.format(err)
             # print(msg)
-            logger.info(msg)
+            # logger.info(msg)
 
         del self.V12Data[node][:]
         del self.V3Data[:]
@@ -582,7 +582,7 @@ class AqnThread(Thread):
         stat_ev = evts.StatusEvent(msg='', field=1)
         wx.PostEvent(self.TopLevel, stat_ev)
         print('\nRun aborted.')
-        logger.info('Run aborted.')
+        # logger.info('Run aborted.')
 
     def finish_run(self):
         # Run complete - leave system safe and final data-save
@@ -590,7 +590,7 @@ class AqnThread(Thread):
         run_id = str(self.RunPage.run_id_txtctrl.GetValue())
         msg = f'Adding run "{run_id}" to master run dict.'
         print(msg)
-        logger.info(msg)
+        # logger.info(msg)
         self.RunPage.master_run_dict.update({run_id: self.run_dict})
 
         data_file = self.TopLevel.data_file
@@ -601,7 +601,7 @@ class AqnThread(Thread):
         # assert working_dir == correct_dir, 'Working Directory error!'
         with open(data_file, 'w') as IVY_out:
             msg = f'SAVING ALL RUN DATA to {data_file}'
-            logger.info(msg)
+            # logger.info(msg)
             json.dump(self.RunPage.master_run_dict, IVY_out)
 
         self.standby()  # Set sources to 0V and leave system safe
@@ -615,7 +615,7 @@ class AqnThread(Thread):
         wx.PostEvent(self.TopLevel, stat_ev)
         stat_ev = evts.StatusEvent(msg='', field=1)
         wx.PostEvent(self.TopLevel, stat_ev)
-        logger.info(f'\n{msg}\n')
+        # logger.info(f'\n{msg}\n')
 
 
     def standby(self):
