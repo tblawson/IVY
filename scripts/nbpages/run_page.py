@@ -12,13 +12,13 @@ Created on Fri Mar 5 15:00:16 2021
 
 import wx
 from wx.lib.masked import NumCtrl
-import logging
+# import logging
 import time
 import datetime as dt
 import math
 from scripts import acquisition as acq, devices, IVY_events as Evts
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 
 class RunPage(wx.Panel):
@@ -228,27 +228,27 @@ class RunPage(wx.Panel):
     def on_Rs(self, e):
         self.Rs_val = int(self.Rs_choice_to_val[e.GetString()])  # an INT
         # print(f'\nRunPage.OnRs(): Rs ={self.Rs_val}')
-        logger.info(f'Rs = {self.Rs_val}')
+        # logger.info(f'Rs = {self.Rs_val}')
         if e.GetString() in self.Rs_SWITCHABLE:  # a STRING
             s = str(int(math.log10(self.Rs_val)))  # '3','4','5' or '6'
             msg = f'Switching Rs - Sending "{s}" to IVbox.'
             print(msg)
-            logger.info(msg)
+            # logger.info(msg)
             devices.ROLES_INSTR['IVbox'].send_cmd(s)
 
     @staticmethod
     def on_node(e):
         node_lbl = e.GetString()  # 'V1', 'V2', or 'V3'
         # print('\nRunPage.OnNode():', node)
-        logger.info('\nRunPage.OnNode(): {}'.format(node_lbl))
+        # logger.info('\nRunPage.OnNode(): {}'.format(node_lbl))
         s = node_lbl[1]  # 'eg: 'V1' -> '1'
         if s in ('1', '2'):
             print('\nRunPage.OnNode():Sending IVbox "{}".'.format(s))
-            logger.info('\nRunPage.OnNode():Sending IVbox "{}"'.format(s))
+            # logger.info('\nRunPage.OnNode():Sending IVbox "{}"'.format(s))
             devices.ROLES_INSTR['IVbox'].send_cmd(s)
         else:  # 'V3'
             print('\nRunPage.OnNode():IGNORING IVbox cmd "{}".'.format(s))
-            logger.info('IGNORING IVbox cmd "{}".'.format(s))
+            # logger.info('IGNORING IVbox cmd "{}".'.format(s))
 
     @staticmethod
     def on_v1_set(e):
@@ -256,7 +256,7 @@ class RunPage(wx.Panel):
         v1 = e.GetValue()
         msg = 'V1 = {}'.format(v1)
         # print('RunPage.OnV1Set(): ', msg)
-        logger.info(msg)
+        # logger.info(msg)
         src = devices.ROLES_INSTR['SRC']
         src.set_v(v1)
         time.sleep(0.5)
@@ -271,13 +271,13 @@ class RunPage(wx.Panel):
         src = devices.ROLES_INSTR['SRC']
         if self.V1_set_numctrl.GetValue() == 0:
             # print('RunPage.OnZeroVolts(): Zero/Stby directly')
-            logger.info('RunPage.OnZeroVolts(): Zero/Stby directly.')
+            # logger.info('RunPage.OnZeroVolts(): Zero/Stby directly.')
             src.set_v(0)
             src.stby()
         else:
             self.V1_set_numctrl.SetValue('0')  # Calls OnV1Set() ONLY IF VAL CHANGES
             # print('RunPage.OnZeroVolts():  Zero/Stby via V1 display')
-            logger.info('RunPage.OnZeroVolts():  Zero/Stby via V1 display.')
+            # logger.info('RunPage.OnZeroVolts():  Zero/Stby via V1 display.')
 
     def on_start(self, e):
         self.progress_gauge.SetValue(0)
