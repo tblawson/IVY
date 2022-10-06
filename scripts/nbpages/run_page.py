@@ -152,7 +152,10 @@ class RunPage(wx.Panel):
                      flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.settle_del_spinctrl, pos=(3, 2), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
-
+        gb_sizer.Add(vset_del_lbl, pos=(2, 3), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.vset_del_spinctrl, pos=(3, 3), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
 
         gb_sizer.Add(v1_set_lbl, pos=(2, 4), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)

@@ -24,7 +24,7 @@ import json
 from scripts import devices, IVY_events as evts
 # import devices
 
-VSETDELAY = 180  # 180s - Delay after applying new voltage.
+# VSETDELAY = 180  # 180s - Delay after applying new voltage.
 AZERODELAY = 5  # 5 - Delay after AZERO.
 NREADS = 20
 TEST_V_OUT = [0.1, 1, 10]  # O/P test voltage selection
@@ -50,7 +50,7 @@ class AqnThread(Thread):
         self.CalcPage = self.RunPage.GetParent().GetPage(3)
         self.TopLevel = self.RunPage.GetTopLevelParent()
         self.Comment = self.RunPage.comment.GetValue()
-        # self.Vset_delay = self.RunPage.vsetdelay.GetValue()
+        self.Vset_delay = self.RunPage.V1_set_numctrl.GetValue()
 
         self._want_abort = 0
 
@@ -71,7 +71,7 @@ class AqnThread(Thread):
                          'Rs': self.RunPage.Rs_val,
                          'DUC_G': float(self.RunPage.DUCgain_cb.GetValue()),
                          'Settle_delay': self.RunPage.settle_del_spinctrl.GetValue(),
-                         'Vset_delay': VSETDELAY,
+                         'Vset_delay': self.Vset_delay,
                          'Azero_delay': AZERODELAY,
                          'DVM12_init': devices.ROLES_INSTR['DVM12'].InitStr,
                          'DVM3_init': devices.ROLES_INSTR['DVM3'].InitStr,
@@ -288,7 +288,7 @@ class AqnThread(Thread):
                         self.abort_run()
                         return
                     if not devices.ROLES_INSTR['SRC'].demo:
-                        time.sleep(VSETDELAY)  # wait after applying V and OPER mode.
+                        time.sleep(self.Vset_delay)  # wait after applying V and OPER mode.
 
                     # Prepare DVMs...
                     stat_ev = evts.StatusEvent(msg='Preparing DVMs...',
