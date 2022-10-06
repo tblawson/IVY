@@ -241,6 +241,7 @@ class Instrument(Device):
         # Send initiation string
         msg_head = 'devices.instrument.init(): {}'
         s = self.InitStr
+        print(msg_head.format(f'Attempting to initialise {self.descr} with {s}.'))
         if self.demo is True:
             # print(msg_head.format(f'{self.descr} in demo mode - no initiation necessary.'))
             # logger.info(msg_head.format(f'{self.descr} in demo mode - no initiation necessary.'))

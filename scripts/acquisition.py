@@ -50,6 +50,7 @@ class AqnThread(Thread):
         self.CalcPage = self.RunPage.GetParent().GetPage(3)
         self.TopLevel = self.RunPage.GetTopLevelParent()
         self.Comment = self.RunPage.comment.GetValue()
+        # self.Vset_delay = self.RunPage.vsetdelay.GetValue()
 
         self._want_abort = 0
 

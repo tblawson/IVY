@@ -77,11 +77,17 @@ class RunPage(wx.Panel):
         self.Rs_cb = wx.ComboBox(self, wx.ID_ANY, choices=self.Rs_CHOICE,
                                  style=wx.CB_DROPDOWN)
         self.Rs_cb.Bind(wx.EVT_COMBOBOX, self.on_Rs)
+
+        # delay widgets
         settle_del_lbl = wx.StaticText(self, id=wx.ID_ANY, label='Settle delay:')
         self.settle_del_spinctrl = wx.SpinCtrl(self, id=wx.ID_ANY, value='1800',
                                                min=0, max=3600)
-        src_lbl = wx.StaticText(self, id=wx.ID_ANY, style=wx.ALIGN_LEFT,
-                                label='V1 Setting:')
+        vset_del_lbl = wx.StaticText(self, id=wx.ID_ANY, label='Vset delay:')
+        self.vset_del_spinctrl = wx.SpinCtrl(self, id=wx.ID_ANY, value='180',
+                                               min=0, max=3600)
+
+        v1_set_lbl = wx.StaticText(self, id=wx.ID_ANY, style=wx.ALIGN_LEFT,
+                                   label='V1 Setting:')
         self.V1_set_numctrl = NumCtrl(self, id=wx.ID_ANY, integerWidth=3,
                                       fractionWidth=8, groupDigits=True)
         self.V1_set_numctrl.Bind(wx.lib.masked.EVT_NUM, self.on_v1_set)
@@ -127,7 +133,7 @@ class RunPage(wx.Panel):
                      flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(run_id_lbl, pos=(1, 0), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(self.new_run_id_btn, pos=(3, 5), span=(1, 1),
+        gb_sizer.Add(self.new_run_id_btn, pos=(2, 5), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.run_id_txtctrl, pos=(1, 1), span=(1, 5),
                      flag=wx.ALL | wx.EXPAND, border=5)
@@ -141,15 +147,18 @@ class RunPage(wx.Panel):
                      flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.Rs_cb, pos=(3, 1), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
+        # delays:
         gb_sizer.Add(settle_del_lbl, pos=(2, 2), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.settle_del_spinctrl, pos=(3, 2), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(src_lbl, pos=(2, 3), span=(1, 1),
+
+
+        gb_sizer.Add(v1_set_lbl, pos=(2, 4), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(self.V1_set_numctrl, pos=(3, 3), span=(1, 1),
+        gb_sizer.Add(self.V1_set_numctrl, pos=(3, 4), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(zero_volts_btn, pos=(3, 4), span=(1, 1),
+        gb_sizer.Add(zero_volts_btn, pos=(3, 5), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.h_sep1, pos=(4, 0), span=(1, 6),
                      flag=wx.ALL | wx.EXPAND, border=5)
