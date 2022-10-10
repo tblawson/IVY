@@ -50,7 +50,7 @@ class AqnThread(Thread):
         self.CalcPage = self.RunPage.GetParent().GetPage(3)
         self.TopLevel = self.RunPage.GetTopLevelParent()
         self.Comment = self.RunPage.comment.GetValue()
-        self.Vset_delay = self.RunPage.V1_set_numctrl.GetValue()
+        self.Vset_delay = self.RunPage.vset_del_spinctrl.GetValue()
 
         self._want_abort = 0
 
@@ -170,8 +170,10 @@ class AqnThread(Thread):
         the input DVM switches between the two nodes V1 and V2.
         For each input node, a mask is applied to the output voltage (and
         thus input V) causing the value to be set to 0 V, each polarity,
-        then 0 V again.
+        then 0 V again. Measurements at all nodes are taken before changing
+        to the next output voltage mask value (0, +, -, 0).
 
+        V & I CONSTRAINTS;
         Nominal input voltage and current are calculated based on nominal
         DUC gain and Rs. If the nominal input current would be outside the
         range {1e-11 A < I < 1e-3 A}, that 8-row block is skipped. If the
@@ -182,11 +184,8 @@ class AqnThread(Thread):
         self.Rs = self.RunPage.Rs_val
         self.duc_gain = float(self.RunPage.DUCgain_cb.GetValue())
 
-        for abs_V3 in TEST_V_OUT:  # Loop over desired output voltages
+        for abs_V3 in TEST_V_OUT:  # Loop over desired output voltages (0.1V, 1V, 10V)
             self.v1_nom = self.Rs * abs_V3 / self.duc_gain  # Nominal non-zero input
-            # print(f'\n________________|V3| loop_______________________'
-            #       f'\n acquisition.py, L181: abs_V3 = {abs_V3}, v1_nom = {self.v1_nom}\n')
-            # logger.info('V3: {} V'.format(abs_V3))
 
             self.i_nom = self.v1_nom / self.Rs
             if abs(self.i_nom) <= I_MIN or abs(self.i_nom) >= I_MAX:
@@ -224,17 +223,14 @@ class AqnThread(Thread):
                       'progress': 100.0*pbar/P_MAX, 'end_flag': 0}
             update_ev = evts.DataEvent(ud=update)
             wx.PostEvent(self.RunPage, update_ev)
-            for node in NODES:  # Select input node (V1 then V2)
-                self.set_node(node)
-                # print('\n_\t______________V1,V2 loop___________________')
-                # print(f'\n\tacquisition.py, L223: node = {node}, (abs_V3 = {abs_V3}, v1_nom = {self.v1_nom})\n')
-                for V3_mask in TEST_V_MASK:
-                    '''
-                    Loop over {0,+,-,0} test voltages (assumes negative gain)
-                    '''
-                    # print('\n_\t_\t________________V3 mask loop_________________')
-                    # print(f'\n\t\tacquisition.py, L229: V3 polarity mask = {V3_mask} '
-                    #       f'(node = {node}, abs_V3 = {abs_V3}, v1_nom = {self.v1_nom})\n')
+
+            for V3_mask in TEST_V_MASK:  # {0,+,-,0}.
+                '''
+                Loop over actual test voltages (assumes negative gain)
+                '''
+                for node in NODES:  # Select input node (V1 then V2)
+                    self.set_node(node)
+
                     self.v_out = abs_V3 * V3_mask  # Nominal output
                     self.v1_set = -1.0 * self.v_out * self.Rs / self.duc_gain
 
