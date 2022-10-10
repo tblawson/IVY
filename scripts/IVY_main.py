@@ -113,7 +113,7 @@ import time
 import datetime as dt
 # import logging
 
-VERSION = "1.1"
+VERSION = "1.2"
 
 print('IVY', VERSION)
 
