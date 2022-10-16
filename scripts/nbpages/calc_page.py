@@ -367,8 +367,8 @@ class CalcPage(wx.Panel):
             gains = []  # gains = {'pos': [],'neg': []}
             # 'neg' and 'pos' refer to polarity of OUTPUT VOLTAGE, not
             # input current! nom_Vout = +/-( 0.1,[1,[10]] ):
-            self.nom_Vout = {'pos': this_run['Nom_Vout'][row+2],
-                             'neg': this_run['Nom_Vout'][row+1]}
+            self.nom_Vout = {'pos': this_run['Nom_Vout'][row+4],  # +2
+                             'neg': this_run['Nom_Vout'][row+2]}  # +1
             abs_nom_vout = self.nom_Vout['pos']
 
             # Construct ureals from raw voltage data, including gain correction
