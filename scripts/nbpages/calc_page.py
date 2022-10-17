@@ -372,48 +372,50 @@ class CalcPage(wx.Panel):
             abs_nom_vout = self.nom_Vout['pos']
 
             # Construct ureals from raw voltage data, including gain correction
-            for n in range(4):
-                label_suffix_1 = this_run['Node'][row+n]+'_'+str(n)
-                label_suffix_2 = this_run['Node'][row+4+n]+'_'+str(n)
-                label_suffix_3 = 'V3' + '_' + str(n)
+            for mask_index in range(4):
+                label_suffix_1 = this_run['Node'][row+mask_index*2]+'_'+str(mask_index)
+                label_suffix_2 = this_run['Node'][row+mask_index*2+1]+'_'+str(mask_index)  # [row+4+n]
+                label_suffix_3 = 'V3' + '_' + str(mask_index)
 
-                v1_v = this_run['IP_V']['val'][row+n]
-                v1_u = this_run['IP_V']['sd'][row+n]
+                v1_v = this_run['IP_V']['val'][row+mask_index*2]
+                print(f'v1_{row+mask_index*2} = {v1_v}')
+                v1_u = this_run['IP_V']['sd'][row+mask_index*2]
                 v1_dof = this_run['Nreads'] - 1
                 v1_label = 'OP' + str(abs_nom_vout) + '_' + label_suffix_1
 
                 d1 = this_run['Instruments']['DVM12']
                 # print(f"Constructing gain parameter for {d1}: v1 = {v1_v}, range = {this_run['IPrange'][n]}")
-                gain_param = self.get_gain_err_param(abs(v1_v), this_run['IPrange'][n], devices.INSTR_DATA[d1])
+                gain_param = self.get_gain_err_param(abs(v1_v), this_run['IPrange'][mask_index], devices.INSTR_DATA[d1])
                 # print(devices.INSTR_DATA[d1].keys())
                 gain = self.build_ureal(devices.INSTR_DATA[d1][gain_param])
-                print(f"{v1_label}. Using gain: {gain.label} ({this_run['Nom_Vout'][row+n]} V)")
+                print(f"{v1_label}. Using gain: {gain.label} ({this_run['Nom_Vout'][row+mask_index]} V)")
                 gains.append(gain)  # gains = self.add_if_unique(gain, gains)  # gains.add(gain)
                 v1_raw = GTC.ureal(v1_v, v1_u, v1_dof, label=v1_label)
                 v1s.append(GTC.result(v1_raw/gain))
 
-                v2_v = this_run['IP_V']['val'][row+4+n]
-                v2_u = this_run['IP_V']['sd'][row+4+n]
+                v2_v = this_run['IP_V']['val'][row+mask_index*2+1]
+                print(f'v2_{row + mask_index * 2} = {v2_v}')
+                v2_u = this_run['IP_V']['sd'][row+mask_index*2+1]
                 v2_dof = this_run['Nreads'] - 1
                 v2_label = 'OP' + str(abs_nom_vout) + '_' + label_suffix_2
 
                 d2 = d1  # Same DVM
-                gain_param = self.get_gain_err_param(abs(v2_v), this_run['IPrange'][n], devices.INSTR_DATA[d2])
+                gain_param = self.get_gain_err_param(abs(v2_v), this_run['IPrange'][mask_index], devices.INSTR_DATA[d2])
                 gain = self.build_ureal(devices.INSTR_DATA[d2][gain_param])
-                print(f"{v2_label}. Using gain: {gain.label} ({this_run['Nom_Vout'][row+n]} V)")
+                print(f"{v2_label}. Using gain: {gain.label} ({this_run['Nom_Vout'][row+mask_index]} V)")
                 gains.append(gain)  # gains = self.add_if_unique(gain, gains)  # gains.add(gain)
                 v2_raw = GTC.ureal(v2_v, v2_u, v2_dof, label=v2_label)
                 v2s.append(GTC.result(v2_raw/gain))
 
-                v3_v = this_run['OP_V']['val'][row+n]
-                v3_u = this_run['OP_V']['sd'][row+n]
+                v3_v = this_run['OP_V']['val'][row+mask_index*2+1]
+                v3_u = this_run['OP_V']['sd'][row+mask_index*2+1]
                 v3_dof = this_run['Nreads'] - 1
                 v3_label = 'OP' + str(abs_nom_vout) + '_' + label_suffix_3
 
                 d3 = this_run['Instruments']['DVM3']
                 gain_param = self.get_gain_err_param(abs(v3_v), abs_nom_vout, devices.INSTR_DATA[d3])
                 gain = self.build_ureal(devices.INSTR_DATA[d3][gain_param])
-                print(f"{v3_label}. Using gain: {gain.label} ({this_run['Nom_Vout'][row+n]} V)")
+                print(f"{v3_label}. Using gain: {gain.label} ({this_run['Nom_Vout'][row+mask_index]} V)")
                 gains.append(gain)  # gains = self.add_if_unique(gain, gains)  # gains.add(gain)
                 v3_raw = GTC.ureal(v3_v, v3_u, v3_dof, label=v3_label)
                 v3s.append(GTC.result(v3_raw/gain))
@@ -476,11 +478,11 @@ class CalcPage(wx.Panel):
             # Rs Temperature
             t_rs = []
             pt_r_cor = []
-            for n, R_raw in enumerate(this_run['Pt_DVM'][row:row+8]):
+            for mask_index, R_raw in enumerate(this_run['Pt_DVM'][row:row+8]):
                 pt_r_cor.append(GTC.result(R_raw * (1 + dvmt_cor),
-                                           label='Pt_Rcor'+str(n)))
+                                           label='Pt_Rcor'+str(mask_index)))
                 t_rs.append(GTC.result(self.R_to_T(alpha=pt_alpha, beta=pt_beta,
-                                                   R=pt_r_cor[n],
+                                                   R=pt_r_cor[mask_index],
                                                    R0=pt_r0, T0=pt_t_ref)))
 
             av_t_rs = GTC.result(GTC.fn.mean(t_rs),
