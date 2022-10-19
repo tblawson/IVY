@@ -339,7 +339,9 @@ class AqnThread(Thread):
                     self.tm = tm_raw.strftime("%d/%m/%Y %H:%M:%S")  # self.tm
                     self.V12m[node] = float(np.mean(self.V12Data[node]))
                     self.V12sd[node] = float(np.std(self.V12Data[node], ddof=1))
-
+                    if self.V12m[node] > 999:  # Deal with overloaded range
+                        self.V12m[node] = 0
+                        self.V12sd[node] = 0
                     msg = 'V12m[{0:s}] = {1:.6f}'.format(node, self.V12m[node])
 
                     print(msg)
@@ -368,6 +370,10 @@ class AqnThread(Thread):
                     assert len(self.V3Data) == NREADS, msg + '(got {} instead)'.format(len(self.V3Data))
                     self.V3m = float(np.mean(self.V3Data))
                     self.V3sd = float(np.std(self.V3Data, ddof=1))
+                    if self.V3m > 999:  # Deal with overloaded range
+                        self.V3m = 0
+                        self.V3sd = 0
+
                     self.T = devices.ROLES_INSTR['GMH'].measure('T')
                     if not devices.ROLES_INSTR['DVM3'].demo:
                         output_range = float(devices.ROLES_INSTR['DVM3'].send_cmd('RANGE?'))
@@ -492,6 +498,8 @@ class AqnThread(Thread):
                 rtn = {'node': node, 'value': dvm_op, 'demo_data': True}
             else:
                 dvm_op = float(devices.ROLES_INSTR['DVM12'].read())
+                # if abs(dvm_op) > 999:  # Deal with overloaded range
+                #     dvm_op = 0
                 # V = float(dvmOP)  # float(filter(self.filt, dvmOP))
                 # self.V12Data['V1'].append(V)
                 rtn = {'node': node, 'value': dvm_op, 'demo_data': False}
@@ -505,6 +513,8 @@ class AqnThread(Thread):
                 rtn = {'node': node, 'value': dvm_op, 'demo_data': True}
             else:
                 dvm_op = float(devices.ROLES_INSTR['DVM12'].read())
+                # if abs(dvm_op) > 999:  # Deal with overloaded range
+                #     dvm_op = 0
                 # V = float(filter(self.filt, dvmOP))
                 # self.V12Data['V2'].append(V)
                 rtn = {'node': node, 'value': dvm_op, 'demo_data': False}
@@ -524,6 +534,8 @@ class AqnThread(Thread):
                 rtn = {'node': node, 'value': dvm_op, 'demo_data': True}
             else:
                 dvm_op = float(devices.ROLES_INSTR['DVM3'].read())
+                # if abs(dvm_op) > 999:  # Deal with overloaded range
+                #     dvm_op = 0
                 # V = float(filter(self.filt, dvm_op))
                 rtn = {'node': node, 'value': dvm_op, 'demo_data': False}
             self.V3Data.append(dvm_op)
