@@ -233,6 +233,7 @@ class RunPage(wx.Panel):
             self.Row_txtctrl.SetValue(str(e.ud['row']))
         if 'progress' in e.ud:
             self.progress_gauge.SetValue(e.ud['progress'])
+            self.progress_gauge.SetToolTip(str(e.ud['progress'])+'%')
         if 'end_flag' in e.ud:  # Aborted or Finished
             self.RunThread = None
             self.start_btn.Enable(True)
