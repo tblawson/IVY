@@ -8,7 +8,7 @@ Created on Mon Jul 31 12:00:00 2017
 
 @author: t.lawson
 
-IVY_main.py - Version 1.1
+IVY_main.py - Version 1.2
 
 ## Introduction
 
@@ -110,12 +110,14 @@ import scripts.nbpages.plot_page as plot_p
 import scripts.nbpages.calc_page as calc_p
 from scripts import devices, IVY_events as evts  # import IVY_events as evts
 import time
+import locale
 import datetime as dt
 # import logging
 
 VERSION = "1.2"
-
 print('IVY', VERSION)
+
+locale.setlocale(locale.LC_ALL, '')
 
 # # Start logging
 # LOG_FMT = '%(asctime)s %(levelname)s %(name)s:%(funcName)s(L%(lineno)d): '\
