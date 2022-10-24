@@ -407,8 +407,8 @@ class AqnThread(Thread):
                     row += 1
 
                     # Reset start row for next measurement
-                # (end of V3_mask loop)
-            # (end of node loop)
+                # (end of node loop)
+            # (end of V3_mask loop)
         # (end of abs_V3 loop)
 
         self.finish_run()
