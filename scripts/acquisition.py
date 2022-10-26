@@ -315,12 +315,13 @@ class AqnThread(Thread):
 
                     for n in range(NREADS):  # Acquire all V and t readings
                         self.measure_v(node)
+                        time.sleep(0.2)
                         self.measure_v('V3')
+                        time.sleep(0.2)
                         pbar += 1
                         update = {'node': '-', 'Vm': 0, 'Vsd': 0, 'time': '-',
                                   'row': row, 'progress': 100.0*pbar/P_MAX,
                                   'end_flag': 0}
-
                         update_ev = evts.DataEvent(ud=update)
                         wx.PostEvent(self.RunPage, update_ev)
                         if self._want_abort:
@@ -346,7 +347,7 @@ class AqnThread(Thread):
 
                     print(msg)
                     # logger.info(msg)
-                    self.set_node(node)
+                    self.set_node(node)  # redundant!
                     update = {'node': node, 'Vm': self.V12m[node],
                               'Vsd': self.V12sd[node], 'time': self.tm,
                               'row': row, 'progress': 100.0*pbar/P_MAX,
@@ -365,7 +366,7 @@ class AqnThread(Thread):
                     time.sleep(2)  # Give user time to read vals before update
 
                     msg = 'Number of V3 readings != {0:d}!'.format(NREADS)
-                    print(msg)
+                    # print(msg)
                     # logger.info(msg)
                     assert len(self.V3Data) == NREADS, msg + '(got {} instead)'.format(len(self.V3Data))
                     self.V3m = float(np.mean(self.V3Data))
