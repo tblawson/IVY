@@ -109,7 +109,7 @@
 		"addr": 17,
 		"str_addr": "GPIB0::17::INSTR",
 		"test": "*IDN?",
-		"init_str": "FUNC OHMF;OCOMP ON",
+		"init_str": "CONF:FRES 100, MIN",
 		"demo": true,
 		"role": null,
 		"correction_100r": {
