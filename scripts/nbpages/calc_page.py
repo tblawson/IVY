@@ -407,8 +407,8 @@ class CalcPage(wx.Panel):
                 v2_raw = GTC.ureal(v2_v, v2_u, v2_dof, label=v2_label)
                 v2s.append(GTC.result(v2_raw/gain))
 
-                v3_v = this_run['OP_V']['val'][row+mask_index*2+1]
-                v3_u = this_run['OP_V']['sd'][row+mask_index*2+1]
+                v3_v = this_run['OP_V']['val'][row+mask_index*2]
+                v3_u = this_run['OP_V']['sd'][row+mask_index*2]
                 v3_dof = this_run['Nreads'] - 1
                 v3_label = 'OP' + str(abs_nom_vout) + '_' + label_suffix_3
 
@@ -444,11 +444,15 @@ class CalcPage(wx.Panel):
 
             duc_T_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](DUC_T_DEF_UNCERT),
                                   3, label='DUC_T_def')
-            Vin = this_run['IP_V']['val'][2]  # Typical value of input voltage.
-            Vout = this_run['Nom_Vout'][2]
+            Vin = this_run['IP_V']['val'][row+2]  # Nominal value of input voltage.
+            Vout = this_run['Nom_Vout'][row+2]  # Nominal value of output voltage.
             Rf_val = abs(this_run['Rs']*(Vout/Vin))
-            # Rf_nom_val = 10**(round(math.log10(Rf_val)))  # Round Rf to nearest decade
-            Rf_nom_val = round(Rf_val, -2)  # Round Rf to nearest 100
+            sigfig = round(math.log10(Rf_val))
+            Rf_nom_val = int(round(Rf_val, -1*sigfig + 1))  # Round Rf to nearest 2 decades
+            # Rf_nom_val = round(Rf_val, -2)  # Round Rf to nearest 100
+            print(f'\tCalculated RF_val={Rf_val}\n\tsigfig={sigfig}')
+            print(f'\tAnalysis row={row}, mask-index={mask_index}\n\tAssuming Vin={Vin} and Vout={Vout}'
+                  f'\n\tCalculate Rf_val={Rf_val} (nominally:{Rf_nom_val})')
             # print(f'\nRf_nom value = {Rf_nom_val}.')
             Rf_name = self.Rf_VAL_NAME[Rf_nom_val]
 
