@@ -267,8 +267,8 @@ class AqnThread(Thread):
 
                     # print(f'RANGE-LOCKING DVM3 TO {abs_V3}...')
                     devices.ROLES_INSTR['DVM3'].send_cmd(f'DCV {abs_V3}')
-                    # rng3 = float(devices.ROLES_INSTR['DVM3'].send_cmd('RANGE?'))
-                    # print(f'(acqn.L268) SANITY CHECK: OP-range={rng3}')
+                    rng3 = float(devices.ROLES_INSTR['DVM3'].send_cmd('RANGE?'))
+                    print(f'RANGE-LOCKed DVM3 TO {rng3}')
 
                     if not (devices.ROLES_INSTR['DVM12'].demo and devices.ROLES_INSTR['DVM3'].demo):
                         time.sleep(0.5)  # Settle after setting range
@@ -276,10 +276,15 @@ class AqnThread(Thread):
                     # print('Aqn_thread.run(): masked V1_set = {}'.format(self.v1_set))
                     # logger.info('masked V1_set = %f', self.v1_set)
                     self.RunPage.V1_set_numctrl.SetValue(str(self.v1_set))
+
                     if not devices.ROLES_INSTR['SRC'].demo:
                         time.sleep(0.5)  # Settle after setting V
-                    if self.v1_set == 0:
-                        devices.ROLES_INSTR['SRC'].oper()  # Over-ride 0V STBY
+                    devices.ROLES_INSTR['SRC'].oper()  # Over-ride 0V STBY
+                    time.sleep(0.5)  # Allow circuit to settle...
+                    devices.ROLES_INSTR['DVM3'].send_cmd('ARANGE ONCE')  # Auto-range-lock output DVM
+                    rng3 = float(devices.ROLES_INSTR['DVM3'].send_cmd('RANGE?'))
+                    print(f'RANGE-LOCKed DVM3 TO {rng3}')
+
                     if self._want_abort:
                         self.abort_run()
                         return
