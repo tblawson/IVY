@@ -370,6 +370,7 @@ class CalcPage(wx.Panel):
             self.nom_Vout = {'pos': this_run['Nom_Vout'][row+4],  # +2
                              'neg': this_run['Nom_Vout'][row+2]}  # +1
             abs_nom_vout = self.nom_Vout['pos']
+            # out_range = int(this_run['Nom_Vout']['OPrange'][row])
 
             # Construct ureals from raw voltage data, including gain correction
             for mask_index in range(4):
@@ -414,6 +415,7 @@ class CalcPage(wx.Panel):
 
                 d3 = this_run['Instruments']['DVM3']
                 gain_param = self.get_gain_err_param(abs(v3_v), abs_nom_vout, devices.INSTR_DATA[d3])
+                # gain_param = self.get_gain_err_param(abs(v3_v), out_range, devices.INSTR_DATA[d3])
                 gain = self.build_ureal(devices.INSTR_DATA[d3][gain_param])
                 print(f"{v3_label}. Using gain: {gain.label} ({this_run['Nom_Vout'][row+mask_index]} V)")
                 gains.append(gain)  # gains = self.add_if_unique(gain, gains)  # gains.add(gain)

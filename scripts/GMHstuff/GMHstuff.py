@@ -407,7 +407,7 @@ class GMHSensor:
         units = []  # E.g. 'deg C', 'hPascal', ...
 
         if len(self._info) > 0:  # Device info already determined.
-            print('\nget_sensor_info(): device info already determined.')
+            # print('\nget_sensor_info(): device info already determined.')
             return self._info
         else:
             # Find all channel-independent parameters
@@ -418,11 +418,11 @@ class GMHSensor:
                 # Visit all the channels and note their capabilities:
                 channel = 0
                 while channel <= self.chan_count:
-                    print('get_sensor_info(): Testing channel {}...'.format(channel))
+                    # print('get_sensor_info(): Testing channel {}...'.format(channel))
                     # Try reading a value, Write result to self.c_intData:
                     self.error_code = self.transmit(channel, 'GetValue')
                     if self.error_code < 0:
-                        print('get_sensor_info(): No measurement function at channel {}'.format(channel))
+                        # print('get_sensor_info(): No measurement function at channel {}'.format(channel))
                         channel += 1
                         continue  # Skip to next channel if this one has no value to read
                     else:  # Successfully got a dummy value
@@ -499,7 +499,7 @@ class GMHSensor:
                 # chan = self._info[MEAS_ALIAS[meas]][0]
                 unit_str = self._info[MEAS_ALIAS[meas_type]][1]
                 reading = (self.c_flData.value, unit_str)
-                print('Measured {} from port {}, chan: {}.'.format(reading, self.port, channel))
-                print(self._info)
+                # print('Measured {} from port {}, chan: {}.'.format(reading, self.port, channel))
+                # print(self._info)
         self.close()
         return reading
