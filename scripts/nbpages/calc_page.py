@@ -362,8 +362,12 @@ class CalcPage(wx.Panel):
         v2s = []
         v3s = []
 
+        skip_to_next_nom_vout = 0  # Flag to skip dud data
+
         num_rows = len(this_run['Nom_Vout'])
         for row in range(0, num_rows, 8):  # 0, [8, [16]]
+            skip_to_next_nom_vout = 0
+
             gains = []  # gains = {'pos': [],'neg': []}
             # 'neg' and 'pos' refer to polarity of OUTPUT VOLTAGE, not
             # input current! nom_Vout = +/-( 0.1,[1,[10]] ):
@@ -380,6 +384,10 @@ class CalcPage(wx.Panel):
 
                 v1_v = this_run['IP_V']['val'][row+mask_index*2]
                 print(f'v1_{row+mask_index*2} = {v1_v}')
+                if v1_v == 0 or abs(v1_v) > 1000:
+                    skip_to_next_nom_vout = 1
+                    print(f'skipping Vout={abs_nom_vout} data-block')
+                    break
                 v1_u = this_run['IP_V']['sd'][row+mask_index*2]
                 v1_dof = this_run['Nreads'] - 1
                 v1_label = 'OP' + str(abs_nom_vout) + '_' + label_suffix_1
@@ -395,6 +403,10 @@ class CalcPage(wx.Panel):
                 v1s.append(GTC.result(v1_raw/gain))
 
                 v2_v = this_run['IP_V']['val'][row+mask_index*2+1]
+                if v2_v == 0 or abs(v2_v) > 1000:
+                    skip_to_next_nom_vout = 1
+                    print(f'skipping Vout={abs_nom_vout} data-block')
+                    break
                 print(f'v2_{row + mask_index * 2} = {v2_v}')
                 v2_u = this_run['IP_V']['sd'][row+mask_index*2+1]
                 v2_dof = this_run['Nreads'] - 1
@@ -410,6 +422,11 @@ class CalcPage(wx.Panel):
 
                 v3_v = this_run['OP_V']['val'][row+mask_index*2]
                 v3_u = this_run['OP_V']['sd'][row+mask_index*2]
+                # Check for bad readings (usually caused by a range overload):
+                if v3_v == 0 or abs(v3_v) > 1000:
+                    skip_to_next_nom_vout = 1
+                    print(f'skipping Vout={abs_nom_vout} data-block')
+                    break
                 v3_dof = this_run['Nreads'] - 1
                 v3_label = 'OP' + str(abs_nom_vout) + '_' + label_suffix_3
 
@@ -424,6 +441,8 @@ class CalcPage(wx.Panel):
 
                 influences.extend([v1_raw, v2_raw, v3_raw])
 
+            if skip_to_next_nom_vout:
+                continue
             influences.extend(gains)  # List of unique gain corrections.
             print('\nlist of gains:')
             for g in gains:
@@ -446,7 +465,7 @@ class CalcPage(wx.Panel):
 
             duc_T_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](DUC_T_DEF_UNCERT),
                                   3, label='DUC_T_def')
-            Vin = this_run['IP_V']['val'][row+2]  # Nominal value of input voltage.
+            Vin = this_run['IP_V']['val'][row+2]  # Measured value of input voltage.
             Vout = this_run['Nom_Vout'][row+2]  # Nominal value of output voltage.
             Rf_val = abs(this_run['Rs']*(Vout/Vin))
             sigfig = round(math.log10(Rf_val))
@@ -456,7 +475,8 @@ class CalcPage(wx.Panel):
             print(f'\tAnalysis row={row}, mask-index={mask_index}\n\tAssuming Vin={Vin} and Vout={Vout}'
                   f'\n\tCalculate Rf_val={Rf_val} (nominally:{Rf_nom_val})')
             # print(f'\nRf_nom value = {Rf_nom_val}.')
-            Rf_name = self.Rf_VAL_NAME[Rf_nom_val]
+            # Rf_name = self.Rf_VAL_NAME[Rf_nom_val]
+            Rf_name = self.Rf_VAL_NAME[duc_gain]
 
             # Get Rf alpha and 1-yr stability from resistor data (as GTC.ureals):
             alpha_Rf = self.build_ureal(devices.RES_DATA[Rf_name][duc_name]['alpha'])
