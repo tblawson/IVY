@@ -140,53 +140,67 @@ class CalcPage(wx.Panel):
         gb_sizer.Add(self.RHExpU, pos=(4, 6), span=(1, 1),
                      flag=wx.ALL, border=5)  # | wx.EXPAND
 
-        tgmh_lbl = wx.StaticText(self, id=wx.ID_ANY, label='T (GMH):')
-        gb_sizer.Add(tgmh_lbl, pos=(5, 2), span=(1, 1),
+        t_room_lbl = wx.StaticText(self, id=wx.ID_ANY, label='T_room:')
+        gb_sizer.Add(t_room_lbl, pos=(5, 2), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        self.TroomSummary = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        gb_sizer.Add(self.TroomSummary, pos=(5, 3), span=(1, 2),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        self.Troomk = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        gb_sizer.Add(self.Troomk, pos=(5, 5), span=(1, 1),
+                     flag=wx.ALL | wx.EXPAND, border=5)
+        self.TroomExpU = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        gb_sizer.Add(self.TroomExpU, pos=(5, 6), span=(1, 1),
+                     flag=wx.ALL, border=5)  # | wx.EXPAND
+
+        # Device temperature
+        tgmh_lbl = wx.StaticText(self, id=wx.ID_ANY, label='T_DUC (GMH):')
+        gb_sizer.Add(tgmh_lbl, pos=(6, 2), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
         self.TGMHSummary = wx.TextCtrl(self, id=wx.ID_ANY,
                                        style=wx.TE_READONLY)
-        gb_sizer.Add(self.TGMHSummary, pos=(5, 3), span=(1, 2),
+        gb_sizer.Add(self.TGMHSummary, pos=(6, 3), span=(1, 2),
                      flag=wx.ALL | wx.EXPAND, border=5)
         self.TGMHk = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gb_sizer.Add(self.TGMHk, pos=(5, 5), span=(1, 1),
+        gb_sizer.Add(self.TGMHk, pos=(6, 5), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
         self.TGMHExpU = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gb_sizer.Add(self.TGMHExpU, pos=(5, 6), span=(1, 1),
+        gb_sizer.Add(self.TGMHExpU, pos=(6, 6), span=(1, 1),
                      flag=wx.ALL, border=5)  # | wx.EXPAND
         # -----------------------------------------------------------------
         self.h_sep3 = wx.StaticLine(self, id=wx.ID_ANY, size=(480, 1),
                                     style=wx.LI_HORIZONTAL)
-        gb_sizer.Add(self.h_sep3, pos=(6, 2), span=(1, 5),
+        gb_sizer.Add(self.h_sep3, pos=(7, 2), span=(1, 5),
                      flag=wx.ALL | wx.EXPAND, border=5)  #
         # -----------------------------------------------------------------
         vout_lbl = wx.StaticText(self, id=wx.ID_ANY,
                                  label='Nom. ' + DELTA + 'Vout:')
-        gb_sizer.Add(vout_lbl, pos=(7, 2), span=(1, 1),
+        gb_sizer.Add(vout_lbl, pos=(8, 2), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
         self.NomVout = wx.ComboBox(self, id=wx.ID_ANY,
                                    style=wx.CB_DROPDOWN | wx.CB_READONLY)
         self.NomVout.Bind(wx.EVT_COMBOBOX, self.on_nom_vout_choice)
-        gb_sizer.Add(self.NomVout, pos=(7, 3), span=(1, 1),
+        gb_sizer.Add(self.NomVout, pos=(8, 3), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
 
         i_in_lbl = wx.StaticText(self, id=wx.ID_ANY, label=DELTA + 'I_in:')
-        gb_sizer.Add(i_in_lbl, pos=(8, 2), span=(1, 1),
+        gb_sizer.Add(i_in_lbl, pos=(9, 2), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
         self.IinSummary = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gb_sizer.Add(self.IinSummary, pos=(8, 3), span=(1, 2),
+        gb_sizer.Add(self.IinSummary, pos=(9, 3), span=(1, 2),
                      flag=wx.ALL | wx.EXPAND, border=5)
         self.Iink = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gb_sizer.Add(self.Iink, pos=(8, 5), span=(1, 1),
+        gb_sizer.Add(self.Iink, pos=(9, 5), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
         self.IinExpU = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        gb_sizer.Add(self.IinExpU, pos=(8, 6), span=(1, 1),
+        gb_sizer.Add(self.IinExpU, pos=(9, 6), span=(1, 1),
                      flag=wx.ALL, border=5)  # | wx.EXPAND
 
         self.Budget = wx.TextCtrl(self, style=wx.TE_MULTILINE |
                                   wx.TE_READONLY | wx.HSCROLL, id=wx.ID_ANY,)
         budget_font = wx.Font(8, wx.MODERN, wx.NORMAL, wx.NORMAL)
         self.Budget.SetFont(budget_font)
-        gb_sizer.Add(self.Budget, pos=(9, 2), span=(14, 6),
+        gb_sizer.Add(self.Budget, pos=(10, 2), span=(14, 6),
                      flag=wx.ALL | wx.EXPAND, border=5)  #
 
         self.SetSizerAndFit(gb_sizer)
@@ -229,6 +243,9 @@ class CalcPage(wx.Panel):
         self.RHSummary.Clear()
         self.RHk.Clear()
         self.RHExpU.Clear()
+        self.TroomSummary.Clear()
+        self.Troomk.Clear()
+        self.TroomExpU.Clear()
         self.TGMHSummary.Clear()
         self.TGMHk.Clear()
         self.TGMHExpU.Clear()
@@ -285,17 +302,20 @@ class CalcPage(wx.Panel):
         gmh_temps = []
         gmh_room_rhs = []
         gmh_room_ps = []
-        for T in this_run['T_GMH']:
-            gmh_temps.append(T[0])
+        gmh_room_ts = []
+        for T_duc in this_run['T_GMH']:
+            gmh_temps.append(T_duc[0])
         for RH in this_run['Room_conds']['RH']:
             gmh_room_rhs.append(RH[0])
         for P in this_run['Room_conds']['P']:
             gmh_room_ps.append(P[0])
+        for T in this_run['Room_conds']['T']:
+            gmh_room_ts.append(T[0])
 
         d = this_run['Instruments']['GMH']
         t_gmh_cor = self.build_ureal(devices.INSTR_DATA[d]['T_correction'])
         t_gmh_raw = GTC.ta.estimate_digitized(gmh_temps, 0.01)
-        t_gmh = t_gmh_raw + t_gmh_cor + gmh_t_def
+        t_gmh = t_gmh_raw + t_gmh_cor #  + gmh_t_def
         t_gmh_k = GTC.rp.k_factor(t_gmh.df)
         t_gmh_eu = t_gmh.u*t_gmh_k
 
@@ -313,6 +333,13 @@ class CalcPage(wx.Panel):
         press_k = GTC.rp.k_factor(press.df)
         press_eu = press.u * press_k
 
+        # Re-use d (same instrument description)
+        t_room_cor = self.build_ureal(devices.INSTR_DATA[d]['T_correction'])
+        t_room_raw = GTC.ta.estimate_digitized(gmh_room_ts, 0.1)
+        t_room = t_room_raw * (1 + t_room_cor)
+        t_room_k = GTC.rp.k_factor(t_room.df)
+        t_room_eu = t_room.u * t_room_k
+
         self.Results.update({self.run_ID: {}})
         self.ThisResult = self.Results[self.run_ID]
         self.ThisResult.update({'Comment': comment,
@@ -320,13 +347,14 @@ class CalcPage(wx.Panel):
                                 'Processed date': processed_date,
                                 'DUC name': duc_name,
                                 'DUC gain': duc_gain,
-                                'T_GMH': {},
+                                'Tduc_GMH': {},
                                 'RH': {},
                                 'P': {},
+                                'Troom': {},
                                 'Nom_dV': {},
                                 'IP_rng': {}})
 
-        self.ThisResult['T_GMH'].update({'value': t_gmh.x,
+        self.ThisResult['Tduc_GMH'].update({'value': t_gmh.x,
                                          'uncert': t_gmh.u,
                                          'dof': t_gmh.df,
                                          'label': t_gmh.label,
@@ -347,12 +375,22 @@ class CalcPage(wx.Panel):
                                      'k': press_k,
                                      'ExpU': press_eu})
 
+        self.ThisResult['Troom'].update({'value': t_room.x,
+                                     'uncert': t_room.u,
+                                     'dof': t_room.df,
+                                     'label': t_room.label,
+                                     'k': t_room_k,
+                                     'ExpU': t_room_eu})
+
         self.PSummary.SetValue('{0:.3f} +/- {1:.3f}. dof={2:.1f}'.format(press.x, press.u, press.df))  # str(press.s)
         self.Pk.SetValue('{0:.1f}'.format(press_k))
         self.PExpU.SetValue('{0:.2f}'.format(press_eu))
         self.RHSummary.SetValue('{0:.3f} +/- {1:.3f}. dof={2:.1f}'.format(rh.x, rh.u, rh.df))  # str(rh.s)
         self.RHk.SetValue('{0:.1f}'.format(rh_k))
         self.RHExpU.SetValue('{0:.2f}'.format(rh_eu))
+        self.TroomSummary.SetValue('{0:.3f} +/- {1:.3f}. dof={2:.1f}'.format(t_room.x, t_room.u, t_room.df))
+        self.Troomk.SetValue('{0:.1f}'.format(t_room_k))
+        self.TroomExpU.SetValue('{0:.2f}'.format(t_room_eu))
         self.TGMHSummary.SetValue('{0:.3f} +/- {1:.3f}. dof={2:.1f}'.format(t_gmh.x, t_gmh.u, t_gmh.df))  # str(t_gmh.s)
         self.TGMHk.SetValue('{0:.1f}'.format(t_gmh_k))
         self.TGMHExpU.SetValue('{0:.2f}'.format(t_gmh_eu))
