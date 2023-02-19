@@ -431,11 +431,11 @@ class CalcPage(wx.Panel):
                 v1_label = 'OP' + str(abs_nom_vout) + '_' + label_suffix_1
 
                 d1 = this_run['Instruments']['DVM12']
-                # print(f"Constructing gain parameter for {d1}: v1 = {v1_v}, range = {this_run['IPrange'][n]}")
-                gain_param = self.get_gain_err_param(abs(v1_v), this_run['IPrange'][mask_index], devices.INSTR_DATA[d1])
+                print(f"Finding gain parameter for {d1}: v1 = {v1_v}, range = {this_run['IPrange'][row+mask_index]}")
+                gain_param = self.get_gain_err_param(abs(v1_v), this_run['IPrange'][row+mask_index], devices.INSTR_DATA[d1])
                 # print(devices.INSTR_DATA[d1].keys())
                 gain = self.build_ureal(devices.INSTR_DATA[d1][gain_param])
-                print(f"{v1_label}. Using gain: {gain.label} ({this_run['Nom_Vout'][row+mask_index]} V)")
+                print(f"{v1_label}. Using gain: {gain.label} (Nom_Vout = {this_run['Nom_Vout'][row+mask_index]} V)")
                 gains.append(gain)  # gains = self.add_if_unique(gain, gains)  # gains.add(gain)
                 v1_raw = GTC.ureal(v1_v, v1_u, v1_dof, label=v1_label)
                 v1s.append(GTC.result(v1_raw/gain))
@@ -451,9 +451,10 @@ class CalcPage(wx.Panel):
                 v2_label = 'OP' + str(abs_nom_vout) + '_' + label_suffix_2
 
                 d2 = d1  # Same DVM
-                gain_param = self.get_gain_err_param(abs(v2_v), this_run['IPrange'][mask_index], devices.INSTR_DATA[d2])
+                print(f"Finding gain parameter for {d2}: v1 = {v2_v}, range = {this_run['IPrange'][row+mask_index]}")
+                gain_param = self.get_gain_err_param(abs(v2_v), this_run['IPrange'][row+mask_index], devices.INSTR_DATA[d2])
                 gain = self.build_ureal(devices.INSTR_DATA[d2][gain_param])
-                print(f"{v2_label}. Using gain: {gain.label} ({this_run['Nom_Vout'][row+mask_index]} V)")
+                print(f"{v2_label}. Using gain: {gain.label} (Nom_Vout = {this_run['Nom_Vout'][row+mask_index]} V)")
                 gains.append(gain)  # gains = self.add_if_unique(gain, gains)  # gains.add(gain)
                 v2_raw = GTC.ureal(v2_v, v2_u, v2_dof, label=v2_label)
                 v2s.append(GTC.result(v2_raw/gain))
@@ -469,10 +470,11 @@ class CalcPage(wx.Panel):
                 v3_label = 'OP' + str(abs_nom_vout) + '_' + label_suffix_3
 
                 d3 = this_run['Instruments']['DVM3']
+                print(f"Finding gain parameter for {d3}: v1 = {v3_v}, range = {abs_nom_vout}")
                 gain_param = self.get_gain_err_param(abs(v3_v), abs_nom_vout, devices.INSTR_DATA[d3])
                 # gain_param = self.get_gain_err_param(abs(v3_v), out_range, devices.INSTR_DATA[d3])
                 gain = self.build_ureal(devices.INSTR_DATA[d3][gain_param])
-                print(f"{v3_label}. Using gain: {gain.label} ({this_run['Nom_Vout'][row+mask_index]} V)")
+                print(f"{v3_label}. Using gain: {gain.label} (Nom_Vout = {this_run['Nom_Vout'][row+mask_index]} V)")
                 gains.append(gain)  # gains = self.add_if_unique(gain, gains)  # gains.add(gain)
                 v3_raw = GTC.ureal(v3_v, v3_u, v3_dof, label=v3_label)
                 v3s.append(GTC.result(v3_raw/gain))
@@ -759,12 +761,12 @@ class CalcPage(wx.Panel):
         """
         Return the key (a string) identifying the correct gain parameter
         for V (and appropriate range).
-        v: measured voltage - should always be >= 0
+        v_meas: measured voltage - should always be >= 0
         rng: DVM range (always positive)
         DVM_keys: list of keys in DVM dict
         """
         assert v_meas >= 0, f'get_gain_err_param(): v must be >= 0! (v = {v_meas})'
-
+        print(f'get_gain_err_param(): v_meas = {v_meas}, rng = {rng}')
         # Populate range-voltage matrix with info from the DVM's gain entries in the Instruments file:
         rng_v_matrix = {0.1: [],
                         1: [],
