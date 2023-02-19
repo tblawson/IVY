@@ -8,7 +8,7 @@ Created on Mon Jul 31 12:00:00 2017
 
 @author: t.lawson
 
-IVY_main.py - Version 1.2
+IVY_main.py - Version 1.3
 
 ## Introduction
 
