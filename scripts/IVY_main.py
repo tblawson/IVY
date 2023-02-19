@@ -114,7 +114,7 @@ import locale
 import datetime as dt
 # import logging
 
-VERSION = "1.2"
+VERSION = "1.3"
 print('IVY', VERSION)
 
 locale.setlocale(locale.LC_ALL, '')
