@@ -336,7 +336,7 @@ class CalcPage(wx.Panel):
         # Re-use d (same instrument description)
         t_room_cor = self.build_ureal(devices.INSTR_DATA[d]['T_correction'])
         t_room_raw = GTC.ta.estimate_digitized(gmh_room_ts, 0.1)
-        t_room = t_room_raw * (1 + t_room_cor)
+        t_room = t_room_raw + t_room_cor
         t_room_k = GTC.rp.k_factor(t_room.df)
         t_room_eu = t_room.u * t_room_k
 
