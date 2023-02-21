@@ -322,7 +322,7 @@ class CalcPage(wx.Panel):
         d = this_run['Instruments']['GMHroom']
         rh_cor = self.build_ureal(devices.INSTR_DATA[d]['RH_correction'])
         rh_raw = GTC.ta.estimate_digitized(gmh_room_rhs, 0.1)
-        rh = rh_raw*(1 + rh_cor)
+        rh = rh_raw + rh_cor
         rh_k = GTC.rp.k_factor(rh.df)
         rh_eu = rh.u*rh_k
 
