@@ -169,7 +169,7 @@ class MainFrame(wx.Frame):
         file_menu = wx.Menu()
 
         about = file_menu.Append(wx.ID_ABOUT, '&About',
-                                 'About IVY v1.1 (I-to-V converter calibration software)')
+                                 f'About IVY v{VERSION} (I-to-V converter calibration software)')
         self.Bind(wx.EVT_MENU, self.on_about, about)
 
         set_dir = file_menu.Append(wx.ID_OPEN, 'Set &Directory',
@@ -178,7 +178,7 @@ class MainFrame(wx.Frame):
 
         file_menu.AppendSeparator()
 
-        exit_app = file_menu.Append(wx.ID_EXIT, '&Quit', 'Exit scripts {}'.format(VERSION))
+        exit_app = file_menu.Append(wx.ID_EXIT, '&Quit', f'Exit scripts {VERSION}')
         self.Bind(wx.EVT_MENU, self.on_quit, exit_app)
 
         menu_bar.Append(file_menu, "&File")
