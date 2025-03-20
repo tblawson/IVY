@@ -189,8 +189,9 @@ class AqnThread(Thread):
             self.i_nom = self.v1_nom / self.Rs
 
             # Check nominal input-I and V are within constraints:
+            i_nom_str = '(%.1g A)' % self.i_nom
             if abs(self.i_nom) <= I_MIN or abs(self.i_nom) >= I_MAX:
-                i_nom_str = '(%.1g A)' % self.i_nom
+                #i_nom_str = '(%.1g A)' % self.i_nom
                 warning = '\nNominal I/P test-I outside scope! ' + i_nom_str
                 print(warning)
                 # logger.warning(warning)
@@ -204,9 +205,12 @@ class AqnThread(Thread):
                 update_ev = evts.DataEvent(ud=update)
                 wx.PostEvent(self.RunPage, update_ev)
                 continue
+            else:
+                print(f'Nominal I/P test-I WITHIN scope: {i_nom_str}')
 
+            v_nom_str = '(%.1g V)' % self.v1_nom
             if abs(self.v1_nom) < V1_MIN or abs(self.v1_nom) > V1_MAX:
-                v_nom_str = '(%.1g V)' % self.v1_nom
+                # v_nom_str = '(%.1g V)' % self.v1_nom
                 warning = 'Nom. I/P test-V outside scope! '+v_nom_str
                 print(f'\n{warning}')
                 # logger.warning(warning)
@@ -219,6 +223,8 @@ class AqnThread(Thread):
                 update_ev = evts.DataEvent(ud=update)
                 wx.PostEvent(self.RunPage, update_ev)
                 continue
+            else:
+                print(f'Nom. I/P test-V WITHIN scope: {v_nom_str}')
 
             update = {'node': '-', 'Vm': 0, 'Vsc': 0, 'time': '-', 'row': row,
                       'progress': 100.0*pbar/P_MAX, 'end_flag': 0}
@@ -564,7 +570,7 @@ class AqnThread(Thread):
             self.T_dvm_op = T_dvm_op
         else:
             T_dvm_op = devices.ROLES_INSTR['DVMT'].read()  # .SendCmd('READ?')
-            self.T_dvm_op = float(T_dvm_op) # float(filter(self.filt, T_dvm_op))
+            self.T_dvm_op = float(T_dvm_op)  # float(filter(self.filt, T_dvm_op))
 
         # Update run_dict:
         self.run_dict['Node'].append(node)
