@@ -624,7 +624,7 @@ class AqnThread(Thread):
             msg = f'SAVING ALL RUN DATA to {data_file}'
             print(msg)
             # logger.info(msg)
-            json.dump(self.RunPage.master_run_dict, IVY_out)
+            json.dump(self.RunPage.master_run_dict, IVY_out, indent=4)
 
         self.standby()  # Set sources to 0V and leave system safe
 
