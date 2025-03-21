@@ -27,20 +27,23 @@ The following file structure is assumed to be pre-existing before running
 the application and the working directory can be set by the File > Set Directory
 pull-down menu-item:
 ```
-└─ <working directory> (defaults to the directory where `IVY_main.py` resides)
+ ├─ Reference
+ │   ├─ IVY_Instruments.json
+ │   └─ IVY_Resistors.json
+ └─ <working directory> (defaults to the directory where `IVY_main.py` resides)
    ├─ data
-   │  ├─ IVY_Instruments.json
-   │  └─ IVY_Resistors.json
    └─ log
 ```
-The contents of the 'data' directory should initially consist of at least:
+The working directory would normally be named for the DUC (e.g. R1047) and be at the same directory level as
+the Reference directory and should contain:
 
 * IVY_Instruments.json (a list of available instruments and external devices) and
 * IVY_Resistors.json (a list of resistors).
 
 Example json files can be found in `<project root-directory>\IVY\data\`.
 
-`data` is also the destination for `IVY_RunData.json` (after initial data acquisition)
+The contents of the 'data' directory should initially be empty.
+`data` is the destination for `IVY_RunData.json` (after initial data acquisition)
 and `IVY_Results.json` (after analysis).
 
 log files are written to the `log` directory.
@@ -149,6 +152,7 @@ class MainFrame(wx.Frame):
         self.log_name = ""
         self.logfile = ""
         self.results_file = ""
+        self.reference_dir = ""
 
         # Logging
         # self.logname = 'IVYv' + VERSION + '_' + str(dt.date.today()) + '.log'
@@ -237,6 +241,7 @@ I-to-V converter program for Light Standards."
             self.directory = dlg.GetPath()
             self.data_file = os.path.join(self.directory, 'data/IVY_RunData.json')
             self.results_file = os.path.join(self.directory, 'data/IVY_Results.json')
+            self.reference_dir = os.path.join(self.directory, '../Reference')
             print(f'Working directory: {self.directory}')
 
             # # log file...
@@ -248,7 +253,7 @@ I-to-V converter program for Light Standards."
             # self.logger.info('\n____________USER INTERACTION LOG: START____________')
 
             # Get resistor and instrument data:
-            devices.RES_DATA, devices.INSTR_DATA = devices.refresh_params(self.directory)
+            devices.RES_DATA, devices.INSTR_DATA = devices.refresh_params(self.reference_dir)
             # Ensure working directory is displayed on SetupPage:
             file_evt = evts.FilePathEvent(Dir=self.directory)
             wx.PostEvent(self.page1, file_evt)
