@@ -38,9 +38,17 @@ class CalcPage(wx.Panel):
         self.version = self.GetTopLevelParent().version
         self.data_dir = self.GetTopLevelParent().directory
         self.data_file = self.GetTopLevelParent().data_file
-#        self.results_file = os.path.join(os.path.dirname(self.data_file),
-#                                         'IVY_Results.json')
-        self.Results = {}  # Accumulate run-analyses here
+        self.results_file = self.GetTopLevelParent().results_file  # os.path.join(os.path.dirname(self.data_file), 'IVY_Results.json')
+
+        # Dictionary to hold ALL runs for this application session:
+        # Open json file (if it exists). Use json to read file contents in to Results dict.
+        # If no file, create empty dictionary.
+        try:
+            with open(self.results_file, 'r') as results_fp:
+                results_str = devices.strip_chars(results_fp.read(), '\t\n')  # Remove tabs & newlines
+                self.Results = json.loads(results_str)  # Load pre-existing data as a dict
+        except FileNotFoundError:
+            self.Results = {}  # Start from scratch if no pre-existing data. Accumulate run-analyses here
 
         self.Rs_VALUES = self.GetTopLevelParent().page2.Rs_VALUES
         self.Rs_NAMES = ['IV1k 1k', 'IV10k 10k',
@@ -657,9 +665,11 @@ class CalcPage(wx.Panel):
             del v3s[:]
         # <-- End of analysis loop for this run
 
-        # Save analysis result
+        # Save analysis result - Overwrites any pre-existing version
         self.results_file = self.GetTopLevelParent().results_file
         with open(self.results_file, 'w') as results_fp:
+            msg = f'SAVING ALL ANALYSIS RESULTS TO {self.results_file}'
+            print(msg)
             json.dump(self.Results, results_fp, indent=4)
 
         # Ensure Vout c-box is cleared before updating choices.
