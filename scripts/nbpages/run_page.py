@@ -16,6 +16,7 @@ from wx.lib.masked import NumCtrl
 import time
 import datetime as dt
 import math
+import json
 from scripts import acquisition as acq, devices, IVY_events as Evts
 
 # logger = logging.getLogger(__name__)
@@ -29,6 +30,8 @@ class RunPage(wx.Panel):
         self.directory = self.GetTopLevelParent().directory
         self.version = self.GetTopLevelParent().version
         self.SetupPage = self.GetTopLevelParent().page1
+        self.data_file = self.GetTopLevelParent().data_file
+        self.results_file = self.GetTopLevelParent().results_file
         self.run_id = 'none'
 
         self.GAINS_CHOICE = ['1e3', '1e4', '1e5', '1e6',
@@ -204,7 +207,14 @@ class RunPage(wx.Panel):
         self.Rs_val = 0
 
         # Dictionary to hold ALL runs for this application session:
-        self.master_run_dict = {}
+        # Open json file (if it exists). Use json to read file contents in to master_run_dict.
+        # If no file, create empty dictionary.
+        try:
+            with open(self.data_file, 'r') as data_fp:
+                data_str = devices.strip_chars(data_fp.read(), '\t\n')  # Remove tabs & newlines
+                self.master_run_dict = json.loads(data_str)  # Load pre-existing data as a dict
+        except FileNotFoundError:
+            self.master_run_dict = {}  # Start from scratch if no pre-existing data
 
     def on_new_run_id(self, e):
         self.version = self.GetTopLevelParent().version
