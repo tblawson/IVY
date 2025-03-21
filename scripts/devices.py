@@ -72,12 +72,12 @@ def refresh_params(directory):
     Both are keyed by description and used to update global dictionaries
     RES_DATA and INSTR_DATA.
     """
-    resistor_file = r'data\IVY_Resistors.json'
+    resistor_file = r'IVY_Resistors.json'
     with open(os.path.join(directory, resistor_file), 'r') as new_resistor_fp:
         resistor_str = strip_chars(new_resistor_fp.read(), '\t\n')  # Remove tabs & newlines
     res_data = json.loads(resistor_str)
 
-    instrument_file = r'data\IVY_Instruments.json'
+    instrument_file = r'IVY_Instruments.json'
     with open(os.path.join(directory, instrument_file), 'r') as new_instr_fp:
         instr_str = strip_chars(new_instr_fp.read(), '\t\n')
     instr_data = json.loads(instr_str)
