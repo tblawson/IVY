@@ -615,11 +615,7 @@ class AqnThread(Thread):
         self.RunPage.master_run_dict.update({run_id: self.run_dict})
 
         data_file = self.TopLevel.data_file
-        # correct_dir = self.TopLevel.directory
-        # displayed_dir = self.SetupPage.WorkingDir.GetValue()
-        # working_dir = os.path.dirname(data_file)
-        # assert displayed_dir == working_dir, 'Working Directory display error!'
-        # assert working_dir == correct_dir, 'Working Directory error!'
+        # Save data - Overwrites any pre-existing data file
         with open(data_file, 'w') as IVY_out:
             msg = f'SAVING ALL RUN DATA to {data_file}'
             print(msg)
