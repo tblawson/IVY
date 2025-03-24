@@ -674,7 +674,11 @@ class AqnThread(Thread):
         return char in accept_str  # Returns 'True' or 'False'
 
     def report_dvm3_range(self, marker):
-        rng3 = float(devices.ROLES_INSTR['DVM3'].send_cmd('RANGE?'))
+        try:
+            rng3 = float(devices.ROLES_INSTR['DVM3'].send_cmd('RANGE?'))
+        except ValueError:
+            rng3 = 0.0
+            print('report_dvm3_range(): demo response to RANGE? - set to 0.0')
         v = devices.ROLES_INSTR['DVM3'].read()
         time.sleep(0.5)
         print(f'\t{marker} ______DVM3 range = {rng3}; V = {v}______')
