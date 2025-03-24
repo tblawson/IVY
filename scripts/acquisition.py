@@ -625,7 +625,8 @@ class AqnThread(Thread):
         msg = f'Adding run "{run_id}" to master run dict.'
         print(msg)
         # logger.info(msg)
-        self.RunPage.master_run_dict.update({run_id: self.run_dict})
+        self.TopLevel.master_run_dict.update({run_id: self.run_dict})
+        # self.RunPage.master_run_dict.update({run_id: self.run_dict})
 
         data_file = self.TopLevel.data_file
         # Save data - Overwrites any pre-existing data file
@@ -633,7 +634,7 @@ class AqnThread(Thread):
             msg = f'SAVING ALL RUN DATA to {data_file}'
             print(msg)
             # logger.info(msg)
-            json.dump(self.RunPage.master_run_dict, IVY_out, indent=4)
+            json.dump(self.TopLevel.master_run_dict, IVY_out, indent=4)
 
         self.standby()  # Set sources to 0V and leave system safe
 
