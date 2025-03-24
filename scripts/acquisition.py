@@ -107,8 +107,10 @@ class AqnThread(Thread):
         self.settle_time = self.RunPage.settle_del_spinctrl.GetValue()
 
         # Local record of GMH ports and addresses
-        self.GMH1Demo_status = devices.ROLES_INSTR['GMH'].demo
-        self.GMH1Port = devices.ROLES_INSTR['GMH'].port
+        self.GMH_DUC_Demo_status = devices.ROLES_INSTR['GMH_DUC'].demo
+        self.GMH_Rs_Demo_status = devices.ROLES_INSTR['GMH_Rs'].demo
+        self.GMH_DUC_Port = devices.ROLES_INSTR['GMH_DUC'].port
+        self.GMH_Rs_Port = devices.ROLES_INSTR['GMH_Rs'].port
 
         self.Rs = 0.0
         self.duc_gain = 0.0
