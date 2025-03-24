@@ -32,6 +32,7 @@ class RunPage(wx.Panel):
         self.SetupPage = self.GetTopLevelParent().page1
         self.data_file = self.GetTopLevelParent().data_file
         self.results_file = self.GetTopLevelParent().results_file
+        self.master_run_dict = self.GetTopLevelParent().master_run_dict
         self.run_id = 'none'
 
         self.GAINS_CHOICE = ['1e3', '1e4', '1e5', '1e6',
@@ -206,15 +207,18 @@ class RunPage(wx.Panel):
 
         self.Rs_val = 0
 
-        # Dictionary to hold ALL runs for this application session:
-        # Open json file (if it exists). Use json to read file contents in to master_run_dict.
-        # If no file, create empty dictionary.
-        try:
-            with open(self.data_file, 'r') as data_fp:
-                data_str = devices.strip_chars(data_fp.read(), '\t\n')  # Remove tabs & newlines
-                self.master_run_dict = json.loads(data_str)  # Load pre-existing data as a dict
-        except FileNotFoundError:
-            self.master_run_dict = {}  # Start from scratch if no pre-existing data
+        # # Dictionary to hold ALL runs for this application session:
+        # # Open json file (if it exists). Use json to read file contents in to master_run_dict.
+        # # If no file, create empty dictionary.
+        # try:
+        #     print(f'*** Run_page: Opening {self.data_file} (if it exists)...')
+        #     with open(self.data_file, 'r') as data_fp:
+        #         data_str = devices.strip_chars(data_fp.read(), '\t\n')  # Remove tabs & newlines
+        #         self.master_run_dict = json.loads(data_str)  # Load pre-existing data as a dict
+        #         print(f'*** Run_page: Existing runs: \n\t{self.master_run_dict.keys()}')
+        # except FileNotFoundError:
+        #     print('*** Run_page: No pre-existing RunData found - creating empty master_run_dict.')
+        #     self.master_run_dict = {}  # Start from scratch if no pre-existing data
 
     def on_new_run_id(self, e):
         self.version = self.GetTopLevelParent().version
