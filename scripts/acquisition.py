@@ -61,7 +61,7 @@ class AqnThread(Thread):
         self.V12sd = {'V1': 0.0, 'V2': 0.0}
         self.V3m = 0.0
         self.V3sd = 0.0
-        self.T = 0.0
+        self.T_DUC = 0.0
         self.Troom = 0.0
         self.Proom = 0.0
         self.RHroom = 0.0
@@ -84,8 +84,9 @@ class AqnThread(Thread):
                          'OPrange': [],
                          'IP_V': {'val': [], 'sd': []},
                          'IPrange': [],
-                         'T_GMH': [],
-                         'Pt_DVM': [],
+                         'T_DUC': [],
+                         'T_Rs': [],
+                         # 'Pt_DVM': [],
                          'Room_conds': {'T': [], 'P': [], 'RH': []},
                          }
 
@@ -390,7 +391,9 @@ class AqnThread(Thread):
                         self.V3m = 0
                         self.V3sd = 0
 
-                    self.T = devices.ROLES_INSTR['GMH'].measure('T')
+                    self.T_DUC = devices.ROLES_INSTR['GMH_DUC'].measure('T')
+                    self.T_Rs = devices.ROLES_INSTR['GMH_Rs'].measure('T')
+
                     if not devices.ROLES_INSTR['DVM3'].demo:
                         output_range = float(devices.ROLES_INSTR['DVM3'].send_cmd('RANGE?'))
                         # assert output_range >= abs_V3, f'Output range wrong!: range={output_range}, V3_nom={abs_V3}'
@@ -565,12 +568,12 @@ class AqnThread(Thread):
         stat_ev = evts.StatusEvent(msg='Row '+str(row), field=1)
         wx.PostEvent(self.TopLevel, stat_ev)
 
-        if devices.ROLES_INSTR['DVMT'].demo is True:
-            T_dvm_op = np.random.normal(108.0, 1.0e-2)
-            self.T_dvm_op = T_dvm_op
-        else:
-            T_dvm_op = devices.ROLES_INSTR['DVMT'].read()  # .SendCmd('READ?')
-            self.T_dvm_op = float(T_dvm_op)  # float(filter(self.filt, T_dvm_op))
+        # if devices.ROLES_INSTR['DVMT'].demo is True:
+        #     T_dvm_op = np.random.normal(108.0, 1.0e-2)
+        #     self.T_dvm_op = T_dvm_op
+        # else:
+        #     T_dvm_op = devices.ROLES_INSTR['DVMT'].read()  # .SendCmd('READ?')
+        #     self.T_dvm_op = float(T_dvm_op)  # float(filter(self.filt, T_dvm_op))
 
         # Update run_dict:
         self.run_dict['Node'].append(node)
@@ -582,8 +585,9 @@ class AqnThread(Thread):
         self.run_dict['OP_V']['val'].append(self.V3m)
         self.run_dict['OP_V']['sd'].append(self.V3sd)
         self.run_dict['OPrange'].append(self.output_range)
-        self.run_dict['Pt_DVM'].append(self.T_dvm_op)
-        self.run_dict['T_GMH'].append(self.T)
+        # self.run_dict['Pt_DVM'].append(self.T_dvm_op)
+        self.run_dict['T_DUC'].append(self.T_DUC)
+        self.run_dict['T_Rs'].append(self.T_Rs)
         self.run_dict['Room_conds']['T'].append(self.Troom)
         self.run_dict['Room_conds']['P'].append(self.Proom)
         self.run_dict['Room_conds']['RH'].append(self.RHroom)
