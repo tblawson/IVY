@@ -40,15 +40,15 @@ class SetupPage(wx.Panel):
         self.INSTRUMENT_CHOICE = {'SRC': 'SRC_F5520A',
                                   'DVM12': 'DVM_3458A:s/n382',
                                   'DVM3': 'DVM_3458A:s/n452',
-                                  'DVMT': 'DVM_34401A:s/n976',
-                                  'GMH': 'GMH:s/n530',
+                                  'GMH_Rs': 'GMH:s/n006',
+                                  'GMH_DUC': 'GMH:s/n007',
                                   'GMHroom': 'GMH:s/n367'}
         self.T_SENSOR_CHOICE = devices.T_Sensors  # 'none', 'Pt', 'SR104t', 'thermistor'
-        self.cbox_addr_COM = []
-        self.cbox_addr_GPIB = []
-        self.cbox_instr_SRC = []
-        self.cbox_instr_DVM = []
-        self.cbox_instr_GMH = []
+        self.cbox_addr_COM = []  # List of COM-addr c'boxes
+        self.cbox_addr_GPIB = []  # List of GPIB-addr c'boxes
+        self.cbox_instr_SRC = []  # List of SRC c'boxes
+        self.cbox_instr_DVM = []  # List of DVM c'boxes
+        self.cbox_instr_GMH = []  # List of GMH c'boxes
 
         self.GMH1Addr = self.GMH2Addr = 0  # invalid initial address as default
 
@@ -83,30 +83,37 @@ class SetupPage(wx.Panel):
                                    style=wx.CB_DROPDOWN)
         self.OP_Dvms.Bind(wx.EVT_COMBOBOX, self.update_instr)
         self.cbox_instr_DVM.append(self.OP_Dvms)
-        TDvmLbl = wx.StaticText(self, label='T-probe DVM (DVMT):',
-                                id=wx.ID_ANY)
-        self.TDvms = wx.ComboBox(self, wx.ID_ANY,
-                                 choices=self.DVM_COMBO_CHOICE,
-                                 style=wx.CB_DROPDOWN)
-        self.TDvms.Bind(wx.EVT_COMBOBOX, self.update_instr)
-        self.cbox_instr_DVM.append(self.TDvms)
+        # TDvmLbl = wx.StaticText(self, label='T-probe DVM (DVMT):',
+        #                         id=wx.ID_ANY)
+        # self.TDvms = wx.ComboBox(self, wx.ID_ANY,
+        #                          choices=self.DVM_COMBO_CHOICE,
+        #                          style=wx.CB_DROPDOWN)
+        # self.TDvms.Bind(wx.EVT_COMBOBOX, self.update_instr)
+        # self.cbox_instr_DVM.append(self.TDvms)
+        GMH_Rs_Lbl = wx.StaticText(self, label='Rs GMH probe (GMH_Rs):',  # Added 24/03/2025
+                                   id=wx.ID_ANY)  #                         Added 24/03/2025
+        self.GMH_Rs_Probes = wx.ComboBox(self, wx.ID_ANY,  #                Added 24/03/2025
+                                         choices=self.GMH_COMBO_CHOICE,  #  Added 24/03/2025
+                                         style=wx.CB_DROPDOWN)  #           Added 24/03/2025
+        self.GMH_Rs_Probes.Bind(wx.EVT_COMBOBOX, self.build_comm_str)  #    Added 24/03/2025
+        self.cbox_instr_GMH.append(self.GMH_Rs_Probes)  #                Added 24/03/2025
 
-        GMHLbl = wx.StaticText(self, label='GMH probe (GMH):',
-                               id=wx.ID_ANY)
-        self.GMHProbes = wx.ComboBox(self, wx.ID_ANY,
-                                     choices=self.GMH_COMBO_CHOICE,
-                                     style=wx.CB_DROPDOWN)
-        self.GMHProbes.Bind(wx.EVT_COMBOBOX, self.build_comm_str)
-        self.cbox_instr_GMH.append(self.GMHProbes)
+        GMH_DUC_Lbl = wx.StaticText(self, label='DUC GMH probe (GMH_DUC):',  # Updated name
+                                    id=wx.ID_ANY)
+        self.GMH_DUC_Probes = wx.ComboBox(self, wx.ID_ANY,
+                                          choices=self.GMH_COMBO_CHOICE,
+                                          style=wx.CB_DROPDOWN)
+        self.GMH_DUC_Probes.Bind(wx.EVT_COMBOBOX, self.build_comm_str)
+        self.cbox_instr_GMH.append(self.GMH_DUC_Probes)
 
-        GMHroomLbl = wx.StaticText(self,
-                                   label='Room conds. GMH probe (GMHroom):',
-                                   id=wx.ID_ANY)
-        self.GMHroomProbes = wx.ComboBox(self, wx.ID_ANY,
-                                         choices=self.GMH_COMBO_CHOICE,
-                                         style=wx.CB_DROPDOWN)
-        self.GMHroomProbes.Bind(wx.EVT_COMBOBOX, self.update_instr)
-        self.cbox_instr_GMH.append(self.GMHroomProbes)
+        GMH_room_Lbl = wx.StaticText(self,
+                                     label='Room conds. GMH probe (GMHroom):',
+                                     id=wx.ID_ANY)
+        self.GMH_room_Probes = wx.ComboBox(self, wx.ID_ANY,
+                                           choices=self.GMH_COMBO_CHOICE,
+                                           style=wx.CB_DROPDOWN)
+        self.GMH_room_Probes.Bind(wx.EVT_COMBOBOX, self.update_instr)
+        self.cbox_instr_GMH.append(self.GMH_room_Probes)
 
         IVboxLbl = wx.StaticText(self, label='IV_box (IVbox) setting:',
                                  id=wx.ID_ANY)
@@ -133,17 +140,23 @@ class SetupPage(wx.Panel):
         self.cbox_addr_GPIB.append(self.OP_DvmAddr)
         self.OP_DvmAddr.Bind(wx.EVT_COMBOBOX, self.update_addr)
 
-        self.TDvmAddr = wx.ComboBox(self, wx.ID_ANY,
-                                    choices=self.GPIBAddressList,
-                                    style=wx.CB_DROPDOWN)
-        self.cbox_addr_GPIB.append(self.TDvmAddr)
-        self.TDvmAddr.Bind(wx.EVT_COMBOBOX, self.update_addr)
+        # self.TDvmAddr = wx.ComboBox(self, wx.ID_ANY,
+        #                             choices=self.GPIBAddressList,
+        #                             style=wx.CB_DROPDOWN)
+        # self.cbox_addr_GPIB.append(self.TDvmAddr)
+        # self.TDvmAddr.Bind(wx.EVT_COMBOBOX, self.update_addr)
 
-        self.GMHPorts = wx.ComboBox(self, wx.ID_ANY,
-                                    choices=self.COMAddressList,
-                                    style=wx.CB_DROPDOWN)
-        self.cbox_addr_COM.append(self.GMHPorts)
-        self.GMHPorts.Bind(wx.EVT_COMBOBOX, self.update_addr)
+        self.GMH_Rs_Ports = wx.ComboBox(self, wx.ID_ANY,  #              Added 24/03/2025
+                                         choices=self.COMAddressList,  # Added 24/03/2025
+                                         style=wx.CB_DROPDOWN)  #        Added 24/03/2025
+        self.cbox_addr_COM.append(self.GMH_Rs_Ports)  #                  Added 24/03/2025
+        self.GMH_Rs_Ports.Bind(wx.EVT_COMBOBOX, self.update_addr)  #     Added 24/03/2025
+
+        self.GMH_DUC_Ports = wx.ComboBox(self, wx.ID_ANY,
+                                         choices=self.COMAddressList,
+                                         style=wx.CB_DROPDOWN)
+        self.cbox_addr_COM.append(self.GMH_DUC_Ports)
+        self.GMH_DUC_Ports.Bind(wx.EVT_COMBOBOX, self.update_addr)
 
         self.GMHroomPorts = wx.ComboBox(self, wx.ID_ANY,
                                         choices=self.COMAddressList,
@@ -188,11 +201,14 @@ class SetupPage(wx.Panel):
         self.D3Test = wx.Button(self, id=wx.ID_ANY, label='Test')
         self.D3Test.Bind(wx.EVT_BUTTON, self.on_test)
 
-        self.DTTest = wx.Button(self, id=wx.ID_ANY, label='Test')
-        self.DTTest.Bind(wx.EVT_BUTTON, self.on_test)
+        # self.DTTest = wx.Button(self, id=wx.ID_ANY, label='Test')
+        # self.DTTest.Bind(wx.EVT_BUTTON, self.on_test)
 
-        self.GMHTest = wx.Button(self, id=wx.ID_ANY, label='Test')
-        self.GMHTest.Bind(wx.EVT_BUTTON, self.on_test)
+        self.GMH_Rs_Test = wx.Button(self, id=wx.ID_ANY, label='Test')  # Added 24/03/2025
+        self.GMH_Rs_Test.Bind(wx.EVT_BUTTON, self.on_test)  #             Added 24/03/2025
+
+        self.GMH_DUC_Test = wx.Button(self, id=wx.ID_ANY, label='Test')
+        self.GMH_DUC_Test.Bind(wx.EVT_BUTTON, self.on_test)
 
         self.GMHroomTest = wx.Button(self, id=wx.ID_ANY, label='Test')
         self.GMHroomTest.Bind(wx.EVT_BUTTON, self.on_test)
@@ -221,21 +237,25 @@ class SetupPage(wx.Panel):
                      flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.OP_Dvms, pos=(2, 1), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(TDvmLbl, pos=(3, 0), span=(1, 1),
+        # gb_sizer.Add(TDvmLbl, pos=(3, 0), span=(1, 1),
+        #              flag=wx.ALL | wx.EXPAND, border=5)
+        # gb_sizer.Add(self.TDvms, pos=(3, 1), span=(1, 1),
+        #              flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(GMH_Rs_Lbl, pos=(4, 0), span=(1, 1),  #         Added 24/03/2025
+                     flag=wx.ALL | wx.EXPAND, border=5)  #           Added 24/03/2025
+        gb_sizer.Add(self.GMH_Rs_Probes, pos=(4, 1), span=(1, 1),  # Added 24/03/2025
+                     flag=wx.ALL | wx.EXPAND, border=5)  #           Added 24/03/2025
+        gb_sizer.Add(GMH_DUC_Lbl, pos=(5, 0), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(self.TDvms, pos=(3, 1), span=(1, 1),
+        gb_sizer.Add(self.GMH_DUC_Probes, pos=(5, 1), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(GMHLbl, pos=(4, 0), span=(1, 1),
+        gb_sizer.Add(GMH_room_Lbl, pos=(6, 0), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(self.GMHProbes, pos=(4, 1), span=(1, 1),
+        gb_sizer.Add(self.GMH_room_Probes, pos=(6, 1), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(GMHroomLbl, pos=(5, 0), span=(1, 1),
+        gb_sizer.Add(IVboxLbl, pos=(7, 0), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(self.GMHroomProbes, pos=(5, 1), span=(1, 1),
-                     flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(IVboxLbl, pos=(6, 0), span=(1, 1),
-                     flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(self.IVbox, pos=(6, 1), span=(1, 1),
+        gb_sizer.Add(self.IVbox, pos=(7, 1), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
 
         # Addresses
@@ -245,17 +265,19 @@ class SetupPage(wx.Panel):
                      flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.OP_DvmAddr, pos=(2, 2), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(self.TDvmAddr, pos=(3, 2), span=(1, 1),
+        # gb_sizer.Add(self.TDvmAddr, pos=(3, 2), span=(1, 1),
+        #              flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.GMH_Rs_Ports, pos=(4, 2), span=(1, 1),  # Added 24/03/2025
+                     flag=wx.ALL | wx.EXPAND, border=5)  #          Added 24/03/2025
+        gb_sizer.Add(self.GMH_DUC_Ports, pos=(5, 2), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(self.GMHPorts, pos=(4, 2), span=(1, 1),
+        gb_sizer.Add(self.GMHroomPorts, pos=(6, 2), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(self.GMHroomPorts, pos=(5, 2), span=(1, 1),
-                     flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(self.IVboxAddr, pos=(6, 2), span=(1, 1),
+        gb_sizer.Add(self.IVboxAddr, pos=(7, 2), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
 
         # DUC Name
-        gb_sizer.Add(self.DUCName, pos=(6, 4), span=(1, 1),
+        gb_sizer.Add(self.DUCName, pos=(7, 4), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
 
         # Filename
@@ -271,18 +293,20 @@ class SetupPage(wx.Panel):
                      flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.D3Test, pos=(2, 3), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(self.DTTest, pos=(3, 3), span=(1, 1),
+        # gb_sizer.Add(self.DTTest, pos=(3, 3), span=(1, 1),
+        #              flag=wx.ALL | wx.EXPAND, border=5)
+        gb_sizer.Add(self.GMH_Rs_Test, pos=(4, 3), span=(1, 1),  # Added 24/03/2025
+                     flag=wx.ALL | wx.EXPAND, border=5)  #         Added 24/03/2025
+        gb_sizer.Add(self.GMH_DUC_Test, pos=(5, 3), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(self.GMHTest, pos=(4, 3), span=(1, 1),
+        gb_sizer.Add(self.GMHroomTest, pos=(6, 3), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(self.GMHroomTest, pos=(5, 3), span=(1, 1),
-                     flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(self.IVboxTest, pos=(6, 3), span=(1, 1),
+        gb_sizer.Add(self.IVboxTest, pos=(7, 3), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
 
         gb_sizer.Add(response_lbl, pos=(4, 4), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
-        gb_sizer.Add(self.Response, pos=(5, 4), span=(1, 3),
+        gb_sizer.Add(self.Response, pos=(5, 4), span=(1, 2),  # span=(1, 2)
                      flag=wx.ALL | wx.EXPAND, border=5)
         gb_sizer.Add(self.VisaList, pos=(0, 5), span=(1, 1),
                      flag=wx.ALL | wx.EXPAND, border=5)
@@ -308,16 +332,20 @@ class SetupPage(wx.Panel):
                                                'icb': self.OP_Dvms,
                                                'acb': self.OP_DvmAddr,
                                                'tbtn': self.D3Test}})
-        devices.ROLES_WIDGETS.update({'DVMT': {'lbl': TDvmLbl,
-                                               'icb': self.TDvms,
-                                               'acb': self.TDvmAddr,
-                                               'tbtn': self.DTTest}})
-        devices.ROLES_WIDGETS.update({'GMH': {'lbl': GMHLbl,
-                                              'icb': self.GMHProbes,
-                                              'acb': self.GMHPorts,
-                                              'tbtn': self.GMHTest}})
-        devices.ROLES_WIDGETS.update({'GMHroom': {'lbl': GMHroomLbl,
-                                                  'icb': self.GMHroomProbes,
+        # devices.ROLES_WIDGETS.update({'DVMT': {'lbl': TDvmLbl,
+        #                                        'icb': self.TDvms,
+        #                                        'acb': self.TDvmAddr,
+        #                                        'tbtn': self.DTTest}})
+        devices.ROLES_WIDGETS.update({'GMH_Rs': {'lbl': GMH_Rs_Lbl,  #           Added 24/03/2025
+                                                  'icb': self.GMH_Rs_Probes,  #  Added 24/03/2025
+                                                  'acb': self.GMH_Rs_Ports,  #   Added 24/03/2025
+                                                  'tbtn': self.GMH_Rs_Test}})  # Added 24/03/2025
+        devices.ROLES_WIDGETS.update({'GMH_DUC': {'lbl': GMH_DUC_Lbl,
+                                              'icb': self.GMH_DUC_Probes,
+                                              'acb': self.GMH_DUC_Ports,
+                                              'tbtn': self.GMH_DUC_Test}})
+        devices.ROLES_WIDGETS.update({'GMHroom': {'lbl': GMH_room_Lbl,
+                                                  'icb': self.GMH_room_Probes,
                                                   'acb': self.GMHroomPorts,
                                                   'tbtn': self.GMHroomTest}})
         devices.ROLES_WIDGETS.update({'IVbox': {'lbl': IVboxLbl,
