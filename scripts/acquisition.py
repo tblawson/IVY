@@ -275,8 +275,12 @@ class AqnThread(Thread):
                     devices.ROLES_INSTR['DVM12'].send_cmd(cmd12)
                     devices.ROLES_INSTR['DVM3'].send_cmd(f'DCV {abs_V3}')
                     # Sanity check:
-                    rng3 = float(devices.ROLES_INSTR['DVM3'].send_cmd('RANGE?'))
-                    print(f'DVM3 range = {rng3}')
+                    try:
+                        rng3 = float(devices.ROLES_INSTR['DVM3'].send_cmd('RANGE?'))
+                        print(f'DVM3 range = {rng3}')
+                    except ValueError:  # Response to 'RANGE?' cmd is demo string & can't be cast to float
+                        rng3 = 1.0
+                        print(f'DVM3 range (DEMO MODE) = {rng3}')
 
                     if not (devices.ROLES_INSTR['DVM12'].demo and devices.ROLES_INSTR['DVM3'].demo):
                         time.sleep(0.5)  # Settle after setting range
@@ -374,11 +378,14 @@ class AqnThread(Thread):
 
                     # record input range (should be fixed at abs. nom. value):
                     if not devices.ROLES_INSTR['DVM12'].demo:
-                        input_range = float(devices.ROLES_INSTR['DVM12'].send_cmd('RANGE?'))
+                        try:
+                            input_range = float(devices.ROLES_INSTR['DVM12'].send_cmd('RANGE?'))
+                        except ValueError:
+                            input_range = 0.0
                         assert input_range >= self.v1_nom, f'Input range wrong!: range={input_range},' \
                                                            f'V1_nom={self.v1_nom}'
-                        if not isinstance(input_range, float):
-                            input_range = 0.0
+                        # if not isinstance(input_range, float):
+                        #     input_range = 0.0
                         self.input_range = input_range
 
                     time.sleep(2)  # Give user time to read vals before update
