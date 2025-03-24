@@ -114,6 +114,7 @@ import scripts.nbpages.calc_page as calc_p
 from scripts import devices, IVY_events as evts  # import IVY_events as evts
 import time
 import locale
+import json
 import datetime as dt
 # import logging
 
@@ -146,6 +147,7 @@ class MainFrame(wx.Frame):
         self.directory = os.getcwd()  # default value
         self.Center()
         self.version = VERSION
+        self.master_run_dict = {}
 
         self.data_file = ""
         self.log_dir = ""
@@ -211,6 +213,7 @@ class MainFrame(wx.Frame):
         sizer.Add(self.NoteBook, 1, wx.EXPAND)
         self.MainPanel.SetSizer(sizer)
 
+
     def update_status(self, e):
         """An event handler for posting status messages to the status bar."""
         if e.field == 'b':
@@ -243,6 +246,19 @@ I-to-V converter program for Light Standards."
             self.results_file = os.path.join(self.directory, 'data/IVY_Results.json')
             self.reference_dir = os.path.join(self.directory, '../Reference')
             print(f'Working directory: {self.directory}')
+
+            # Dictionary to hold ALL runs for this application session:
+            # Open json file (if it exists). Use json to read file contents in to master_run_dict.
+            # If no file, create empty dictionary.
+            try:
+                print(f'*** Run_page: Opening {self.data_file} (if it exists)...')
+                with open(self.data_file, 'r') as data_fp:
+                    data_str = devices.strip_chars(data_fp.read(), '\t\n')  # Remove tabs & newlines
+                    self.master_run_dict = json.loads(data_str)  # Load pre-existing data as a dict
+                    print(f'*** Run_page: Existing runs: \n\t{self.master_run_dict.keys()}')
+            except FileNotFoundError:
+                print('*** Run_page: No pre-existing RunData found - creating empty master_run_dict.')
+                self.master_run_dict = {}  # Start from scratch if no pre-existing data
 
             # # log file...
             # logname = 'IVYv' + VERSION + '_' + str(dt.date.today()) + '.log'
