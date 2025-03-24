@@ -24,9 +24,9 @@ import os
 from scripts import devices
 
 DELTA = u'\N{GREEK CAPITAL LETTER DELTA}'
-PT_T_DEF_UNCERT = 0.5
-GMH_T_DEF_UNCERT = 0.5
-DUC_T_DEF_UNCERT = 1
+PT_T_DEF_UNCERT = 0.5  # Remove
+GMH_T_DEF_UNCERT = 0.5  # Large location uncertainty - applies to all GMH probes.
+DUC_T_DEF_UNCERT = 1  # Allows for difference between Rf calibration and measurement temperatures
 
 # logger = logging.getLogger(__name__)
 
@@ -270,23 +270,23 @@ class CalcPage(wx.Panel):
         # logger.info('STARTING ANALYSIS...')
 
         # Correction for Pt-100 sensor DVM:
-        dvmt = this_run['Instruments']['DVMT']
-        dvmt_cor = self.build_ureal(devices.INSTR_DATA[dvmt]['correction_100r'])
+        # dvmt = this_run['Instruments']['DVMT']
+        # dvmt_cor = self.build_ureal(devices.INSTR_DATA[dvmt]['correction_100r'])
+
+        # """
+        # Pt sensor is a few cm away from input resistors, so assume a
+        # fairly large type B Tdef of 0.5 deg C:
+        # """
+        # pt_t_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](PT_T_DEF_UNCERT),
+        #                      3, label='Pt_T_def')
+        #
+        # pt_alpha = self.build_ureal(devices.RES_DATA['Pt 100r']['alpha'])
+        # pt_beta = self.build_ureal(devices.RES_DATA['Pt 100r']['beta'])
+        # pt_r0 = self.build_ureal(devices.RES_DATA['Pt 100r']['R0_LV'])
+        # pt_t_ref = self.build_ureal(devices.RES_DATA['Pt 100r']['TRef_LV'])
 
         """
-        Pt sensor is a few cm away from input resistors, so assume a
-        fairly large type B Tdef of 0.5 deg C:
-        """
-        pt_t_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](PT_T_DEF_UNCERT),
-                             3, label='Pt_T_def')
-
-        pt_alpha = self.build_ureal(devices.RES_DATA['Pt 100r']['alpha'])
-        pt_beta = self.build_ureal(devices.RES_DATA['Pt 100r']['beta'])
-        pt_r0 = self.build_ureal(devices.RES_DATA['Pt 100r']['R0_LV'])
-        pt_t_ref = self.build_ureal(devices.RES_DATA['Pt 100r']['TRef_LV'])
-
-        """
-        GMH sensor is a few cm away from DUC which, itself, has a size of
+        GMH_DUC sensor is a few cm away from DUC which, itself, has a size of
         several cm, so assume a fairly large type B Tdef of 0.5 deg C:
         """
         gmh_t_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](GMH_T_DEF_UNCERT),
@@ -307,25 +307,25 @@ class CalcPage(wx.Panel):
         #             comment, self.run_ID, duc_gain, mean_date)
 
         # Determine mean env. conditions
-        gmh_temps = []
+        duc_temps = []
         gmh_room_rhs = []
         gmh_room_ps = []
         gmh_room_ts = []
-        for T_duc in this_run['T_GMH']:
-            gmh_temps.append(T_duc[0])
+        for T_duc in this_run['T_DUC']:
+            duc_temps.append(T_duc[0])  # Each reading is a tuple: (value, 'unit')
         for RH in this_run['Room_conds']['RH']:
-            gmh_room_rhs.append(RH[0])
+            gmh_room_rhs.append(RH[0])  # Each reading is a tuple: (value, 'unit')
         for P in this_run['Room_conds']['P']:
-            gmh_room_ps.append(P[0])
+            gmh_room_ps.append(P[0])  # Each reading is a tuple: (value, 'unit')
         for T in this_run['Room_conds']['T']:
-            gmh_room_ts.append(T[0])
+            gmh_room_ts.append(T[0])  # Each reading is a tuple: (value, 'unit')
 
-        d = this_run['Instruments']['GMH']
-        t_gmh_cor = self.build_ureal(devices.INSTR_DATA[d]['T_correction'])
-        t_gmh_raw = GTC.ta.estimate_digitized(gmh_temps, 0.01)
-        t_gmh = t_gmh_raw + t_gmh_cor #  + gmh_t_def
-        t_gmh_k = GTC.rp.k_factor(t_gmh.df)
-        t_gmh_eu = t_gmh.u*t_gmh_k
+        d = this_run['Instruments']['GMH_DUC']  # 'd' for instrument 'description'
+        tduc_gmh_cor = self.build_ureal(devices.INSTR_DATA[d]['T_correction'])
+        tduc_gmh_raw = GTC.ta.estimate_digitized(duc_temps, 0.01)
+        tduc_gmh = tduc_gmh_raw + tduc_gmh_cor + gmh_t_def  # Was excluding gmh_t_def - WHY?
+        tduc_gmh_k = GTC.rp.k_factor(tduc_gmh.df)
+        tduc_gmh_eu = tduc_gmh.u * tduc_gmh_k
 
         d = this_run['Instruments']['GMHroom']
         rh_cor = self.build_ureal(devices.INSTR_DATA[d]['RH_correction'])
@@ -362,12 +362,12 @@ class CalcPage(wx.Panel):
                                 'Nom_dV': {},
                                 'IP_rng': {}})
 
-        self.ThisResult['Tduc_GMH'].update({'value': t_gmh.x,
-                                         'uncert': t_gmh.u,
-                                         'dof': t_gmh.df,
-                                         'label': t_gmh.label,
-                                         'k': t_gmh_k,
-                                         'ExpU': t_gmh_eu})
+        self.ThisResult['Tduc_GMH'].update({'value': tduc_gmh.x,
+                                         'uncert': tduc_gmh.u,
+                                         'dof': tduc_gmh.df,
+                                         'label': tduc_gmh.label,
+                                         'k': tduc_gmh_k,
+                                         'ExpU': tduc_gmh_eu})
 
         self.ThisResult['RH'].update({'value': rh.x,
                                       'uncert': rh.u,
@@ -399,9 +399,9 @@ class CalcPage(wx.Panel):
         self.TroomSummary.SetValue('{0:.3f} +/- {1:.3f}. dof={2:.1f}'.format(t_room.x, t_room.u, t_room.df))
         self.Troomk.SetValue('{0:.1f}'.format(t_room_k))
         self.TroomExpU.SetValue('{0:.2f}'.format(t_room_eu))
-        self.TGMHSummary.SetValue('{0:.3f} +/- {1:.3f}. dof={2:.1f}'.format(t_gmh.x, t_gmh.u, t_gmh.df))  # str(t_gmh.s)
-        self.TGMHk.SetValue('{0:.1f}'.format(t_gmh_k))
-        self.TGMHExpU.SetValue('{0:.2f}'.format(t_gmh_eu))
+        self.TGMHSummary.SetValue('{0:.3f} +/- {1:.3f}. dof={2:.1f}'.format(tduc_gmh.x, tduc_gmh.u, tduc_gmh.df))  # str(t_gmh.s)
+        self.TGMHk.SetValue('{0:.1f}'.format(tduc_gmh_k))
+        self.TGMHExpU.SetValue('{0:.2f}'.format(tduc_gmh_eu))
 
         influences = []
         v1s = []
@@ -550,26 +550,36 @@ class CalcPage(wx.Panel):
             # print(f'\nV_Rs+ value = {v_rs_pos.x}.\tV_Rs- value = {v_rs_neg.x}.\n')
 
             # Rs Temperature
-            t_rs = []
-            pt_r_cor = []
-            for mask_index, R_raw in enumerate(this_run['Pt_DVM'][row:row+8]):
-                pt_r_cor.append(GTC.result(R_raw * (1 + dvmt_cor),
-                                           label='Pt_Rcor'+str(mask_index)))
-                t_rs.append(GTC.result(self.R_to_T(alpha=pt_alpha, beta=pt_beta,
-                                                   R=pt_r_cor[mask_index],
-                                                   R0=pt_r0, T0=pt_t_ref)))
+            # T-correction for GMH_Rs:
+            d = this_run['Instruments']['GMH_Rs']  # 'd' for instrument 'description'
+            t_Rs_gmh_corr = self.build_ureal(devices.INSTR_DATA[d]['T_correction'])
 
-            av_t_rs = GTC.result(GTC.fn.mean(t_rs),
-                                 label='av_T_Rs'+str(abs_nom_vout))
-            influences.extend(pt_r_cor)
-            influences.extend([pt_alpha, pt_beta, pt_r0, pt_t_ref,
-                                dvmt_cor, pt_t_def])  # av_T_Rs
-            assert pt_alpha in influences, 'Influencies missing Pt_alpha!'
-            assert pt_beta in influences, 'Influencies missing Pt_beta!'
-            assert pt_r0 in influences, 'Influencies missing Pt_R0!'
-            assert pt_t_ref in influences, 'Influencies missing Pt_TRef!'
-            assert dvmt_cor in influences, 'Influencies missing DVMT_cor!'
-            assert pt_t_def in influences, 'Influencies missing Pt_T_def!'
+            t_Rs_raw = [T[0] for T in this_run['T_Rs']]  # Raw readings
+
+            # Mean of raw T_Rs readings:
+            t_Rs_raw_av = GTC.result(GTC.ta.estimate_digitized(t_Rs_raw, 0.01), label='av_T_Rs'+str(abs_nom_vout))
+            t_Rs = t_Rs_raw_av + t_Rs_gmh_corr + gmh_t_def  # Mean T, corrected for GMH and T-definition.
+            influences.extend([t_Rs_raw_av, t_Rs_gmh_corr, gmh_t_def])
+            # t_rs = []  # Temperature of Rs
+            # pt_r_cor = []
+            # for mask_index, R_raw in enumerate(this_run['Pt_DVM'][row:row+8]):
+            #     pt_r_cor.append(GTC.result(R_raw * (1 + dvmt_cor),
+            #                                label='Pt_Rcor'+str(mask_index)))
+            #     t_rs.append(GTC.result(self.R_to_T(alpha=pt_alpha, beta=pt_beta,
+            #                                        R=pt_r_cor[mask_index],
+            #                                        R0=pt_r0, T0=pt_t_ref)))
+
+            # av_t_rs = GTC.result(GTC.fn.mean(t_Rs), label='av_T_Rs'+str(abs_nom_vout))
+
+            # influences.extend(pt_r_cor)
+            # influences.extend([pt_alpha, pt_beta, pt_r0, pt_t_ref,
+            #                     dvmt_cor, pt_t_def])  # av_T_Rs
+            # assert pt_alpha in influences, 'Influencies missing Pt_alpha!'
+            # assert pt_beta in influences, 'Influencies missing Pt_beta!'
+            # assert pt_r0 in influences, 'Influencies missing Pt_R0!'
+            # assert pt_t_ref in influences, 'Influencies missing Pt_TRef!'
+            # assert dvmt_cor in influences, 'Influencies missing DVMT_cor!'
+            # assert pt_t_def in influences, 'Influencies missing Pt_T_def!'
 
             # Value of Rs
             nom_Rs = this_run['Rs']
@@ -583,7 +593,7 @@ class CalcPage(wx.Panel):
             rs_beta = self.build_ureal(devices.RES_DATA[rs_name]['beta'])
 
             # Correct Rs value for temperature
-            delta_t = GTC.result(av_t_rs - rs_t_ref + pt_t_def)
+            delta_t = GTC.result(t_Rs - rs_t_ref)
             rs = GTC.result(rs_0 * (1 + GTC.function.mul2(rs_alpha, delta_t) + rs_beta * delta_t ** 2))
             print(f'\nCorrected Rs value = {rs.x}\n')
             influences.extend([rs_0, rs_alpha, rs_beta, rs_t_ref])
