@@ -31,7 +31,7 @@ class RunPage(wx.Panel):
         self.version = self.GetTopLevelParent().version
         self.SetupPage = self.GetTopLevelParent().page1
         self.data_file = self.GetTopLevelParent().data_file
-        self.results_file = self.GetTopLevelParent().results_file
+        self.results_file = self.GetTopLevelParent().results_file  # not needed here?
         self.master_run_dict = self.GetTopLevelParent().master_run_dict
         self.run_id = 'none'
 
