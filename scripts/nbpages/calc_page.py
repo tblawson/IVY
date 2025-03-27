@@ -43,12 +43,12 @@ class CalcPage(wx.Panel):
         # Dictionary to hold ALL runs for this application session:
         # Open json file (if it exists). Use json to read file contents in to Results dict.
         # If no file, create empty dictionary.
-        try:
-            with open(self.results_file, 'r') as results_fp:
-                results_str = devices.strip_chars(results_fp.read(), '\t\n')  # Remove tabs & newlines
-                self.Results = json.loads(results_str)  # Load pre-existing data as a dict
-        except FileNotFoundError:
-            self.Results = {}  # Start from scratch if no pre-existing data. Accumulate run-analyses here
+        # try:
+        #     with open(self.results_file, 'r') as results_fp:
+        #         results_str = devices.strip_chars(results_fp.read(), '\t\n')  # Remove tabs & newlines
+        #         self.Results = json.loads(results_str)  # Load pre-existing data as a dict
+        # except FileNotFoundError:
+        #     self.Results = {}  # Start from scratch if no pre-existing data. Accumulate run-analyses here
 
         self.Rs_VALUES = self.GetTopLevelParent().page2.Rs_VALUES
         self.Rs_NAMES = ['IV1k 1k', 'IV10k 10k',
@@ -266,6 +266,16 @@ class CalcPage(wx.Panel):
     def on_analyze(self, e):
         self.run_ID = self.RunID_cb.GetValue()
         this_run = self.run_data[self.run_ID]
+
+        # Dictionary to hold ALL run results:
+        # Open json file (if it exists). Use json to read file contents in to Results dict.
+        # If no file, create empty dictionary.
+        try:
+            with open(self.results_file, 'r') as results_fp:
+                results_str = devices.strip_chars(results_fp.read(), '\t\n')  # Remove tabs & newlines
+                self.Results = json.loads(results_str)  # Load pre-existing data as a dict
+        except FileNotFoundError:
+            self.Results = {}  # Start from scratch if no pre-existing data. Accumulate run-analyses here
 
         # logger.info('STARTING ANALYSIS...')
 
