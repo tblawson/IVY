@@ -546,7 +546,7 @@ class CalcPage(wx.Panel):
             # V-drop across Rs
             v_rs_pos = GTC.result(v1_pos - v2_pos)
             v_rs_neg = GTC.result(v1_neg - v2_neg)
-            assert v_rs_pos.x * v_rs_neg.x < 0, 'V_Rs polarity error!'
+            assert v_rs_pos.x * v_rs_neg.x < 0, f'V_Rs polarity error! V_Rs+ = {v_rs_pos.x}, V_Rs- = {v_rs_neg.x}'
             # print(f'\nV_Rs+ value = {v_rs_pos.x}.\tV_Rs- value = {v_rs_neg.x}.\n')
 
             # Rs Temperature
@@ -678,7 +678,7 @@ class CalcPage(wx.Panel):
         # Save analysis result - Overwrites any pre-existing version
         self.results_file = self.GetTopLevelParent().results_file
         with open(self.results_file, 'w') as results_fp:
-            msg = f'SAVING ALL ANALYSIS RESULTS TO {self.results_file}'
+            msg = f'SAVING ALL ANALYSIS RESULTS TO {self.results_file}\n {list(self.Results.keys())}'
             print(msg)
             json.dump(self.Results, results_fp, indent=4)
 
