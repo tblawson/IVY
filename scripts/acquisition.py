@@ -171,7 +171,7 @@ class AqnThread(Thread):
         The following sequence progresses through three blocks with nominal
         output voltages of 0.1, 1 or 10 V. For each output voltage block
         the input DVM switches between the two nodes V1 and V2.
-        For each input node, a mask is applied to the output voltage (and
+        For each input node selection, a mask is applied to the output voltage (and
         thus input V) causing the value to be set to 0 V, each polarity,
         then 0 V again. Measurements at all nodes are taken before changing
         to the next output voltage mask value (0, +, -, 0).
@@ -274,13 +274,15 @@ class AqnThread(Thread):
                     cmd12 = f'DCV {self.v1_nom}'
                     devices.ROLES_INSTR['DVM12'].send_cmd(cmd12)
                     devices.ROLES_INSTR['DVM3'].send_cmd(f'DCV {abs_V3}')
-                    # Sanity check:
+                    # Sanity check (has range been set correctly?):
                     try:
                         rng3 = float(devices.ROLES_INSTR['DVM3'].send_cmd('RANGE?'))
                         print(f'DVM3 range = {rng3}')
                     except ValueError:  # Response to 'RANGE?' cmd is demo string & can't be cast to float
                         rng3 = 1.0
                         print(f'DVM3 range (DEMO MODE) = {rng3}')
+
+                    devices.ROLES_INSTR['DVM12'].read()
 
                     if not (devices.ROLES_INSTR['DVM12'].demo and devices.ROLES_INSTR['DVM3'].demo):
                         time.sleep(0.5)  # Settle after setting range
@@ -337,9 +339,9 @@ class AqnThread(Thread):
                     wx.PostEvent(self.TopLevel, stat_ev)
 
                     for n in range(NREADS):  # Acquire all V and t readings
-                        self.measure_v(node)
+                        self.measure_v(node, self.v1_nom)
                         time.sleep(0.2)
-                        print(self.measure_v('V3'))  # Check for overload
+                        print(self.measure_v('V3', abs_V3))  # Check for overload
                         pbar += 1
                         update = {'node': '-', 'Vm': 0, 'Vsd': 0, 'time': '-',
                                   'row': row, 'progress': 100.0*pbar/P_MAX,
@@ -512,7 +514,7 @@ class AqnThread(Thread):
         del self.V3Data[:]
         del self.Times[:]
 
-    def measure_v(self, node):
+    def measure_v(self, node, v):
         assert node in ('V1', 'V2', 'V3'), 'Unknown argument to MeasureV().'
 
         if node == 'V1':
@@ -558,9 +560,16 @@ class AqnThread(Thread):
                 rtn = {'node': node, 'value': dvm_op, 'demo_data': True}
             else:
                 dvm_op = float(devices.ROLES_INSTR['DVM3'].read())
-                # if abs(dvm_op) > 999:  # Deal with overloaded range
-                #     dvm_op = 0
-                # V = float(filter(self.filt, dvm_op))
+                """
+                 If a DVM is over-range on the chosen range setting,
+                 increase it to the next decade:
+                 """
+                if abs(dvm_op) > 999:  # Deal with overloaded range (usually '1e38')
+                    devices.ROLES_INSTR['DVM3'].send_cmd(f'DCV {v*10}')
+                    time.sleep(0.5)  # Settle after changing range
+                    dvm_op = float(devices.ROLES_INSTR['DVM3'].read())
+                    print(f'measure(): Increased DVM3 range to {v*10}')
+
                 rtn = {'node': node, 'value': dvm_op, 'demo_data': False}
             self.V3Data.append(dvm_op)
             # print(f'{node}: {dvm_op}')
