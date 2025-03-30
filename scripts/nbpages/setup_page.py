@@ -39,7 +39,7 @@ class SetupPage(wx.Panel):
                                    'Rs=10^6': '6'}  # '': None
         self.INSTRUMENT_CHOICE = {'SRC': 'SRC_F5520A',
                                   'DVM12': 'DVM_3458A:s/n382',
-                                  'DVM3': 'DVM_3458A:s/n452',
+                                  'DVM3': 'DVM_3458A:s/n518',
                                   'GMH_Rs': 'GMH:s/n006',
                                   'GMH_DUC': 'GMH:s/n007',
                                   'GMHroom': 'GMH:s/n367'}
