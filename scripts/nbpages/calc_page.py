@@ -222,7 +222,7 @@ class CalcPage(wx.Panel):
         self.nom_Vout = {}
         self.budget_table_sorted = {'pos': [], 'neg': []}
         self.result_row = []
-        self.results_file = ''
+        # self.results_file = ''
 
     def on_list_runs(self, e):
         """
