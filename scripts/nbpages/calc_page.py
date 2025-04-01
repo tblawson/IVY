@@ -333,7 +333,7 @@ class CalcPage(wx.Panel):
         d = this_run['Instruments']['GMH_DUC']  # 'd' for instrument 'description'
         tduc_gmh_cor = self.build_ureal(devices.INSTR_DATA[d]['T_correction'])
         tduc_gmh_raw = GTC.ta.estimate_digitized(duc_temps, 0.01)
-        tduc_gmh = tduc_gmh_raw + tduc_gmh_cor + gmh_t_def  # Was excluding gmh_t_def - WHY?
+        tduc_gmh = tduc_gmh_raw + tduc_gmh_cor  # + gmh_t_def excluded here because it's added later, in Excel
         tduc_gmh_k = GTC.rp.k_factor(tduc_gmh.df)
         tduc_gmh_eu = tduc_gmh.u * tduc_gmh_k
 
