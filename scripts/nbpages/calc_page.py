@@ -36,9 +36,9 @@ class CalcPage(wx.Panel):
         wx.Panel.__init__(self, parent)
 
         self.version = self.GetTopLevelParent().version
-        self.data_dir = self.GetTopLevelParent().directory
-        self.data_file = self.GetTopLevelParent().data_file
-        self.results_file = self.GetTopLevelParent().results_file  # os.path.join(os.path.dirname(self.data_file), 'IVY_Results.json')
+        # self.data_dir = self.GetTopLevelParent().directory
+        # self.data_file = self.GetTopLevelParent().data_file
+        # self.results_file = self.GetTopLevelParent().results_file  # os.path.join(os.path.dirname(self.data_file), 'IVY_Results.json')
 
         # Dictionary to hold ALL runs for this application session:
         # Open json file (if it exists). Use json to read file contents in to Results dict.
@@ -213,7 +213,7 @@ class CalcPage(wx.Panel):
 
         self.SetSizerAndFit(gb_sizer)
 
-        self.data_file = None
+        # self.data_file = None
         self.run_data = None
         self.run_IDs = []
         self.runstr = ''
@@ -270,12 +270,17 @@ class CalcPage(wx.Panel):
         # Dictionary to hold ALL run results:
         # Open json file (if it exists). Use json to read file contents in to Results dict.
         # If no file, create empty dictionary.
+        self.results_file = self.GetTopLevelParent().results_file
+        print(f'on_analyze(): Attempting to open results file "{self.results_file}"')
         try:
             with open(self.results_file, 'r') as results_fp:
                 results_str = devices.strip_chars(results_fp.read(), '\t\n')  # Remove tabs & newlines
                 self.Results = json.loads(results_str)  # Load pre-existing data as a dict
+                print(f'Opened file successfully. Found the following run-ids:\n'
+                      f'{list(self.Results.keys())}')
         except FileNotFoundError:
             self.Results = {}  # Start from scratch if no pre-existing data. Accumulate run-analyses here
+            print(f'Failed to open results file. Created empty results dict.')
 
         # logger.info('STARTING ANALYSIS...')
 
@@ -359,6 +364,7 @@ class CalcPage(wx.Panel):
         t_room_eu = t_room.u * t_room_k
 
         self.Results.update({self.run_ID: {}})
+        print(f'Just updated self.Results - list of runs:\n{list(self.Results.keys())}')
         self.ThisResult = self.Results[self.run_ID]
         self.ThisResult.update({'Comment': comment,
                                 'Date': mean_date,
